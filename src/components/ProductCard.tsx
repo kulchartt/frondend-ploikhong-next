@@ -1,6 +1,5 @@
 'use client';
 
-import { Heart } from 'lucide-react';
 import { useState } from 'react';
 
 interface ProductCardProps {
@@ -24,14 +23,18 @@ interface ProductCardProps {
 }
 
 const IMG_TINTS = [
-  'linear-gradient(135deg,#d4a59a,#c8866e)',
-  'linear-gradient(135deg,#a5c4d4,#7ba8c8)',
-  'linear-gradient(135deg,#b8d4a5,#8ec87b)',
-  'linear-gradient(135deg,#d4c4a5,#c8a87b)',
-  'linear-gradient(135deg,#c4a5d4,#a87bc8)',
-  'linear-gradient(135deg,#a5d4c4,#7bc8a8)',
-  'linear-gradient(135deg,#d4d4a5,#c8c87b)',
-  'linear-gradient(135deg,#c4a5a5,#c87b7b)',
+  ['#d4a59a','#c8866e'],
+  ['#a5c4d4','#7ba8c8'],
+  ['#b8d4a5','#8ec87b'],
+  ['#d4c4a5','#c8a87b'],
+  ['#c4a5d4','#a87bc8'],
+  ['#a5d4c4','#7bc8a8'],
+  ['#d4d4a5','#c8c87b'],
+  ['#c4a5a5','#c87b7b'],
+  ['#a5b4d4','#7b8ec8'],
+  ['#d4b4a5','#c8987b'],
+  ['#b4d4a5','#98c87b'],
+  ['#d4a5c4','#c87ba8'],
 ];
 
 function timeAgo(dateStr?: string) {
@@ -44,7 +47,9 @@ function timeAgo(dateStr?: string) {
 
 export function ProductCard({ product, inWishlist = false, onWishlist, onClick }: ProductCardProps) {
   const [liked, setLiked] = useState(inWishlist);
-  const tint = IMG_TINTS[product.id % IMG_TINTS.length];
+  const [hovered, setHovered] = useState(false);
+  const tints = IMG_TINTS[product.id % IMG_TINTS.length];
+  const price = product.flash_price || product.price;
 
   function handleWishlist(e: React.MouseEvent) {
     e.stopPropagation();
@@ -55,67 +60,81 @@ export function ProductCard({ product, inWishlist = false, onWishlist, onClick }
   return (
     <div
       onClick={() => onClick?.(product.id)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         background: 'var(--surface)',
-        border: '1px solid var(--line)',
+        border: `1px solid ${hovered ? 'var(--ink)' : 'var(--line)'}`,
         borderRadius: 'var(--radius)',
         overflow: 'hidden',
         cursor: 'pointer',
-        transition: 'box-shadow .15s',
+        position: 'relative',
+        transition: 'border-color .18s, transform .18s',
+        transform: hovered ? 'translateY(-1px)' : 'none',
       }}
-      onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,.1)')}
-      onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
     >
-      {/* Image */}
-      <div style={{ position: 'relative', aspectRatio: '4/3' }}>
-        {product.images?.[0] ? (
+      {/* Image — square 1:1 */}
+      <div style={{ position: 'relative', aspectRatio: '1/1', width: '100%',
+        background: `linear-gradient(135deg, ${tints[0]} 0%, ${tints[1]} 100%)` }}>
+        {product.images?.[0] && (
           <img src={product.images[0]} alt={product.title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : (
-          <div style={{ width: '100%', height: '100%', background: tint }} />
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         )}
 
-        {/* Badges */}
-        <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {/* Badges top-left */}
+        <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {product.is_boosted && (
-            <span style={{ background: '#111', color: '#fff', fontSize: 10, fontWeight: 700,
-              padding: '2px 6px', borderRadius: 4, letterSpacing: '.5px' }}>BOOST</span>
+            <span style={{ background: 'linear-gradient(90deg,#111,#333)', color: '#fff',
+              fontSize: 10, fontWeight: 700, padding: '3px 8px',
+              borderRadius: 999, letterSpacing: '.01em', fontFamily: 'var(--font-mono)' }}>BOOST</span>
           )}
           {product.flash_price && (
-            <span style={{ background: 'var(--accent)', color: '#fff', fontSize: 10, fontWeight: 700,
-              padding: '2px 6px', borderRadius: 4 }}>SALE</span>
+            <span style={{ background: 'var(--accent)', color: '#fff',
+              fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999 }}>SALE</span>
           )}
         </div>
 
-        {/* Wishlist */}
+        {/* Wishlist top-right */}
         <button onClick={handleWishlist}
-          style={{ position: 'absolute', top: 8, right: 8, width: 32, height: 32,
-            borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,.9)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,.15)' }}>
-          <Heart size={16} fill={liked ? '#ff2d1f' : 'none'} stroke={liked ? '#ff2d1f' : '#555'} />
+          style={{ position: 'absolute', top: 10, right: 10, width: 30, height: 30,
+            borderRadius: '50%', border: '1px solid var(--line)', background: 'rgba(255,255,255,.82)',
+            display: 'grid', placeItems: 'center', cursor: 'pointer',
+            backdropFilter: 'blur(6px)', padding: 0 }}>
+          <svg width={14} height={14} viewBox="0 0 24 24" strokeWidth={1.8}
+            stroke={liked ? '#b83216' : 'var(--ink)'} fill={liked ? '#b83216' : 'none'}>
+            <path d="M12 21s-7-4.5-9.5-10C1 7.5 3 4 7 4c2 0 3.5 1.5 5 3 1.5-1.5 3-3 5-3 4 0 6 3.5 4.5 7C19 16.5 12 21 12 21z"/>
+          </svg>
         </button>
       </div>
 
-      {/* Info */}
-      <div style={{ padding: '10px 12px' }}>
-        <div className="mono" style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', marginBottom: 2 }}>
-          ฿{Number(product.flash_price || product.price).toLocaleString()}
-          {product.original_price && (
-            <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--ink-3)',
-              textDecoration: 'line-through', marginLeft: 6 }}>
-              ฿{Number(product.original_price).toLocaleString()}
-            </span>
-          )}
-        </div>
-        <div style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500,
-          overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical', lineHeight: 1.4, marginBottom: 6 }}>
+      {/* Body */}
+      <div style={{ padding: '12px 14px 14px' }}>
+        {/* Title first */}
+        <div style={{
+          fontSize: 14, fontWeight: 500, lineHeight: 1.4, marginBottom: 4,
+          color: 'var(--ink)',
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+          overflow: 'hidden', minHeight: '2.8em',
+        }}>
           {product.title}
         </div>
-        <div style={{ fontSize: 11, color: 'var(--ink-3)', display: 'flex', gap: 6 }}>
-          {product.location && <span>📍 {product.location}</span>}
-          {product.created_at && <span>· {timeAgo(product.created_at)}</span>}
+
+        {/* Price — font-display, 18px */}
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700,
+          letterSpacing: '-.01em', color: 'var(--ink)' }}>
+          ฿{Number(price).toLocaleString()}
+          {product.original_price && product.original_price > price && (
+            <s style={{ color: 'var(--ink-3)', fontWeight: 400, fontSize: 13, marginLeft: 6 }}>
+              ฿{Number(product.original_price).toLocaleString()}
+            </s>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginTop: 8, fontSize: 12, color: 'var(--ink-3)' }}>
+          <span>{product.location?.split('·')[0]?.trim() ?? ''}</span>
+          <span>{timeAgo(product.created_at)}</span>
         </div>
       </div>
     </div>
