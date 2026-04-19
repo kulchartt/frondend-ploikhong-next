@@ -1,9 +1,10 @@
 'use client';
 
-import { MessageSquare, Heart, User, ShoppingBag, Store, Search, ChevronDown } from 'lucide-react';
+import { MessageSquare, Heart, User, ShoppingBag, Store, ChevronDown, LogOut } from 'lucide-react';
 import { PloiWordmark } from './PloiLogo';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
+import { useState } from 'react';
 
 const SUBNAV = ['สำหรับคุณ', 'ใกล้ฉัน', 'ของใหม่', 'Boost เด่น', 'ส่งฟรี', 'ลดราคา', 'ของสะสม', 'ดีลพนักงาน', 'นัดรับ'];
 
@@ -18,6 +19,9 @@ interface NavbarProps {
 
 export function Navbar({ onSearch, onOpenAuth, onOpenChat, onOpenHub, onOpenListing, unreadChat = 0 }: NavbarProps) {
   const { data: session } = useSession();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const avatarLetter = session?.user?.name?.[0]?.toUpperCase() ?? '?';
 
   return (
     <header style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--surface)',
@@ -74,6 +78,67 @@ export function Navbar({ onSearch, onOpenAuth, onOpenChat, onOpenHub, onOpenList
               cursor: 'pointer', whiteSpace: 'nowrap' }}>
             + ลงขาย
           </button>
+
+          {/* User avatar / dropdown when logged in */}
+          {session?.user && (
+            <div style={{ position: 'relative', marginLeft: 4 }}>
+              <button onClick={() => setDropdownOpen(o => !o)}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+                  background: 'var(--surface-2)', border: '1.5px solid var(--line)',
+                  borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}>
+                {session.user.image ? (
+                  <img src={session.user.image} alt="" width={26} height={26}
+                    style={{ borderRadius: '50%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: 26, height: 26, borderRadius: '50%',
+                    background: 'var(--accent)', color: '#fff', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 700 }}>{avatarLetter}</div>
+                )}
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', maxWidth: 100,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {session.user.name?.split(' ')[0]}
+                </span>
+                <ChevronDown size={13} color="var(--ink-3)" />
+              </button>
+
+              {dropdownOpen && (
+                <div onClick={() => setDropdownOpen(false)}
+                  style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)',
+                    background: 'var(--surface)', border: '1.5px solid var(--line)',
+                    borderRadius: 'var(--radius)', boxShadow: '0 8px 24px rgba(0,0,0,.12)',
+                    minWidth: 180, zIndex: 200, overflow: 'hidden' }}>
+                  <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{session.user.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{session.user.email}</div>
+                  </div>
+                  {[
+                    { label: 'สินค้าของฉัน', icon: <Store size={14} /> },
+                    { label: 'การซื้อของฉัน', icon: <ShoppingBag size={14} /> },
+                    { label: 'รายการถูกใจ', icon: <Heart size={14} /> },
+                  ].map(({ label, icon }) => (
+                    <button key={label}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                        padding: '10px 14px', background: 'none', border: 'none',
+                        fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer', textAlign: 'left' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                      {icon} {label}
+                    </button>
+                  ))}
+                  <div style={{ height: 1, background: 'var(--line)' }} />
+                  <button onClick={() => signOut({ callbackUrl: '/' })}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                      padding: '10px 14px', background: 'none', border: 'none',
+                      fontSize: 13, color: 'var(--neg)', cursor: 'pointer', textAlign: 'left' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                    <LogOut size={14} /> ออกจากระบบ
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
