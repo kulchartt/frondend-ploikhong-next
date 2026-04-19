@@ -1,0 +1,6 @@
+<svg width="56" height="56" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
+  <!-- PloiMark — Light mode (black circle, white glyph, red line) -->
+  <circle cx="28" cy="28" r="26" fill="#111110"/>
+  <path d="M18 14 h12 a10 10 0 0 1 0 20 h-8 v10 h-4 z M22 20 v8 h8 a4 4 0 0 0 0 -8 z" fill="#ffffff"/>
+  <line x1="8" y1="46" x2="48" y2="34" stroke="#ff2d1f" stroke-width="5" stroke-linecap="round"/>
+</svg>

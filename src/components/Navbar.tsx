@@ -20,7 +20,14 @@ interface NavbarProps {
 export function Navbar({ onSearch, onOpenAuth, onOpenChat, onOpenHub, onOpenListing, unreadChat = 0 }: NavbarProps) {
   const { data: session } = useSession();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dark, setDark] = useState(false);
   const avatarLetter = session?.user?.name?.[0]?.toUpperCase() ?? '?';
+
+  function toggleDark() {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.setAttribute('data-theme', next ? 'dark' : '');
+  }
 
   return (
     <header style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--surface)',
@@ -80,6 +87,16 @@ export function Navbar({ onSearch, onOpenAuth, onOpenChat, onOpenHub, onOpenList
               )}
             </button>
           ))}
+
+          {/* Dark mode toggle */}
+          <button onClick={toggleDark}
+            title={dark ? 'Light mode' : 'Dark mode'}
+            style={{ padding: '8px 10px', border: 'none', borderRadius: 'var(--radius-sm)',
+              background: 'none', color: 'var(--ink-2)', cursor: 'pointer', display: 'flex' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+            {dark ? <SunIcon /> : <MoonIcon />}
+          </button>
 
           {/* + ลงขาย — 13px, 9px 16px */}
           <button onClick={onOpenListing}
@@ -199,5 +216,16 @@ function BagIcon() {
 function StoreIcon() {
   return <svg style={ic} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
     <path d="M3 7h18M6 7v13h12V7M9 11h6"/>
+  </svg>;
+}
+function MoonIcon() {
+  return <svg style={ic} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>;
+}
+function SunIcon() {
+  return <svg style={ic} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
+    <circle cx="12" cy="12" r="5"/>
+    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
   </svg>;
 }
