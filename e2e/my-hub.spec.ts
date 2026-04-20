@@ -689,7 +689,8 @@ test.describe('V8Hub — Auth guard', () => {
     await page.route('**/api/products*', r => r.fulfill({ json: [] }));
     await page.goto('/');
     await page.getByRole('button', { name: 'ขาย', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'เข้าสู่ระบบ' })).toBeVisible();
+    // Auth modal should appear (data-testid="auth-modal"), hub should NOT open
+    await expect(page.locator('[data-testid="auth-modal"]')).toBeVisible();
     await expect(page.locator('[data-testid="v8hub"]')).not.toBeVisible();
   });
 

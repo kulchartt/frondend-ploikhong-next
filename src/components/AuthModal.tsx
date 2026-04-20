@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { PloiWordmark } from './PloiLogo';
 import { X, Eye, EyeOff } from 'lucide-react';
@@ -10,10 +10,16 @@ type Mode = 'login' | 'signup' | 'reset';
 interface AuthModalProps {
   open: boolean;
   onClose: () => void;
+  initialMode?: Mode;
 }
 
-export function AuthModal({ open, onClose }: AuthModalProps) {
-  const [mode, setMode] = useState<Mode>('login');
+export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalProps) {
+  const [mode, setMode] = useState<Mode>(initialMode);
+
+  // Reset to initialMode whenever modal opens
+  useEffect(() => {
+    if (open) setMode(initialMode);
+  }, [open, initialMode]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -74,7 +80,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
   ];
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
+    <div data-testid="auth-modal" onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
       zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div onClick={e => e.stopPropagation()}
         style={{ background: 'var(--surface)', borderRadius: 16, padding: 36, width: '100%',

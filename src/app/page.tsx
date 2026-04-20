@@ -52,6 +52,7 @@ export default function HomePage() {
   const [gridView, setGridView] = useState(true);
   const [sort, setSort] = useState('newest');
   const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'reset'>('login');
   const [listingOpen, setListingOpen] = useState(false);
   const [hubOpen, setHubOpen] = useState<{ mode: 'sell' | 'buy'; tab?: string } | null>(null);
   const [wishlistOpen, setWishlistOpen] = useState(false);
@@ -123,11 +124,12 @@ export default function HomePage() {
     <>
       <Navbar
         onSearch={setSearch}
-        onOpenAuth={() => setAuthOpen(true)}
+        onOpenAuth={() => { setAuthMode('login'); setAuthOpen(true); }}
+        onResetPassword={() => { setAuthMode('reset'); setAuthOpen(true); }}
         onOpenListing={openListing}
-        onOpenChat={() => { if (!session?.user) { setAuthOpen(true); return; } setChatOpen(true); }}
+        onOpenChat={() => { if (!session?.user) { setAuthMode('login'); setAuthOpen(true); return; } setChatOpen(true); }}
         onOpenHub={(mode, tab) => {
-          if (!session?.user) { setAuthOpen(true); return; }
+          if (!session?.user) { setAuthMode('login'); setAuthOpen(true); return; }
           setHubOpen({ mode, tab });
         }}
       />
@@ -333,7 +335,7 @@ export default function HomePage() {
           resultCount={products.length}
         />
       )}
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} initialMode={authMode} />
       {listingOpen && <ListingFlow onClose={() => setListingOpen(false)} onPosted={loadProducts} />}
       {hubOpen && (
         <MyHub
