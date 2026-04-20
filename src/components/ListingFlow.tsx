@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import { PloiWordmark } from './PloiLogo';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import * as api from '@/lib/api';
 
 interface ListingFlowProps {
   onClose: () => void;
@@ -47,6 +49,8 @@ interface Form {
 }
 
 export function ListingFlow({ onClose }: ListingFlowProps) {
+  const { data: session } = useSession();
+  const token: string | undefined = (session as any)?.token;
   const isMobile = useBreakpoint(768);
   const [step, setStep] = useState(1);
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -59,6 +63,9 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
   });
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState('');
+  const [posting, setPosting] = useState(false);
+  const [postError, setPostError] = useState('');
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const [posted, setPosted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -136,9 +143,55 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
     }
   }
 
-  function handlePost() {
-    setPosted(true);
-    setTimeout(onClose, 1600);
+  async function handlePost() {
+    if (!token) {
+      setPostError('กรุณาเข้าสู่ระบบก่อนโพสต์');
+      return;
+    }
+    setPosting(true);
+    setPostError('');
+
+    try {
+      // 1. Upload photos that have real files
+      const photosWithFiles = photos.filter(p => p.file);
+      setUploadProgress({ done: 0, total: photosWithFiles.length });
+
+      const imageUrls: string[] = [];
+      for (let i = 0; i < photos.length; i++) {
+        const p = photos[i];
+        if (p.file) {
+          const url = await api.uploadImage(p.file, token);
+          imageUrls.push(url);
+          setUploadProgress({ done: imageUrls.length, total: photosWithFiles.length });
+        } else if (p.url && !p.url.startsWith('blob:')) {
+          imageUrls.push(p.url); // already-uploaded URL
+        }
+      }
+
+      setUploadProgress(null);
+
+      // 2. Create the product
+      await api.createProduct({
+        title: form.title.trim(),
+        description: form.desc.trim(),
+        price: Number(form.price),
+        category: form.cat,
+        condition: form.cond,
+        location: form.loc,
+        delivery: form.delivery,
+        negotiable: form.negotiable,
+        is_boosted: form.boost,
+        images: imageUrls,
+        image_url: imageUrls[0] ?? '',
+      }, token);
+
+      setPosted(true);
+      setTimeout(onClose, 2200);
+    } catch (err: any) {
+      setPostError(err?.message || 'โพสต์ไม่สำเร็จ กรุณาลองใหม่');
+    } finally {
+      setPosting(false);
+    }
   }
 
   if (posted) {
@@ -165,6 +218,7 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
       }}>
       <style>{`
         @keyframes lstFade { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:none } }
+        @keyframes spin { to { transform: rotate(360deg) } }
       `}</style>
 
       <div
@@ -594,6 +648,33 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
                   ลงประกาศฟรี ไม่มีค่าธรรมเนียมเมื่อขายสำเร็จ · ได้เต็มราคาที่คุยกับผู้ซื้อ
                 </div>
               </div>
+
+              {/* Upload progress */}
+              {uploadProgress && (
+                <div style={{ marginTop: 14, padding: '12px 14px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', fontSize: 13 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: 'var(--ink-2)' }}>
+                    <span>กำลังอัพโหลดรูป…</span>
+                    <span style={{ fontFamily: 'var(--font-mono)' }}>{uploadProgress.done}/{uploadProgress.total}</span>
+                  </div>
+                  <div style={{ height: 4, background: 'var(--line)', borderRadius: 999, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: 999, background: 'var(--accent)',
+                      width: `${uploadProgress.total ? (uploadProgress.done / uploadProgress.total) * 100 : 0}%`,
+                      transition: 'width .3s ease',
+                    }} />
+                  </div>
+                </div>
+              )}
+
+              {/* Post error */}
+              {postError && (
+                <div style={{ marginTop: 14, padding: '12px 14px', background: 'rgba(184,50,22,.08)', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--neg)', display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ flexShrink: 0 }}>
+                    <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
+                  </svg>
+                  {postError}
+                </div>
+              )}
             </div>
           )}
 
@@ -645,13 +726,26 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
             <button
               data-testid="listing-post-btn"
               onClick={handlePost}
+              disabled={posting}
               style={{
                 padding: '11px 26px',
-                background: 'var(--accent)', color: '#fff',
+                background: posting ? 'var(--line)' : 'var(--accent)',
+                color: posting ? 'var(--ink-3)' : '#fff',
                 border: 'none', borderRadius: 'var(--radius-sm)',
-                fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                fontSize: 14, fontWeight: 700,
+                cursor: posting ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', gap: 8,
+                transition: '.15s',
               }}>
-              {form.boost ? 'โพสต์ & Boost ฿29' : 'โพสต์ประกาศ'}
+              {posting && (
+                <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+                  style={{ animation: 'spin 1s linear infinite' }}>
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                </svg>
+              )}
+              {posting
+                ? (uploadProgress ? `อัพโหลด ${uploadProgress.done}/${uploadProgress.total}…` : 'กำลังโพสต์…')
+                : form.boost ? 'โพสต์ & Boost ฿29' : 'โพสต์ประกาศ'}
             </button>
           )}
         </div>
