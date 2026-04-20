@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import * as api from '@/lib/api';
 
 interface Product {
   id: number;
@@ -49,22 +51,25 @@ function nowTime() {
 }
 
 export function ProductDetail({ product, onClose }: ProductDetailProps) {
+  const { data: session } = useSession();
+  const token: string | undefined = (session as any)?.token;
   const isMobile = useBreakpoint(768);
   const [imgIdx, setImgIdx] = useState(0);
-  const [msgs, setMsgs] = useState<Msg[]>([
-    { who: 'seller', text: 'สวัสดีครับ สินค้ายังว่างนะครับ 😊', time: '14:02' },
-    { who: 'me',     text: 'สนใจครับ ของสภาพยังไงบ้าง?', time: '14:03' },
-    { who: 'seller', text: 'สภาพประมาณ 95% ครับ ใช้มา 4 เดือน ไม่มีรอยร้าว มีรอยขนแมวเล็กน้อย', time: '14:04' },
-  ]);
+  const [msgs, setMsgs] = useState<Msg[]>([]);
   const [draft, setDraft] = useState('');
   const [typing, setTyping] = useState(false);
+  const [roomId, setRoomId] = useState<number | null>(null);
+  const [myUserId, setMyUserId] = useState<number | null>(null);
+  const [chatReady, setChatReady] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const latestMsgId = useRef<number>(0);
 
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [msgs, typing]);
 
-  // Lock body scroll when open
+  // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
@@ -77,12 +82,75 @@ export function ProductDetail({ product, onClose }: ProductDetailProps) {
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
+  // Normalise API messages → internal Msg format
+  const normaliseMsgs = useCallback((raw: any[], meId: number): Msg[] =>
+    raw.map(m => ({
+      who: m.sender_id === meId ? 'me' : 'seller',
+      text: m.content ?? m.message ?? '',
+      time: m.created_at
+        ? new Date(m.created_at).toLocaleTimeString('th', { hour: '2-digit', minute: '2-digit' })
+        : nowTime(),
+    }))
+  , []);
+
+  // Create/find chat room + load initial messages
+  useEffect(() => {
+    if (!token || !product?.seller_id) {
+      // Guest: show simulated preview messages
+      setMsgs([
+        { who: 'seller', text: 'สวัสดีครับ สินค้ายังว่างนะครับ 😊', time: '14:02' },
+        { who: 'me',     text: 'สนใจครับ ของสภาพยังไงบ้าง?',         time: '14:03' },
+        { who: 'seller', text: 'สภาพ 95% ครับ ใช้มา 4 เดือน ไม่มีรอยร้าว', time: '14:04' },
+      ]);
+      setChatReady(false);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const room = await api.createChatRoom(product.seller_id!, product.id, token);
+        if (cancelled) return;
+        const meId: number = room.buyer_id ?? room.user_id ?? 0;
+        setRoomId(room.id);
+        setMyUserId(meId);
+        const rawMsgs = await api.getChatMessages(room.id, token);
+        if (cancelled) return;
+        const normalised = normaliseMsgs(rawMsgs, meId);
+        setMsgs(normalised);
+        if (rawMsgs.length) latestMsgId.current = rawMsgs[rawMsgs.length - 1].id;
+        setChatReady(true);
+      } catch {
+        // Fall back to simulated
+        setMsgs([{ who: 'seller', text: 'สวัสดีครับ ยินดีให้ข้อมูลเลยครับ 😊', time: nowTime() }]);
+        setChatReady(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token, product?.id, product?.seller_id, normaliseMsgs]);
+
+  // Poll for new messages every 3 s
+  useEffect(() => {
+    if (!token || !roomId || !myUserId) return;
+    pollRef.current = setInterval(async () => {
+      try {
+        const rawMsgs = await api.getChatMessages(roomId, token);
+        const lastId = rawMsgs.length ? rawMsgs[rawMsgs.length - 1].id : 0;
+        if (lastId !== latestMsgId.current) {
+          latestMsgId.current = lastId;
+          setMsgs(normaliseMsgs(rawMsgs, myUserId));
+        }
+      } catch {}
+    }, 3000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [token, roomId, myUserId, normaliseMsgs]);
+
   if (!product) return null;
 
   const tints = IMG_TINTS[product.id % IMG_TINTS.length];
   const imgs = product.images?.length
     ? product.images
-    : [null, null, null, null]; // 4 placeholder slots
+    : [null, null, null, null];
 
   const price = product.flash_price || product.price;
   const sellerInitial = (product.seller_name ?? 'S')[0].toUpperCase();
@@ -91,15 +159,24 @@ export function ProductDetail({ product, onClose }: ProductDetailProps) {
     return IMG_TINTS[(product.id + i) % IMG_TINTS.length];
   }
 
-  function send(text: string) {
+  async function send(text: string) {
     if (!text.trim()) return;
-    setMsgs(m => [...m, { who: 'me', text, time: nowTime() }]);
+    const optimistic: Msg = { who: 'me', text, time: nowTime() };
+    setMsgs(m => [...m, optimistic]);
     setDraft('');
-    setTyping(true);
-    setTimeout(() => {
-      setTyping(false);
-      setMsgs(m => [...m, { who: 'seller', text: 'เดี๋ยวตอบให้นะครับ ขอเช็คของก่อน 🙏', time: nowTime() }]);
-    }, 1800);
+
+    if (chatReady && token && roomId) {
+      try {
+        await api.sendMessage(roomId, text, token);
+      } catch {} // keep optimistic even on error
+    } else {
+      // Simulated reply for guests
+      setTyping(true);
+      setTimeout(() => {
+        setTyping(false);
+        setMsgs(m => [...m, { who: 'seller', text: 'เดี๋ยวตอบให้นะครับ ขอเช็คของก่อน 🙏', time: nowTime() }]);
+      }, 1800);
+    }
   }
 
   return (

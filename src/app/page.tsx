@@ -13,6 +13,7 @@ import { ListingFlow } from '@/components/ListingFlow';
 import { MyHub } from '@/components/MyHub';
 import { FilterDrawer } from '@/components/FilterDrawer';
 import { WishlistDrawer } from '@/components/WishlistDrawer';
+import { ChatDrawer } from '@/components/ChatDrawer';
 import * as api from '@/lib/api';
 
 const MONEY_RAIL = [
@@ -53,6 +54,7 @@ export default function HomePage() {
   const [listingOpen, setListingOpen] = useState(false);
   const [hubOpen, setHubOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [filters, setFilters] = useState<any>({});
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
@@ -121,6 +123,7 @@ export default function HomePage() {
         onSearch={setSearch}
         onOpenAuth={() => setAuthOpen(true)}
         onOpenListing={openListing}
+        onOpenChat={() => { if (!session) { setAuthOpen(true); return; } setChatOpen(true); }}
         onOpenHub={(mode) => {
           if (!session) { setAuthOpen(true); return; }
           if (mode === 'sell') setHubOpen(true);
@@ -311,6 +314,9 @@ export default function HomePage() {
         </main>
       </div>
 
+      {chatOpen && (
+        <ChatDrawer onClose={() => setChatOpen(false)} />
+      )}
       {wishlistOpen && (
         <WishlistDrawer
           onClose={() => setWishlistOpen(false)}

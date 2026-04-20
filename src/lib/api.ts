@@ -80,6 +80,12 @@ export const createChatRoom = (sellerId: number, productId: number, token: strin
     body: JSON.stringify({ seller_id: sellerId, product_id: productId }),
   }, token);
 
+export const sendMessage = (roomId: number, content: string, token: string) =>
+  req<any>(`/api/chat/rooms/${roomId}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  }, token);
+
 // ─── Wishlist ────────────────────────────────────────────────────────────────
 
 export const getWishlist = (token: string) =>
