@@ -321,6 +321,7 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
                         )}
                       </div>
                       <button
+                        data-testid={`remove-photo-${p.id}`}
                         onClick={() => removePhoto(p.id)}
                         style={{
                           position: 'absolute', top: 5, right: 5, width: 20, height: 20,

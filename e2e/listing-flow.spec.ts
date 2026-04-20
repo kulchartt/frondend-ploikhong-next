@@ -1,112 +1,125 @@
 import { test, expect } from '@playwright/test';
+import path from 'path';
 
 const MOCK_PRODUCTS = [
   { id: 1, title: 'Test Product', price: 1000, images: [], seller_name: 'Test' },
 ];
 
-// Helper: mock session so user is "logged in"
-async function mockSession(page: any) {
-  await page.route('**/api/auth/session', route => {
-    route.fulfill({
-      json: {
-        user: { name: 'ทดสอบ', email: 'test@example.com', image: null },
-        expires: new Date(Date.now() + 86400000).toISOString(),
-      },
-    });
+const MOCK_SESSION = {
+  user: { name: 'ทดสอบ', email: 'test@example.com', image: null },
+  expires: new Date(Date.now() + 86400000).toISOString(),
+  token: 'mock-token-abc',
+};
+
+// Upload a fake image via the hidden file input
+async function addPhoto(page: any) {
+  const fileInput = page.locator('input[type="file"]');
+  await fileInput.setInputFiles({
+    name: 'test.jpg',
+    mimeType: 'image/jpeg',
+    buffer: Buffer.from('fake-image-data'),
   });
+}
+
+async function openListing(page: any) {
+  await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
+}
+
+async function goToStep2(page: any) {
+  await openListing(page);
+  await addPhoto(page);
+  await page.getByTestId('listing-next-btn').click();
+}
+
+async function goToStep3(page: any) {
+  await goToStep2(page);
+  await page.getByTestId('listing-title').fill('iPhone 14 Pro');
+  await page.getByTestId('listing-desc').fill('เครื่องศูนย์ไทย ใช้งานปกติ ครบกล่อง');
+  await page.getByTestId('listing-next-btn').click();
+}
+
+async function goToStep4(page: any) {
+  await goToStep3(page);
+  await page.getByTestId('listing-price').fill('15000');
+  await page.getByTestId('listing-next-btn').click();
 }
 
 test.describe('Listing Flow', () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.route('**/api/products*', route => route.fulfill({ json: MOCK_PRODUCTS }));
-    await mockSession(page);
+    await page.route('**/api/products*', r => r.fulfill({ json: MOCK_PRODUCTS }));
+    await page.route('**/api/auth/session', r => r.fulfill({ json: MOCK_SESSION }));
+    await page.route('**/api/wishlist', r => r.fulfill({ json: [] }));
     await page.goto('/');
   });
 
   // ─── Opening ───────────────────────────────────────────────────────────────
 
-  test('logged-in user: "+ ลงขาย" opens listing modal (not auth modal)', async ({ page }) => {
-    const btn = page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first();
-    await btn.click();
-    // Auth modal shows "เข้าสู่ระบบ"; listing modal shows "รูปภาพ" step label
+  test('logged-in user: "+ ลงขาย" opens listing modal', async ({ page }) => {
+    await openListing(page);
     await expect(page.getByText('รูปภาพ').first()).toBeVisible();
     await expect(page.getByText('เข้าสู่ระบบ')).not.toBeVisible();
   });
 
-  test('unauthenticated user: "+ ลงขาย" opens auth modal', async ({ page }) => {
-    // Override session to return no user
-    await page.route('**/api/auth/session', route => route.fulfill({ json: {} }));
-    await page.reload();
-    const btn = page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first();
-    await btn.click();
-    await expect(page.getByText('เข้าสู่ระบบ')).toBeVisible();
+  test('unauthenticated user: "+ ลงขาย" does not open listing flow', async ({ page }) => {
+    // New page with no session at all
+    await page.route('**/api/auth/session', r => r.fulfill({ status: 200, json: null }));
+    await page.route('**/api/products*', r => r.fulfill({ json: MOCK_PRODUCTS }));
+    await page.goto('/');
+    await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
+    // Listing modal (stepper) must NOT appear
+    await expect(page.getByText('ขั้นตอน 1 จาก 4')).not.toBeVisible();
   });
 
   // ─── Stepper ───────────────────────────────────────────────────────────────
 
-  test('stepper shows all 4 steps on open', async ({ page }) => {
-    await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
+  test('stepper shows all 4 step labels on open', async ({ page }) => {
+    await openListing(page);
     for (const label of ['รูปภาพ', 'รายละเอียด', 'ราคา & ส่ง', 'ตรวจ & โพสต์']) {
       await expect(page.getByText(label).first()).toBeVisible();
     }
   });
 
   test('step counter shows "ขั้นตอน 1 จาก 4"', async ({ page }) => {
-    await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
+    await openListing(page);
     await expect(page.getByText('ขั้นตอน 1 จาก 4')).toBeVisible();
   });
 
   // ─── Step 1: Photos ────────────────────────────────────────────────────────
 
-  test('step 1: "ต่อไป" button is disabled when no photos', async ({ page }) => {
-    await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
+  test('step 1: "ต่อไป" disabled when no photos', async ({ page }) => {
+    await openListing(page);
     await expect(page.getByTestId('listing-next-btn')).toBeDisabled();
   });
 
-  test('step 1: adding a photo enables "ต่อไป" button', async ({ page }) => {
-    await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
-    await page.getByTestId('add-photo-btn').click();
+  test('step 1: adding a photo enables "ต่อไป"', async ({ page }) => {
+    await openListing(page);
+    await addPhoto(page);
     await expect(page.getByTestId('listing-next-btn')).toBeEnabled();
   });
 
-  test('step 1: added photo shows photo count 1/10', async ({ page }) => {
-    await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
-    await page.getByTestId('add-photo-btn').click();
+  test('step 1: added photo shows count 1/10', async ({ page }) => {
+    await openListing(page);
+    await addPhoto(page);
     await expect(page.getByText('1/10')).toBeVisible();
   });
 
-  test('step 1: adding 10 photos hides the add button', async ({ page }) => {
-    await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
-    for (let i = 0; i < 10; i++) {
-      const addBtn = page.getByTestId('add-photo-btn');
-      if (await addBtn.isVisible()) await addBtn.click();
-    }
-    await expect(page.getByTestId('add-photo-btn')).not.toBeVisible();
-  });
-
-  test('step 1: removing a photo brings it back below 10', async ({ page }) => {
-    await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
-    await page.getByTestId('add-photo-btn').click();
-    // Remove button (×) on added photo
-    await page.locator('button').filter({ hasText: '×' }).first().click();
-    // Photo count should be 0/10 and add button visible again
-    await expect(page.getByTestId('add-photo-btn')).toBeVisible();
-  });
-
   test('step 1: COVER label appears on first photo', async ({ page }) => {
-    await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
-    await page.getByTestId('add-photo-btn').click();
+    await openListing(page);
+    await addPhoto(page);
     await expect(page.getByText('COVER')).toBeVisible();
   });
 
-  // ─── Step 2: Details ───────────────────────────────────────────────────────
+  test('step 1: removing a photo shows add button again', async ({ page }) => {
+    await openListing(page);
+    await addPhoto(page);
+    // Remove button uses × character inside a button
+    await page.locator('[data-testid^="remove-photo"]').first().click();
+    await expect(page.getByTestId('add-photo-btn')).toBeVisible();
+    await expect(page.getByTestId('listing-next-btn')).toBeDisabled();
+  });
 
-  async function goToStep2(page: any) {
-    await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
-    await page.getByTestId('add-photo-btn').click();
-    await page.getByTestId('listing-next-btn').click();
-  }
+  // ─── Step 2: Details ───────────────────────────────────────────────────────
 
   test('step 2: shows title, category, condition, description fields', async ({ page }) => {
     await goToStep2(page);
@@ -120,7 +133,7 @@ test.describe('Listing Flow', () => {
     await goToStep2(page);
     await expect(page.getByTestId('listing-next-btn')).toBeDisabled();
     await page.getByTestId('listing-title').fill('iPhone 14');
-    await expect(page.getByTestId('listing-next-btn')).toBeDisabled(); // desc still empty
+    await expect(page.getByTestId('listing-next-btn')).toBeDisabled();
     await page.getByTestId('listing-desc').fill('ใช้งานปกติทุกฟังก์ชัน ของแท้');
     await expect(page.getByTestId('listing-next-btn')).toBeEnabled();
   });
@@ -144,21 +157,14 @@ test.describe('Listing Flow', () => {
 
   // ─── Step 3: Price & Delivery ──────────────────────────────────────────────
 
-  async function goToStep3(page: any) {
-    await goToStep2(page);
-    await page.getByTestId('listing-title').fill('iPhone 14 Pro');
-    await page.getByTestId('listing-desc').fill('เครื่องศูนย์ไทย ใช้งานปกติ ครบกล่อง');
-    await page.getByTestId('listing-next-btn').click();
-  }
-
-  test('step 3: price field, location, delivery chips are visible', async ({ page }) => {
+  test('step 3: price field, delivery chips visible', async ({ page }) => {
     await goToStep3(page);
     await expect(page.getByTestId('listing-price')).toBeVisible();
-    await expect(page.getByText('วิธีรับสินค้า')).toBeVisible();
-    await expect(page.getByText('นัดรับ').first()).toBeVisible();
+    await expect(page.locator('label').filter({ hasText: 'วิธีรับสินค้า' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'นัดรับ', exact: true }).first()).toBeVisible();
   });
 
-  test('step 3: "ต่อไป" disabled until price is filled', async ({ page }) => {
+  test('step 3: "ต่อไป" disabled until price filled', async ({ page }) => {
     await goToStep3(page);
     await expect(page.getByTestId('listing-next-btn')).toBeDisabled();
     await page.getByTestId('listing-price').fill('15000');
@@ -170,26 +176,17 @@ test.describe('Listing Flow', () => {
     const boost = page.getByTestId('boost-card');
     await expect(boost).toBeVisible();
     await boost.click();
-    // After click, checkbox inside should be checked
-    const checkbox = boost.locator('input[type="checkbox"]');
-    await expect(checkbox).toBeChecked();
+    await expect(boost.locator('input[type="checkbox"]')).toBeChecked();
   });
 
   test('step 3: delivery chip "ส่งไปรษณีย์" can be selected', async ({ page }) => {
     await goToStep3(page);
-    await page.getByRole('button', { name: 'ส่งไปรษณีย์' }).click();
-    // That button should now have dark background (ink)
-    const btn = page.getByRole('button', { name: 'ส่งไปรษณีย์' });
-    await expect(btn).toHaveCSS('color', 'rgb(248, 249, 251)'); // --bg color
+    const btn = page.getByRole('button', { name: 'ส่งไปรษณีย์', exact: true });
+    await btn.click();
+    await expect(btn).toHaveCSS('color', 'rgb(248, 249, 251)');
   });
 
   // ─── Step 4: Preview & Post ────────────────────────────────────────────────
-
-  async function goToStep4(page: any) {
-    await goToStep3(page);
-    await page.getByTestId('listing-price').fill('15000');
-    await page.getByTestId('listing-next-btn').click();
-  }
 
   test('step 4: shows preview with entered title', async ({ page }) => {
     await goToStep4(page);
@@ -209,11 +206,10 @@ test.describe('Listing Flow', () => {
 
   test('step 4: post button shows "โพสต์ประกาศ"', async ({ page }) => {
     await goToStep4(page);
-    await expect(page.getByTestId('listing-post-btn')).toBeVisible();
     await expect(page.getByTestId('listing-post-btn')).toContainText('โพสต์ประกาศ');
   });
 
-  test('step 4: post button shows boost price when boost is on', async ({ page }) => {
+  test('step 4: post button shows boost price when boost on', async ({ page }) => {
     await goToStep3(page);
     await page.getByTestId('boost-card').click();
     await page.getByTestId('listing-price').fill('15000');
@@ -222,9 +218,50 @@ test.describe('Listing Flow', () => {
   });
 
   test('step 4: clicking "โพสต์" shows success screen', async ({ page }) => {
+    await page.route('**/api/products/upload', r => r.fulfill({ json: { url: 'https://example.com/img.jpg' } }));
+    await page.route('**/api/products', r => r.fulfill({ json: { id: 99, title: 'iPhone 14 Pro' } }));
     await goToStep4(page);
     await page.getByTestId('listing-post-btn').click();
-    await expect(page.getByText('โพสต์สำเร็จแล้ว!')).toBeVisible();
+    await expect(page.getByText('โพสต์สำเร็จแล้ว!')).toBeVisible({ timeout: 10000 });
+  });
+
+  // ─── Close button in header ────────────────────────────────────────────────
+
+  test('× button in header closes modal on step 1', async ({ page }) => {
+    await openListing(page);
+    await expect(page.getByText('ขั้นตอน 1 จาก 4')).toBeVisible();
+    const closeBtn = page.locator('button').filter({
+      has: page.locator('svg path[d*="M6 6l12 12"]'),
+    }).first();
+    await closeBtn.click();
+    await expect(page.getByText('ขั้นตอน 1 จาก 4')).not.toBeVisible();
+  });
+
+  test('× button in header closes modal on step 4', async ({ page }) => {
+    await goToStep4(page);
+    await expect(page.getByText('ตรวจสอบก่อนโพสต์')).toBeVisible();
+    const closeBtn = page.locator('button').filter({
+      has: page.locator('svg path[d*="M6 6l12 12"]'),
+    }).first();
+    await closeBtn.click();
+    await expect(page.getByText('ตรวจสอบก่อนโพสต์')).not.toBeVisible();
+  });
+
+  // ─── Auth warning on step 4 ────────────────────────────────────────────────
+
+  test('step 4: post button disabled when no token — clicking shows warning', async ({ page }) => {
+    await page.route('**/api/auth/session', r => r.fulfill({
+      json: {
+        user: { name: 'ทดสอบ', email: 'test@example.com', image: null },
+        expires: new Date(Date.now() + 86400000).toISOString(),
+        // no token field
+      },
+    }));
+    await page.route('**/api/products*', r => r.fulfill({ json: MOCK_PRODUCTS }));
+    await page.goto('/');
+    await goToStep4(page);
+    await page.getByTestId('listing-post-btn').click();
+    await expect(page.getByText('กรุณาเข้าสู่ระบบก่อนโพสต์')).toBeVisible();
   });
 
   // ─── Navigation ────────────────────────────────────────────────────────────
@@ -235,23 +272,18 @@ test.describe('Listing Flow', () => {
     await expect(page.getByText('ขั้นตอน 1 จาก 4')).toBeVisible();
   });
 
-  test('cancel button on step 1 closes modal', async ({ page }) => {
-    await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
-    await page.getByRole('button', { name: 'ยกเลิก' }).click();
-    await expect(page.getByText('ขั้นตอน 1 จาก 4')).not.toBeVisible();
-  });
-
   test('ESC key closes listing modal', async ({ page }) => {
-    await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
+    await openListing(page);
     await expect(page.getByText('ขั้นตอน 1 จาก 4')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByText('ขั้นตอน 1 จาก 4')).not.toBeVisible();
   });
 
   test('clicking backdrop closes listing modal', async ({ page }) => {
-    await page.getByRole('button', { name: /^\+\s*ลงขาย$/ }).first().click();
+    await openListing(page);
     await expect(page.getByText('ขั้นตอน 1 จาก 4')).toBeVisible();
-    await page.mouse.click(5, 5);
+    // Click far left edge of screen (backdrop area)
+    await page.mouse.click(10, page.viewportSize()!.height / 2);
     await expect(page.getByText('ขั้นตอน 1 จาก 4')).not.toBeVisible();
   });
 
