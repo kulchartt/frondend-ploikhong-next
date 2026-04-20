@@ -53,7 +53,7 @@ export default function HomePage() {
   const [sort, setSort] = useState('newest');
   const [authOpen, setAuthOpen] = useState(false);
   const [listingOpen, setListingOpen] = useState(false);
-  const [hubOpen, setHubOpen] = useState(false);
+  const [hubOpen, setHubOpen] = useState<{ mode: 'sell' | 'buy'; tab?: string } | null>(null);
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
@@ -126,10 +126,9 @@ export default function HomePage() {
         onOpenAuth={() => setAuthOpen(true)}
         onOpenListing={openListing}
         onOpenChat={() => { if (!session?.user) { setAuthOpen(true); return; } setChatOpen(true); }}
-        onOpenHub={(mode) => {
+        onOpenHub={(mode, tab) => {
           if (!session?.user) { setAuthOpen(true); return; }
-          if (mode === 'sell') setHubOpen(true);
-          else setWishlistOpen(true);
+          setHubOpen({ mode, tab });
         }}
       />
 
@@ -338,8 +337,10 @@ export default function HomePage() {
       {listingOpen && <ListingFlow onClose={() => setListingOpen(false)} onPosted={loadProducts} />}
       {hubOpen && (
         <MyHub
-          onClose={() => setHubOpen(false)}
-          onNewListing={() => { setHubOpen(false); setListingOpen(true); }}
+          mode={hubOpen.mode}
+          initialTab={hubOpen.tab}
+          onClose={() => setHubOpen(null)}
+          onNewListing={() => { setHubOpen(null); setListingOpen(true); }}
         />
       )}
       {selectedProduct && (

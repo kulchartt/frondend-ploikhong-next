@@ -105,6 +105,25 @@ export const makeOffer = (productId: number, amount: number, token: string) =>
 export const getMyOffers = (token: string) =>
   req<any[]>('/api/offers/my', {}, token);
 
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+export const getNotifications = (token: string) =>
+  req<{ notifications: any[]; unread: number }>('/api/notifications', {}, token);
+
+export const markNotificationsRead = (token: string) =>
+  req<any>('/api/notifications/read-all', { method: 'POST' }, token);
+
+// ─── Follows ──────────────────────────────────────────────────────────────────
+
+export const getFollowing = (token: string) =>
+  req<any[]>('/api/follows', {}, token);
+
+export const toggleFollow = (sellerId: number, token: string) =>
+  req<any>('/api/follows/toggle', {
+    method: 'POST',
+    body: JSON.stringify({ seller_id: sellerId }),
+  }, token);
+
 // ─── Shop ────────────────────────────────────────────────────────────────────
 
 export const getShop = (userId: number) =>

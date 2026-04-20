@@ -13,7 +13,7 @@ interface NavbarProps {
   onSearch?: (q: string) => void;
   onOpenAuth?: () => void;
   onOpenChat?: () => void;
-  onOpenHub?: (mode: 'buy' | 'sell') => void;
+  onOpenHub?: (mode: 'buy' | 'sell', tab?: string) => void;
   onOpenListing?: () => void;
   unreadChat?: number;
 }
@@ -66,9 +66,9 @@ export function Navbar({ onSearch, onOpenAuth, onOpenChat, onOpenHub, onOpenList
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
           {[
             { icon: <MsgIcon />, label: 'แชท', badge: unreadChat, action: onOpenChat },
-            { icon: <HeartIcon />, label: 'ถูกใจ', action: () => onOpenHub?.('buy') },
+            { icon: <HeartIcon />, label: 'ถูกใจ', action: () => onOpenHub?.('buy', 'saved') },
             { icon: <UserIcon />, label: 'บัญชี', action: session ? () => onOpenHub?.('sell') : onOpenAuth },
-            { icon: <BagIcon />, label: 'ซื้อ', action: () => onOpenHub?.('buy') },
+            { icon: <BagIcon />, label: 'ซื้อ', action: () => onOpenHub?.('buy', 'activity') },
             { icon: <StoreIcon />, label: 'ขาย', action: () => onOpenHub?.('sell') },
           ].map(({ icon, label, badge, action }) => (
             <button key={label} onClick={action}
