@@ -143,17 +143,6 @@ export function ShopDrawer({ sellerId, onClose, onProductClick }: ShopDrawerProp
             <button style={{
               padding: '8px 16px', borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--line)', background: 'var(--surface)',
-              fontSize: 13, fontWeight: 500, cursor: 'pointer', color: 'var(--ink)',
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-              </svg>
-              ดูโปรไฟล์
-            </button>
-            <button style={{
-              padding: '8px 16px', borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--line)', background: 'var(--surface)',
               fontSize: 13, fontWeight: 500, cursor: 'pointer', color: 'var(--ink-2)',
             }}>
               รายงาน
