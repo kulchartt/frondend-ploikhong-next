@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -64,11 +64,16 @@ const MOCK_FOLLOWING = [
     followed_at: new Date(Date.now() - 86400000 * 10).toISOString() },
 ];
 
-// ─── Route helpers ────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function setupBase(page: any, products = MOCK_PRODUCTS) {
+/** Scope locators INSIDE the hub overlay to avoid matching Navbar/Sidebar behind it */
+function hub(page: Page): Locator {
+  return page.locator('[data-testid="v8hub"]');
+}
+
+async function setupBase(page: Page, products = MOCK_PRODUCTS) {
   await page.route('**/api/auth/session', r => r.fulfill({ json: MOCK_SESSION }));
-  // broad route first (LIFO) so specific /my wins
+  // broad first (LIFO — specific /my route wins)
   await page.route('**/api/products*', r => r.fulfill({ json: [] }));
   await page.route('**/api/products/my', r => r.fulfill({ json: products }));
   await page.route('**/api/wishlist', r => {
@@ -82,302 +87,322 @@ async function setupBase(page: any, products = MOCK_PRODUCTS) {
   await page.route('**/api/follows/toggle', r => r.fulfill({ json: { success: true } }));
 }
 
-async function openSellHub(page: any, products = MOCK_PRODUCTS) {
+async function openSellHub(page: Page, products = MOCK_PRODUCTS) {
   await setupBase(page, products);
   await page.goto('/');
-  // "ขาย" in navbar — exact to avoid matching "+ ลงขาย" or "ลงขายฟรี"
-  await page.getByRole('button', { name: 'ขาย', exact: true }).click();
+  // Wait for session to fully load — nav-user-btn only renders when session?.user is truthy
+  await page.waitForSelector('[data-testid="nav-user-btn"]', { timeout: 10000 });
+  const sellBtn = page.getByRole('button', { name: 'ขาย', exact: true });
+  await expect(sellBtn).toBeVisible({ timeout: 5000 });
+  await sellBtn.click();
+  await expect(page.locator('[data-testid="v8hub"]')).toBeVisible({ timeout: 8000 });
 }
 
-async function openBuyHub(page: any, tab?: string) {
-  await setupBase(page);
-  await page.goto('/');
-  // Open hub in buy mode via "ถูกใจ" (goes to buy→saved) or just open sell then switch
-  await page.getByRole('button', { name: 'ถูกใจ', exact: true }).click();
-  if (tab && tab !== 'saved') {
-    await page.getByRole('button', { name: tab, exact: true }).click();
-  }
+/** Open hub in buy/saved mode via the proven sell→switch path (avoids session race on ถูกใจ click) */
+async function openBuyHub(page: Page) {
+  await openSellHub(page);
+  // switch to buy mode, land on saved tab
+  await hub(page).getByRole('button', { name: 'ซื้อ', exact: true }).click();
+  await hub(page).getByRole('button', { name: 'บันทึกแล้ว' }).click();
+  await expect(hub(page).getByRole('heading', { name: 'บันทึกแล้ว' })).toBeVisible();
 }
 
 // =============================================================================
-// SELL MODE
+// SELL MODE: opening & navigation
 // =============================================================================
 
 test.describe('V8Hub — Sell mode: opening & navigation', () => {
 
   test('clicking "ขาย" while logged in opens V8Hub', async ({ page }) => {
     await openSellHub(page);
-    await expect(page.getByText('รายการสินค้าของคุณ')).toBeVisible();
+    await expect(hub(page).getByRole('heading', { name: 'รายการสินค้าของคุณ' })).toBeVisible();
   });
 
   test('hub shows ขาย/ซื้อ mode switch', async ({ page }) => {
     await openSellHub(page);
-    await expect(page.getByRole('button', { name: 'ขาย', exact: true }).nth(1)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'ซื้อ', exact: true })).toBeVisible();
+    // mode switch buttons are inside the hub overlay
+    await expect(hub(page).getByRole('button', { name: 'ขาย', exact: true })).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'ซื้อ', exact: true })).toBeVisible();
   });
 
   test('ESC closes the hub', async ({ page }) => {
     await openSellHub(page);
-    await expect(page.getByText('รายการสินค้าของคุณ')).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(page.getByText('รายการสินค้าของคุณ')).not.toBeVisible();
+    await expect(page.locator('[data-testid="v8hub"]')).not.toBeVisible();
   });
 
-  test('← Marketplace back button closes the hub', async ({ page }) => {
+  test('← back button closes the hub', async ({ page }) => {
     await openSellHub(page);
-    await expect(page.getByText('รายการสินค้าของคุณ')).toBeVisible();
-    // Back button contains "Marketplace" text on desktop
-    await page.getByRole('button', { name: /Marketplace/ }).first().click();
-    await expect(page.getByText('รายการสินค้าของคุณ')).not.toBeVisible();
+    // back button text is exactly "Marketplace" on desktop (not "โปรไฟล์ Marketplace")
+    await hub(page).getByRole('button', { name: 'Marketplace', exact: true }).click();
+    await expect(page.locator('[data-testid="v8hub"]')).not.toBeVisible();
   });
 
-  test('sidebar nav shows all sell tabs', async ({ page }) => {
+  test('sidebar shows all sell tabs', async ({ page }) => {
     await openSellHub(page);
-    await expect(page.getByRole('button', { name: 'รายการสินค้าของคุณ' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'ข้อมูลเชิงลึก' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'ข่าวประกาศ' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'โปรไฟล์ Marketplace' })).toBeVisible();
+    const h = hub(page);
+    await expect(h.getByRole('button', { name: 'รายการสินค้าของคุณ' })).toBeVisible();
+    await expect(h.getByRole('button', { name: 'ข้อมูลเชิงลึก' })).toBeVisible();
+    await expect(h.getByRole('button', { name: 'ข่าวประกาศ' })).toBeVisible();
+    await expect(h.getByRole('button', { name: 'โปรไฟล์ Marketplace' })).toBeVisible();
   });
 
-  test('clicking "ข้อมูลเชิงลึก" navigates to insights tab', async ({ page }) => {
+  test('clicking "ข้อมูลเชิงลึก" navigates to insights', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: 'ข้อมูลเชิงลึก' }).click();
-    await expect(page.getByText('ยอดเข้าชม 30 วัน')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'ข้อมูลเชิงลึก' }).click();
+    await expect(hub(page).getByText('ยอดเข้าชม 30 วัน')).toBeVisible();
   });
 
-  test('clicking "ข่าวประกาศ" navigates to news tab', async ({ page }) => {
+  test('clicking "ข่าวประกาศ" navigates to news', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: 'ข่าวประกาศ' }).click();
-    await expect(page.getByText('ข่าวและอัปเดตสำหรับผู้ขาย')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'ข่าวประกาศ' }).click();
+    await expect(hub(page).getByText('ข่าวและอัปเดตสำหรับผู้ขาย')).toBeVisible();
   });
 
-  test('clicking "โปรไฟล์ Marketplace" shows user name', async ({ page }) => {
+  test('clicking "โปรไฟล์ Marketplace" shows user profile', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: 'โปรไฟล์ Marketplace' }).first().click();
-    await expect(page.getByText('สมชาย ทดสอบ')).toBeVisible();
-    await expect(page.getByText('test@ploi.dev')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'โปรไฟล์ Marketplace' }).click();
+    await expect(hub(page).getByText('สมชาย ทดสอบ')).toBeVisible();
+    await expect(hub(page).getByText('test@ploi.dev').first()).toBeVisible();
   });
 
   test('header "สร้างรายการสินค้าใหม่" closes hub and opens ListingFlow', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: 'สร้างรายการสินค้าใหม่' }).click();
-    await expect(page.getByText('รายการสินค้าของคุณ')).not.toBeVisible();
+    await hub(page).getByRole('button', { name: 'สร้างรายการสินค้าใหม่' }).click();
+    await expect(page.locator('[data-testid="v8hub"]')).not.toBeVisible();
     await expect(page.getByText('ขั้นตอน 1 จาก 4')).toBeVisible();
   });
 
 });
 
 // =============================================================================
-// SELL: LISTINGS TAB
+// SELL: LISTINGS — product list
 // =============================================================================
 
 test.describe('V8Hub — SellListings: product list', () => {
 
   test('shows all 3 products', async ({ page }) => {
     await openSellHub(page);
-    await expect(page.getByText('iPhone 14 Pro 256GB')).toBeVisible();
-    await expect(page.getByText('MacBook Air M2')).toBeVisible();
-    await expect(page.getByText('AirPods Pro Gen 2')).toBeVisible();
+    const h = hub(page);
+    await expect(h.getByText('iPhone 14 Pro 256GB')).toBeVisible();
+    await expect(h.getByText('MacBook Air M2')).toBeVisible();
+    await expect(h.getByText('AirPods Pro Gen 2')).toBeVisible();
   });
 
   test('shows formatted price', async ({ page }) => {
     await openSellHub(page);
-    await expect(page.getByText('฿32,900')).toBeVisible();
+    await expect(hub(page).getByText('฿32,900')).toBeVisible();
   });
 
-  test('shows กำลังขาย badge for active product', async ({ page }) => {
+  test('shows กำลังขาย badge', async ({ page }) => {
     await openSellHub(page);
-    await expect(page.getByText('กำลังขาย').first()).toBeVisible();
+    await expect(hub(page).getByText('กำลังขาย').first()).toBeVisible();
   });
 
-  test('shows ขายแล้ว badge for sold product', async ({ page }) => {
+  test('shows ขายแล้ว badge', async ({ page }) => {
     await openSellHub(page);
-    await expect(page.getByText('ขายแล้ว').first()).toBeVisible();
+    await expect(hub(page).getByText('ขายแล้ว').first()).toBeVisible();
   });
 
-  test('shows BOOST badge for boosted product', async ({ page }) => {
+  test('shows BOOST badge', async ({ page }) => {
     await openSellHub(page);
-    await expect(page.getByText('BOOST', { exact: true })).toBeVisible();
+    await expect(hub(page).getByText('BOOST', { exact: true })).toBeVisible();
   });
 
 });
+
+// =============================================================================
+// SELL: LISTINGS — filter chips
+// =============================================================================
 
 test.describe('V8Hub — SellListings: filter chips', () => {
 
-  test('filter chip "ทั้งหมด" shows count 3', async ({ page }) => {
+  test('chip "ทั้งหมด" shows count 3', async ({ page }) => {
     await openSellHub(page);
-    const chip = page.getByRole('button', { name: /ทั้งหมด/ }).first();
+    // scope to hub to avoid Sidebar's "ทั้งหมด" category button
+    const chip = hub(page).getByRole('button', { name: /ทั้งหมด/ }).first();
     await expect(chip).toContainText('3');
   });
 
-  test('filter chip "กำลังขาย" shows count 2', async ({ page }) => {
+  test('chip "กำลังขาย" shows count 2', async ({ page }) => {
     await openSellHub(page);
-    const chip = page.getByRole('button', { name: /กำลังขาย/ }).first();
+    const chip = hub(page).getByRole('button', { name: /กำลังขาย/ }).first();
     await expect(chip).toContainText('2');
   });
 
-  test('filter chip "ขายแล้ว" shows count 1', async ({ page }) => {
+  test('chip "ขายแล้ว" shows count 1', async ({ page }) => {
     await openSellHub(page);
-    const chip = page.getByRole('button', { name: /ขายแล้ว/ }).first();
+    const chip = hub(page).getByRole('button', { name: /ขายแล้ว/ }).first();
     await expect(chip).toContainText('1');
   });
 
-  test('"กำลังขาย" filter shows only active products', async ({ page }) => {
+  test('"กำลังขาย" filter hides sold products', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: /กำลังขาย/ }).first().click();
-    await expect(page.getByText('iPhone 14 Pro 256GB')).toBeVisible();
-    await expect(page.getByText('AirPods Pro Gen 2')).toBeVisible();
-    await expect(page.getByText('MacBook Air M2')).not.toBeVisible();
+    await hub(page).getByRole('button', { name: /กำลังขาย/ }).first().click();
+    await expect(hub(page).getByText('iPhone 14 Pro 256GB')).toBeVisible();
+    await expect(hub(page).getByText('AirPods Pro Gen 2')).toBeVisible();
+    await expect(hub(page).getByText('MacBook Air M2')).not.toBeVisible();
   });
 
-  test('"ขายแล้ว" filter shows only sold products', async ({ page }) => {
+  test('"ขายแล้ว" filter hides active products', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: /ขายแล้ว/ }).first().click();
-    await expect(page.getByText('MacBook Air M2')).toBeVisible();
-    await expect(page.getByText('iPhone 14 Pro 256GB')).not.toBeVisible();
+    await hub(page).getByRole('button', { name: /ขายแล้ว/ }).first().click();
+    await expect(hub(page).getByText('MacBook Air M2')).toBeVisible();
+    await expect(hub(page).getByText('iPhone 14 Pro 256GB')).not.toBeVisible();
   });
 
-  test('search input filters products by title', async ({ page }) => {
+  test('search input filters by title', async ({ page }) => {
     await openSellHub(page);
-    await page.locator('input[placeholder*="ค้นหารายการสินค้า"]').fill('AirPods');
-    await expect(page.getByText('AirPods Pro Gen 2')).toBeVisible();
-    await expect(page.getByText('iPhone 14 Pro 256GB')).not.toBeVisible();
+    await hub(page).locator('input[placeholder*="ค้นหารายการสินค้า"]').fill('AirPods');
+    await expect(hub(page).getByText('AirPods Pro Gen 2')).toBeVisible();
+    await expect(hub(page).getByText('iPhone 14 Pro 256GB')).not.toBeVisible();
   });
 
 });
+
+// =============================================================================
+// SELL: LISTINGS — edit
+// =============================================================================
 
 test.describe('V8Hub — SellListings: edit', () => {
 
-  test('clicking edit icon expands inline edit form', async ({ page }) => {
+  test('clicking edit icon opens inline form', async ({ page }) => {
     await openSellHub(page);
-    const firstEditBtn = page.locator('button').filter({
+    const firstEditBtn = hub(page).locator('button').filter({
       has: page.locator('svg path[d*="M11 4H4"]'),
     }).first();
     await firstEditBtn.click();
-    await expect(page.getByText('ชื่อประกาศ').first()).toBeVisible();
-    await expect(page.getByText('ราคา (฿)').first()).toBeVisible();
-    await expect(page.getByText('คำอธิบาย').first()).toBeVisible();
+    await expect(hub(page).getByText('ชื่อประกาศ').first()).toBeVisible();
+    await expect(hub(page).getByText('ราคา (฿)').first()).toBeVisible();
   });
 
-  test('edit form pre-fills current product title', async ({ page }) => {
+  test('edit form pre-fills current title', async ({ page }) => {
     await openSellHub(page);
-    const firstEditBtn = page.locator('button').filter({
+    const firstEditBtn = hub(page).locator('button').filter({
       has: page.locator('svg path[d*="M11 4H4"]'),
     }).first();
     await firstEditBtn.click();
-    await expect(page.locator('input[maxlength="80"]')).toHaveValue('iPhone 14 Pro 256GB');
+    await expect(hub(page).locator('input[maxlength="80"]')).toHaveValue('iPhone 14 Pro 256GB');
   });
 
-  test('save calls PATCH and updates the list', async ({ page }) => {
+  test('save calls PATCH and updates list', async ({ page }) => {
     let patchCalled = false;
     await page.route('**/api/products/10', r => {
-      if (r.request().method() === 'PATCH') {
-        patchCalled = true;
-        r.fulfill({ json: { id: 10, title: 'iPhone EDITED', price: 30000 } });
-      } else { r.continue(); }
+      if (r.request().method() === 'PATCH') { patchCalled = true; r.fulfill({ json: { id: 10, title: 'iPhone EDITED', price: 30000 } }); }
+      else r.continue();
     });
     await openSellHub(page);
-    const firstEditBtn = page.locator('button').filter({
+    const firstEditBtn = hub(page).locator('button').filter({
       has: page.locator('svg path[d*="M11 4H4"]'),
     }).first();
     await firstEditBtn.click();
-    await page.locator('input[maxlength="80"]').fill('iPhone EDITED');
-    await page.getByRole('button', { name: 'บันทึก' }).click();
+    await hub(page).locator('input[maxlength="80"]').fill('iPhone EDITED');
+    await hub(page).getByRole('button', { name: 'บันทึก' }).click();
     expect(patchCalled).toBe(true);
-    await expect(page.getByText('iPhone EDITED')).toBeVisible();
+    await expect(hub(page).getByText('iPhone EDITED')).toBeVisible();
   });
 
-  test('clicking edit again collapses the form', async ({ page }) => {
+  test('clicking edit again collapses form', async ({ page }) => {
     await openSellHub(page);
-    const firstEditBtn = page.locator('button').filter({
+    const firstEditBtn = hub(page).locator('button').filter({
       has: page.locator('svg path[d*="M11 4H4"]'),
     }).first();
     await firstEditBtn.click();
-    await expect(page.getByText('ชื่อประกาศ').first()).toBeVisible();
+    await expect(hub(page).getByText('ชื่อประกาศ').first()).toBeVisible();
     await firstEditBtn.click();
-    await expect(page.getByText('ชื่อประกาศ')).not.toBeVisible();
+    await expect(hub(page).getByText('ชื่อประกาศ')).not.toBeVisible();
   });
 
-  test('"ยกเลิก" in edit form collapses it', async ({ page }) => {
+  test('"ยกเลิก" collapses form', async ({ page }) => {
     await openSellHub(page);
-    const firstEditBtn = page.locator('button').filter({
+    const firstEditBtn = hub(page).locator('button').filter({
       has: page.locator('svg path[d*="M11 4H4"]'),
     }).first();
     await firstEditBtn.click();
-    await page.getByRole('button', { name: 'ยกเลิก' }).first().click();
-    await expect(page.getByText('ชื่อประกาศ')).not.toBeVisible();
+    await hub(page).getByRole('button', { name: 'ยกเลิก' }).first().click();
+    await expect(hub(page).getByText('ชื่อประกาศ')).not.toBeVisible();
   });
 
 });
 
+// =============================================================================
+// SELL: LISTINGS — delete
+// =============================================================================
+
 test.describe('V8Hub — SellListings: delete', () => {
 
-  test('clicking trash icon shows delete confirm bar', async ({ page }) => {
+  test('trash icon shows delete confirm bar', async ({ page }) => {
     await openSellHub(page);
-    const firstDeleteBtn = page.locator('button').filter({
+    const firstDeleteBtn = hub(page).locator('button').filter({
       has: page.locator('svg polyline[points="3 6 5 6 21 6"]'),
     }).first();
     await firstDeleteBtn.click();
-    await expect(page.getByText('ลบประกาศนี้? ย้อนกลับไม่ได้')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'ลบเลย' })).toBeVisible();
+    await expect(hub(page).getByText('ลบประกาศนี้? ย้อนกลับไม่ได้')).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'ลบเลย' })).toBeVisible();
   });
 
-  test('"ยกเลิก" in confirm bar dismisses it', async ({ page }) => {
+  test('"ยกเลิก" dismisses confirm bar', async ({ page }) => {
     await openSellHub(page);
-    const firstDeleteBtn = page.locator('button').filter({
+    const firstDeleteBtn = hub(page).locator('button').filter({
       has: page.locator('svg polyline[points="3 6 5 6 21 6"]'),
     }).first();
     await firstDeleteBtn.click();
-    await page.getByRole('button', { name: 'ยกเลิก' }).click();
-    await expect(page.getByText('ลบประกาศนี้?')).not.toBeVisible();
+    await hub(page).getByRole('button', { name: 'ยกเลิก' }).click();
+    await expect(hub(page).getByText('ลบประกาศนี้?')).not.toBeVisible();
   });
 
   test('"ลบเลย" calls DELETE and removes product', async ({ page }) => {
     let deleteCalled = false;
     await page.route('**/api/products/10', r => {
-      if (r.request().method() === 'DELETE') {
-        deleteCalled = true;
-        r.fulfill({ json: { success: true } });
-      } else { r.continue(); }
+      if (r.request().method() === 'DELETE') { deleteCalled = true; r.fulfill({ json: { success: true } }); }
+      else r.continue();
     });
     await openSellHub(page);
-    const firstDeleteBtn = page.locator('button').filter({
+    const firstDeleteBtn = hub(page).locator('button').filter({
       has: page.locator('svg polyline[points="3 6 5 6 21 6"]'),
     }).first();
     await firstDeleteBtn.click();
-    await page.getByRole('button', { name: 'ลบเลย' }).click();
+    await hub(page).getByRole('button', { name: 'ลบเลย' }).click();
     expect(deleteCalled).toBe(true);
-    await expect(page.getByText('iPhone 14 Pro 256GB')).not.toBeVisible();
+    await expect(hub(page).getByText('iPhone 14 Pro 256GB')).not.toBeVisible();
   });
 
 });
+
+// =============================================================================
+// SELL: LISTINGS — empty state
+// =============================================================================
 
 test.describe('V8Hub — SellListings: empty state', () => {
 
   test('shows empty state when no products', async ({ page }) => {
     await openSellHub(page, []);
-    await expect(page.getByText('ยังไม่มีประกาศ')).toBeVisible();
-    await expect(page.getByRole('button', { name: '+ ลงขายฟรี' })).toBeVisible();
+    await expect(hub(page).getByText('ยังไม่มีประกาศ')).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: '+ ลงขายฟรี' })).toBeVisible();
   });
 
-  test('"+ ลงขายฟรี" in empty state opens ListingFlow', async ({ page }) => {
+  test('"+ ลงขายฟรี" opens ListingFlow', async ({ page }) => {
     await openSellHub(page, []);
-    await page.getByRole('button', { name: '+ ลงขายฟรี' }).click();
-    await expect(page.getByText('ยังไม่มีประกาศ')).not.toBeVisible();
+    await hub(page).getByRole('button', { name: '+ ลงขายฟรี' }).click();
+    await expect(page.locator('[data-testid="v8hub"]')).not.toBeVisible();
     await expect(page.getByText('ขั้นตอน 1 จาก 4')).toBeVisible();
   });
 
   test('shows loading skeletons while fetching', async ({ page }) => {
-    await page.route('**/api/auth/session', r => r.fulfill({ json: MOCK_SESSION }));
-    await page.route('**/api/products*', r => r.fulfill({ json: [] }));
+    // Use setupBase for stable session/routes, then override /my with a delayed response (LIFO wins)
+    await setupBase(page);
     await page.route('**/api/products/my', async r => {
-      await new Promise(res => setTimeout(res, 800));
+      await new Promise(res => setTimeout(res, 900));
       r.fulfill({ json: MOCK_PRODUCTS });
     });
     await page.goto('/');
-    await page.getByRole('button', { name: 'ขาย', exact: true }).click();
-    const skeletons = page.locator('[style*="animation"]');
-    await expect(skeletons.first()).toBeVisible({ timeout: 2000 });
+    const sellBtn = page.getByRole('button', { name: 'ขาย', exact: true });
+    await expect(sellBtn).toBeVisible({ timeout: 10000 });
+    await sellBtn.click();
+    await expect(page.locator('[data-testid="v8hub"]')).toBeVisible({ timeout: 8000 });
+    // Skeletons appear while the 900ms /my request is in-flight
+    const skeletons = page.locator('[data-testid="v8hub"] [style*="animation"]');
+    await expect(skeletons.first()).toBeVisible({ timeout: 3000 });
   });
 
 });
@@ -390,22 +415,21 @@ test.describe('V8Hub — Insights tab', () => {
 
   test('shows stat cards', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: 'ข้อมูลเชิงลึก' }).click();
-    await expect(page.getByText('ยอดเข้าชม 30 วัน')).toBeVisible();
-    await expect(page.getByText('กำลังขายอยู่')).toBeVisible();
-    await expect(page.getByText('ขายสำเร็จเดือนนี้')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'ข้อมูลเชิงลึก' }).click();
+    await expect(hub(page).getByText('ยอดเข้าชม 30 วัน')).toBeVisible();
+    await expect(hub(page).getByText('กำลังขายอยู่')).toBeVisible();
   });
 
-  test('shows chart heading', async ({ page }) => {
+  test('shows chart', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: 'ข้อมูลเชิงลึก' }).click();
-    await expect(page.getByText('ยอดเข้าชมรายวัน')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'ข้อมูลเชิงลึก' }).click();
+    await expect(hub(page).getByText('ยอดเข้าชมรายวัน')).toBeVisible();
   });
 
-  test('shows top-products section when products loaded', async ({ page }) => {
+  test('shows top products section', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: 'ข้อมูลเชิงลึก' }).click();
-    await expect(page.getByText('สินค้าที่มีผู้สนใจสูงสุด')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'ข้อมูลเชิงลึก' }).click();
+    await expect(hub(page).getByText('สินค้าที่มีผู้สนใจสูงสุด')).toBeVisible();
   });
 
 });
@@ -418,16 +442,14 @@ test.describe('V8Hub — News tab', () => {
 
   test('shows news cards', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: 'ข่าวประกาศ' }).click();
-    await expect(page.getByText('Boost ราคาพิเศษ ฿19 ในเดือนนี้')).toBeVisible();
-    await expect(page.getByText('ข่าวและอัปเดตสำหรับผู้ขาย')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'ข่าวประกาศ' }).click();
+    await expect(hub(page).getByText('Boost ราคาพิเศษ ฿19 ในเดือนนี้')).toBeVisible();
   });
 
-  test('shows tags on news cards', async ({ page }) => {
+  test('shows news tags', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: 'ข่าวประกาศ' }).click();
-    await expect(page.getByText('ใหม่').first()).toBeVisible();
-    await expect(page.getByText('เคล็ดลับ').first()).toBeVisible();
+    await hub(page).getByRole('button', { name: 'ข่าวประกาศ' }).click();
+    await expect(hub(page).getByText('ใหม่').first()).toBeVisible();
   });
 
 });
@@ -438,183 +460,187 @@ test.describe('V8Hub — News tab', () => {
 
 test.describe('V8Hub — Mode switch', () => {
 
-  test('clicking "ซื้อ" switches to buy mode and shows buy nav', async ({ page }) => {
+  test('clicking "ซื้อ" switches to buy mode', async ({ page }) => {
     await openSellHub(page);
-    await expect(page.getByText('รายการสินค้าของคุณ')).toBeVisible();
-    // Switch to buy
-    await page.getByRole('button', { name: 'ซื้อ', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'กิจกรรมล่าสุด' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'บันทึกแล้ว' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'การแจ้งเตือน' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'กำลังติดตาม' })).toBeVisible();
+    await hub(page).getByRole('button', { name: 'ซื้อ', exact: true }).click();
+    await expect(hub(page).getByRole('button', { name: 'กิจกรรมล่าสุด' })).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'บันทึกแล้ว' })).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'การแจ้งเตือน' })).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'กำลังติดตาม' })).toBeVisible();
   });
 
   test('switching back to "ขาย" restores sell nav', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: 'ซื้อ', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'กิจกรรมล่าสุด' })).toBeVisible();
-    // Switch back to sell
-    await page.getByRole('button', { name: 'ขาย', exact: true }).nth(1).click();
-    await expect(page.getByRole('button', { name: 'รายการสินค้าของคุณ' })).toBeVisible();
+    await hub(page).getByRole('button', { name: 'ซื้อ', exact: true }).click();
+    await hub(page).getByRole('button', { name: 'ขาย', exact: true }).click();
+    await expect(hub(page).getByRole('button', { name: 'รายการสินค้าของคุณ' })).toBeVisible();
+  });
+
+  test('buy mode shows activity tab content by default', async ({ page }) => {
+    await openSellHub(page);
+    await hub(page).getByRole('button', { name: 'ซื้อ', exact: true }).click();
+    // activity tab is default in buy mode
+    await expect(hub(page).getByRole('heading', { name: 'กิจกรรมล่าสุด' })).toBeVisible();
   });
 
 });
 
 // =============================================================================
-// BUY MODE
+// BUY: ACTIVITY
 // =============================================================================
 
 test.describe('V8Hub — Buy: Activity', () => {
 
-  test('clicking ถูกใจ opens hub in buy/saved mode', async ({ page }) => {
-    await openBuyHub(page);
-    await expect(page.getByText('บันทึกแล้ว')).toBeVisible();
+  test('ถูกใจ button opens hub in buy/saved mode', async ({ page }) => {
+    await setupBase(page);
+    await page.goto('/');
+    // Wait for the page to be interactive (ลงขาย always shown)
+    await page.waitForSelector('button:has-text("ลงขาย")');
+    await page.getByRole('button', { name: 'ถูกใจ', exact: true }).click();
+    await expect(page.locator('[data-testid="v8hub"]')).toBeVisible({ timeout: 8000 });
+    // Hub should land on buy mode, saved tab
+    await expect(hub(page).getByRole('heading', { name: 'บันทึกแล้ว' })).toBeVisible();
   });
 
-  test('clicking "กิจกรรมล่าสุด" shows activity items', async ({ page }) => {
+  test('"กิจกรรมล่าสุด" tab shows activity content', async ({ page }) => {
     await openBuyHub(page);
-    await page.getByRole('button', { name: 'กิจกรรมล่าสุด' }).click();
-    await expect(page.getByText('กิจกรรมล่าสุด')).toBeVisible();
-    await expect(page.getByText('ของที่คุณดู · ข้อความ · ข้อเสนอ · บันทึก')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'กิจกรรมล่าสุด' }).click();
+    await expect(hub(page).getByRole('heading', { name: 'กิจกรรมล่าสุด' })).toBeVisible();
+    await expect(hub(page).getByText('ของที่คุณดู · ข้อความ · ข้อเสนอ · บันทึก')).toBeVisible();
   });
 
 });
 
-test.describe('V8Hub — Buy: Saved (Wishlist)', () => {
+// =============================================================================
+// BUY: SAVED (WISHLIST)
+// =============================================================================
+
+test.describe('V8Hub — Buy: Saved', () => {
 
   test('shows wishlist items', async ({ page }) => {
     await openBuyHub(page);
-    await expect(page.getByText('iPhone 14 Pro 256GB Wishlist')).toBeVisible();
-    await expect(page.getByText('MacBook Air M2 Wishlist')).toBeVisible();
+    const h = hub(page);
+    await expect(h.getByText('iPhone 14 Pro 256GB Wishlist')).toBeVisible();
+    await expect(h.getByText('MacBook Air M2 Wishlist')).toBeVisible();
   });
 
-  test('shows formatted prices', async ({ page }) => {
+  test('shows formatted price', async ({ page }) => {
     await openBuyHub(page);
-    await expect(page.getByText('฿32,900')).toBeVisible();
+    await expect(hub(page).getByText('฿32,900')).toBeVisible();
   });
 
-  test('shows item count', async ({ page }) => {
+  test('shows item count badge', async ({ page }) => {
     await openBuyHub(page);
-    await expect(page.locator('span').filter({ hasText: /^2$/ }).first()).toBeVisible();
+    await expect(hub(page).locator('span').filter({ hasText: /^2$/ }).first()).toBeVisible();
   });
 
   test('shows footer total value', async ({ page }) => {
     await openBuyHub(page);
     // 32900 + 42000 = 74900
-    await expect(page.getByText('฿74,900')).toBeVisible();
+    await expect(hub(page).getByText('฿74,900')).toBeVisible();
   });
 
-  test('clicking heart removes item and updates total', async ({ page }) => {
+  test('heart button removes item and updates total', async ({ page }) => {
     await openBuyHub(page);
-    await page.locator('button[title="นำออกจากรายการถูกใจ"]').first().click();
-    await expect(page.getByText('iPhone 14 Pro 256GB Wishlist')).not.toBeVisible();
-    // Only MacBook remains
-    await expect(page.getByText('฿42,000')).toBeVisible();
+    await hub(page).locator('button[title="นำออกจากรายการถูกใจ"]').first().click();
+    await expect(hub(page).getByText('iPhone 14 Pro 256GB Wishlist')).not.toBeVisible();
+    await expect(hub(page).getByText('฿42,000').first()).toBeVisible();
   });
 
   test('shows empty state when wishlist is empty', async ({ page }) => {
-    await page.route('**/api/auth/session', r => r.fulfill({ json: MOCK_SESSION }));
-    await page.route('**/api/products*', r => r.fulfill({ json: [] }));
-    await page.route('**/api/products/my', r => r.fulfill({ json: [] }));
+    // Override wishlist route to return empty (registered after setupBase, so LIFO wins)
+    await openSellHub(page);
     await page.route('**/api/wishlist', r => r.fulfill({ json: [] }));
-    await page.route('**/api/notifications', r => r.fulfill({ json: { notifications: [], unread: 0 } }));
-    await page.route('**/api/follows', r => r.fulfill({ json: [] }));
-    await page.goto('/');
-    await page.getByRole('button', { name: 'ถูกใจ', exact: true }).click();
-    await expect(page.getByText('ยังไม่มีรายการถูกใจ')).toBeVisible();
-    await expect(page.getByText(/กดไอคอนหัวใจ/)).toBeVisible();
+    await hub(page).getByRole('button', { name: 'ซื้อ', exact: true }).click();
+    await hub(page).getByRole('button', { name: 'บันทึกแล้ว' }).click();
+    await expect(hub(page).getByText('ยังไม่มีรายการถูกใจ')).toBeVisible();
+    await expect(hub(page).getByText(/กดไอคอนหัวใจ/)).toBeVisible();
   });
 
 });
 
+// =============================================================================
+// BUY: NOTIFICATIONS
+// =============================================================================
+
 test.describe('V8Hub — Buy: Notifications', () => {
 
-  test('shows notifications', async ({ page }) => {
+  test('shows notifications list', async ({ page }) => {
     await openBuyHub(page);
-    await page.getByRole('button', { name: 'การแจ้งเตือน' }).click();
-    await expect(page.getByText('การแจ้งเตือน')).toBeVisible();
-    await expect(page.getByText('ราคาลดลงจาก ฿24,900 → ฿18,500')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'การแจ้งเตือน' }).click();
+    await expect(hub(page).getByRole('heading', { name: 'การแจ้งเตือน' })).toBeVisible();
+    await expect(hub(page).getByText('ราคาลดลงจาก ฿24,900 → ฿18,500')).toBeVisible();
   });
 
-  test('shows unread count in subtitle', async ({ page }) => {
+  test('shows unread count', async ({ page }) => {
     await openBuyHub(page);
-    await page.getByRole('button', { name: 'การแจ้งเตือน' }).click();
-    await expect(page.getByText('1 รายการยังไม่ได้อ่าน')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'การแจ้งเตือน' }).click();
+    await expect(hub(page).getByText('1 รายการยังไม่ได้อ่าน')).toBeVisible();
   });
 
   test('"ทำเครื่องหมายอ่านทั้งหมด" button visible when unread > 0', async ({ page }) => {
     await openBuyHub(page);
-    await page.getByRole('button', { name: 'การแจ้งเตือน' }).click();
-    await expect(page.getByRole('button', { name: 'ทำเครื่องหมายอ่านทั้งหมด' })).toBeVisible();
+    await hub(page).getByRole('button', { name: 'การแจ้งเตือน' }).click();
+    await expect(hub(page).getByRole('button', { name: 'ทำเครื่องหมายอ่านทั้งหมด' })).toBeVisible();
   });
 
-  test('clicking mark-all calls API and updates count', async ({ page }) => {
-    let apiCalled = false;
-    await page.route('**/api/notifications/read-all', r => {
-      apiCalled = true;
-      r.fulfill({ json: { success: true } });
-    });
+  test('clicking mark-all calls API and shows อ่านหมดแล้ว', async ({ page }) => {
     await openBuyHub(page);
-    await page.getByRole('button', { name: 'การแจ้งเตือน' }).click();
-    await page.getByRole('button', { name: 'ทำเครื่องหมายอ่านทั้งหมด' }).click();
+    // Register custom route AFTER setupBase (LIFO — this wins)
+    let apiCalled = false;
+    await page.route('**/api/notifications/read-all', r => { apiCalled = true; r.fulfill({ json: { success: true } }); });
+    await hub(page).getByRole('button', { name: 'การแจ้งเตือน' }).click();
+    await hub(page).getByRole('button', { name: 'ทำเครื่องหมายอ่านทั้งหมด' }).click();
     expect(apiCalled).toBe(true);
-    await expect(page.getByText('อ่านหมดแล้ว')).toBeVisible();
+    await expect(hub(page).getByText('อ่านหมดแล้ว')).toBeVisible();
   });
 
   test('shows empty state when no notifications', async ({ page }) => {
-    await page.route('**/api/auth/session', r => r.fulfill({ json: MOCK_SESSION }));
-    await page.route('**/api/products*', r => r.fulfill({ json: [] }));
-    await page.route('**/api/products/my', r => r.fulfill({ json: [] }));
-    await page.route('**/api/wishlist', r => r.fulfill({ json: [] }));
+    await openSellHub(page);
     await page.route('**/api/notifications', r => r.fulfill({ json: { notifications: [], unread: 0 } }));
-    await page.route('**/api/follows', r => r.fulfill({ json: [] }));
-    await page.goto('/');
-    await page.getByRole('button', { name: 'ถูกใจ', exact: true }).click();
-    await page.getByRole('button', { name: 'การแจ้งเตือน' }).click();
-    await expect(page.getByText('ไม่มีการแจ้งเตือน')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'ซื้อ', exact: true }).click();
+    await hub(page).getByRole('button', { name: 'การแจ้งเตือน' }).click();
+    await expect(hub(page).getByText('ไม่มีการแจ้งเตือน')).toBeVisible();
   });
 
 });
+
+// =============================================================================
+// BUY: FOLLOWING
+// =============================================================================
 
 test.describe('V8Hub — Buy: Following', () => {
 
   test('shows followed sellers', async ({ page }) => {
     await openBuyHub(page);
-    await page.getByRole('button', { name: 'กำลังติดตาม' }).click();
-    await expect(page.getByText('TechBKK')).toBeVisible();
-    await expect(page.getByText('GameLoop')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'กำลังติดตาม' }).click();
+    await expect(hub(page).getByText('TechBKK')).toBeVisible();
+    await expect(hub(page).getByText('GameLoop')).toBeVisible();
   });
 
   test('shows seller count in subtitle', async ({ page }) => {
     await openBuyHub(page);
-    await page.getByRole('button', { name: 'กำลังติดตาม' }).click();
-    await expect(page.getByText('2 ผู้ขายที่คุณติดตามอยู่')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'กำลังติดตาม' }).click();
+    await expect(hub(page).getByText('2 ผู้ขายที่คุณติดตามอยู่')).toBeVisible();
   });
 
-  test('"กำลังติดตาม ✓" unfollow button calls API and removes seller', async ({ page }) => {
-    let apiCalled = false;
-    await page.route('**/api/follows/toggle', r => {
-      apiCalled = true;
-      r.fulfill({ json: { success: true } });
-    });
+  test('"กำลังติดตาม ✓" calls API and removes seller', async ({ page }) => {
     await openBuyHub(page);
-    await page.getByRole('button', { name: 'กำลังติดตาม' }).click();
-    await page.getByRole('button', { name: /กำลังติดตาม ✓/ }).first().click();
+    // Register AFTER openBuyHub (LIFO — wins over setupBase's follows/toggle route)
+    let apiCalled = false;
+    await page.route('**/api/follows/toggle', r => { apiCalled = true; r.fulfill({ json: { success: true } }); });
+    await hub(page).getByRole('button', { name: 'กำลังติดตาม' }).click();
+    await hub(page).getByRole('button', { name: /กำลังติดตาม ✓/ }).first().click();
     expect(apiCalled).toBe(true);
-    await expect(page.getByText('TechBKK')).not.toBeVisible();
+    await expect(hub(page).getByText('TechBKK')).not.toBeVisible();
   });
 
   test('shows empty state when not following anyone', async ({ page }) => {
-    await page.route('**/api/auth/session', r => r.fulfill({ json: MOCK_SESSION }));
-    await page.route('**/api/products*', r => r.fulfill({ json: [] }));
-    await page.route('**/api/products/my', r => r.fulfill({ json: [] }));
-    await page.route('**/api/wishlist', r => r.fulfill({ json: [] }));
-    await page.route('**/api/notifications', r => r.fulfill({ json: { notifications: [], unread: 0 } }));
+    await openSellHub(page);
     await page.route('**/api/follows', r => r.fulfill({ json: [] }));
-    await page.goto('/');
-    await page.getByRole('button', { name: 'ถูกใจ', exact: true }).click();
-    await page.getByRole('button', { name: 'กำลังติดตาม' }).click();
-    await expect(page.getByText('ยังไม่ได้ติดตามผู้ขายคนใด')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'ซื้อ', exact: true }).click();
+    await hub(page).getByRole('button', { name: 'กำลังติดตาม' }).click();
+    await expect(hub(page).getByText('ยังไม่ได้ติดตามผู้ขายคนใด')).toBeVisible();
   });
 
 });
@@ -625,29 +651,29 @@ test.describe('V8Hub — Buy: Following', () => {
 
 test.describe('V8Hub — Profile tab', () => {
 
-  test('shows user name in profile', async ({ page }) => {
+  test('shows user name', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: 'โปรไฟล์ Marketplace' }).first().click();
-    await expect(page.getByText('สมชาย ทดสอบ')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'โปรไฟล์ Marketplace' }).click();
+    await expect(hub(page).getByText('สมชาย ทดสอบ')).toBeVisible();
   });
 
-  test('shows user email in profile', async ({ page }) => {
+  test('shows user email', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: 'โปรไฟล์ Marketplace' }).first().click();
-    await expect(page.getByText('test@ploi.dev')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'โปรไฟล์ Marketplace' }).click();
+    await expect(hub(page).getByText('test@ploi.dev').first()).toBeVisible();
   });
 
-  test('profile accessible from buy mode too', async ({ page }) => {
+  test('accessible from buy mode too', async ({ page }) => {
     await openBuyHub(page);
-    await page.getByRole('button', { name: 'โปรไฟล์ Marketplace' }).first().click();
-    await expect(page.getByText('สมชาย ทดสอบ')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'โปรไฟล์ Marketplace' }).click();
+    await expect(hub(page).getByText('สมชาย ทดสอบ')).toBeVisible();
   });
 
   test('shows privacy settings toggles', async ({ page }) => {
     await openSellHub(page);
-    await page.getByRole('button', { name: 'โปรไฟล์ Marketplace' }).first().click();
-    await expect(page.getByText('รับข่าวสารทางอีเมล')).toBeVisible();
-    await expect(page.getByText('แสดงสถานะออนไลน์')).toBeVisible();
+    await hub(page).getByRole('button', { name: 'โปรไฟล์ Marketplace' }).click();
+    await expect(hub(page).getByText('รับข่าวสารทางอีเมล')).toBeVisible();
+    await expect(hub(page).getByText('แสดงสถานะออนไลน์')).toBeVisible();
   });
 
 });
@@ -658,13 +684,13 @@ test.describe('V8Hub — Profile tab', () => {
 
 test.describe('V8Hub — Auth guard', () => {
 
-  test('unauthenticated user gets auth modal when clicking ขาย', async ({ page }) => {
+  test('unauthenticated user gets auth modal on clicking ขาย', async ({ page }) => {
     await page.route('**/api/auth/session', r => r.fulfill({ json: {} }));
     await page.route('**/api/products*', r => r.fulfill({ json: [] }));
     await page.goto('/');
     await page.getByRole('button', { name: 'ขาย', exact: true }).click();
     await expect(page.getByRole('button', { name: 'เข้าสู่ระบบ' })).toBeVisible();
-    await expect(page.getByText('รายการสินค้าของคุณ')).not.toBeVisible();
+    await expect(page.locator('[data-testid="v8hub"]')).not.toBeVisible();
   });
 
 });

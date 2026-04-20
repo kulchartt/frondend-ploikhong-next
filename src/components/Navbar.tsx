@@ -115,7 +115,7 @@ export function Navbar({ onSearch, onOpenAuth, onOpenChat, onOpenHub, onOpenList
           {session?.user && (
             <div style={{ position: 'relative', marginLeft: 4,
               display: isMobile ? 'none' : undefined }}>
-              <button onClick={() => setDropdownOpen(o => !o)}
+              <button data-testid="nav-user-btn" onClick={() => setDropdownOpen(o => !o)}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
                   background: 'var(--surface-2)', border: '1px solid var(--line)',
                   borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}>
