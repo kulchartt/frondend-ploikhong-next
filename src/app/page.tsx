@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { ProductCard } from '@/components/ProductCard';
 import { AuthModal } from '@/components/AuthModal';
 import { ProductDetail } from '@/components/ProductDetail';
+import { ListingFlow } from '@/components/ListingFlow';
 import * as api from '@/lib/api';
 
 const MONEY_RAIL = [
@@ -36,15 +38,22 @@ const MONEY_RAIL = [
 ];
 
 export default function HomePage() {
+  const { data: session } = useSession();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [gridView, setGridView] = useState(true);
   const [sort, setSort] = useState('newest');
   const [authOpen, setAuthOpen] = useState(false);
+  const [listingOpen, setListingOpen] = useState(false);
   const [filters, setFilters] = useState<any>({});
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+
+  function openListing() {
+    if (session) setListingOpen(true);
+    else setAuthOpen(true);
+  }
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -71,7 +80,7 @@ export default function HomePage() {
       <Navbar
         onSearch={setSearch}
         onOpenAuth={() => setAuthOpen(true)}
-        onOpenListing={() => setAuthOpen(true)}
+        onOpenListing={openListing}
       />
 
       {/* Main wrapper */}
@@ -110,7 +119,7 @@ export default function HomePage() {
               </div>
             </div>
             <button
-              onClick={() => setAuthOpen(true)}
+              onClick={openListing}
               style={{
                 padding: '9px 16px', background: 'var(--accent)', color: '#fff',
                 border: 'none', borderRadius: 'var(--radius-sm)',
@@ -253,6 +262,7 @@ export default function HomePage() {
       </div>
 
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+      {listingOpen && <ListingFlow onClose={() => setListingOpen(false)} />}
       {selectedProduct && (
         <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
       )}

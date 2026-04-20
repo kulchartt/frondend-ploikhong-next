@@ -14,14 +14,29 @@ async function req<T>(path: string, opts?: RequestInit, token?: string): Promise
   return data;
 }
 
+// ─── Normalize ──────────────────────────────────────────────────────────────
+
+function normalizeProduct(p: any): any {
+  if (!p || typeof p !== 'object') return p;
+  // Backend returns image_url (string); components expect images (string[])
+  if (p.images === undefined || p.images === null) {
+    p.images = p.image_url ? [p.image_url] : [];
+  }
+  return p;
+}
+
 // ─── Products ───────────────────────────────────────────────────────────────
 
-export const getProducts = (params?: Record<string, string | number>) => {
+export const getProducts = async (params?: Record<string, string | number>): Promise<any[]> => {
   const qs = params ? '?' + new URLSearchParams(params as any).toString() : '';
-  return req<any[]>(`/api/products${qs}`);
+  const data = await req<any[]>(`/api/products${qs}`);
+  return Array.isArray(data) ? data.map(normalizeProduct) : [];
 };
 
-export const getProduct = (id: number) => req<any>(`/api/products/${id}`);
+export const getProduct = async (id: number): Promise<any> => {
+  const data = await req<any>(`/api/products/${id}`);
+  return normalizeProduct(data);
+};
 
 export const createProduct = (body: any, token: string) =>
   req<any>('/api/products', { method: 'POST', body: JSON.stringify(body) }, token);
