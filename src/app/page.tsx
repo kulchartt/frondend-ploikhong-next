@@ -12,6 +12,7 @@ import { ProductDetail } from '@/components/ProductDetail';
 import { ListingFlow } from '@/components/ListingFlow';
 import { MyHub } from '@/components/MyHub';
 import { FilterDrawer } from '@/components/FilterDrawer';
+import { WishlistDrawer } from '@/components/WishlistDrawer';
 import * as api from '@/lib/api';
 
 const MONEY_RAIL = [
@@ -51,6 +52,7 @@ export default function HomePage() {
   const [authOpen, setAuthOpen] = useState(false);
   const [listingOpen, setListingOpen] = useState(false);
   const [hubOpen, setHubOpen] = useState(false);
+  const [wishlistOpen, setWishlistOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [filters, setFilters] = useState<any>({});
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
@@ -122,7 +124,7 @@ export default function HomePage() {
         onOpenHub={(mode) => {
           if (!session) { setAuthOpen(true); return; }
           if (mode === 'sell') setHubOpen(true);
-          else setAuthOpen(true);
+          else setWishlistOpen(true);
         }}
       />
 
@@ -309,6 +311,13 @@ export default function HomePage() {
         </main>
       </div>
 
+      {wishlistOpen && (
+        <WishlistDrawer
+          onClose={() => setWishlistOpen(false)}
+          onProductClick={p => setSelectedProduct(p)}
+          onRemove={id => setWishlistIds(prev => { const s = new Set(prev); s.delete(id); return s; })}
+        />
+      )}
       {filterDrawerOpen && (
         <FilterDrawer
           onClose={() => setFilterDrawerOpen(false)}
