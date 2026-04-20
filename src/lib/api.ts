@@ -105,6 +105,14 @@ export const makeOffer = (productId: number, amount: number, token: string) =>
 export const getMyOffers = (token: string) =>
   req<any[]>('/api/offers/my', {}, token);
 
+// ─── Shop ────────────────────────────────────────────────────────────────────
+
+export const getShop = (userId: number) =>
+  req<any>(`/api/shop/${userId}`);
+
+export const getProductsBySeller = (sellerId: number) =>
+  req<any[]>(`/api/products?seller_id=${sellerId}`).then(d => Array.isArray(d) ? d.map(normalizeProduct) : []);
+
 // ─── Upload ──────────────────────────────────────────────────────────────────
 
 export const uploadImage = async (file: File, token: string): Promise<string> => {

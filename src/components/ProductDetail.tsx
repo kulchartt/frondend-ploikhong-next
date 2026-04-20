@@ -25,6 +25,7 @@ interface Product {
 interface ProductDetailProps {
   product: Product | null;
   onClose: () => void;
+  onViewShop?: (sellerId: number) => void;
 }
 
 const IMG_TINTS = [
@@ -51,7 +52,7 @@ function nowTime() {
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
-export function ProductDetail({ product, onClose }: ProductDetailProps) {
+export function ProductDetail({ product, onClose, onViewShop }: ProductDetailProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
   const isMobile = useBreakpoint(768);
@@ -324,7 +325,9 @@ export function ProductDetail({ product, onClose }: ProductDetailProps) {
                 4.9 ★ · 342 รีวิว · ตอบภายใน 10 นาที
               </div>
             </div>
-            <button style={{ padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', fontSize: 13, cursor: 'pointer', color: 'var(--ink)' }}>
+            <button
+              onClick={() => product?.seller_id && onViewShop?.(product.seller_id)}
+              style={{ padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', fontSize: 13, cursor: 'pointer', color: 'var(--ink)' }}>
               ดูร้าน
             </button>
           </div>

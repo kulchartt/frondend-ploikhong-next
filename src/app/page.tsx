@@ -14,6 +14,7 @@ import { MyHub } from '@/components/MyHub';
 import { FilterDrawer } from '@/components/FilterDrawer';
 import { WishlistDrawer } from '@/components/WishlistDrawer';
 import { ChatDrawer } from '@/components/ChatDrawer';
+import { ShopDrawer } from '@/components/ShopDrawer';
 import * as api from '@/lib/api';
 
 const MONEY_RAIL = [
@@ -59,6 +60,7 @@ export default function HomePage() {
   const [filters, setFilters] = useState<any>({});
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [shopSellerId, setShopSellerId] = useState<number | null>(null);
   const isMobile = useBreakpoint(768);
   const token: string | undefined = (session as any)?.token;
   const debouncedSearch = useDebounce(search, 400);
@@ -341,7 +343,18 @@ export default function HomePage() {
         />
       )}
       {selectedProduct && (
-        <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+        <ProductDetail
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          onViewShop={id => { setSelectedProduct(null); setShopSellerId(id); }}
+        />
+      )}
+      {shopSellerId && (
+        <ShopDrawer
+          sellerId={shopSellerId}
+          onClose={() => setShopSellerId(null)}
+          onProductClick={p => { setShopSellerId(null); setSelectedProduct(p); }}
+        />
       )}
     </>
   );
