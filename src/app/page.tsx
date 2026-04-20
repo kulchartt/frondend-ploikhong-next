@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { ProductCard } from '@/components/ProductCard';
 import { AuthModal } from '@/components/AuthModal';
 import { ProductDetail } from '@/components/ProductDetail';
@@ -49,6 +50,7 @@ export default function HomePage() {
   const [filters, setFilters] = useState<any>({});
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const isMobile = useBreakpoint(768);
 
   function openListing() {
     if (session) setListingOpen(true);
@@ -84,11 +86,12 @@ export default function HomePage() {
       />
 
       {/* Main wrapper */}
-      <div style={{ maxWidth: 1440, margin: '0 auto', padding: '20px 20px 60px',
-        display: 'grid', gridTemplateColumns: '240px 1fr', gap: 24, alignItems: 'flex-start' }}>
+      <div style={{ maxWidth: 1440, margin: '0 auto',
+        padding: isMobile ? '12px 14px 60px' : '20px 20px 60px',
+        display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '240px 1fr', gap: 24, alignItems: 'flex-start' }}>
 
         {/* Sidebar */}
-        <Sidebar onFilter={setFilters} />
+        {!isMobile && <Sidebar onFilter={setFilters} />}
 
         {/* Main */}
         <main>
@@ -98,14 +101,14 @@ export default function HomePage() {
             background: 'linear-gradient(120deg, var(--surface), var(--surface-2))',
             border: '1px solid var(--line)',
             borderRadius: 'var(--radius)',
-            padding: '18px 22px',
+            padding: isMobile ? '14px 16px' : '18px 22px',
             marginBottom: 18,
             display: 'flex', alignItems: 'center', gap: 16,
           }}>
             <div style={{
               width: 40, height: 40, borderRadius: 'var(--radius-sm)',
               background: 'var(--accent)', color: '#fff',
-              display: 'grid', placeItems: 'center',
+              display: isMobile ? 'none' : 'grid', placeItems: 'center',
               fontWeight: 700, fontFamily: 'var(--font-display)',
               fontSize: 18, flexShrink: 0,
             }}>฿</div>
@@ -136,7 +139,7 @@ export default function HomePage() {
             borderRadius: 14,
             padding: 18,
             display: 'grid',
-            gridTemplateColumns: 'repeat(4,1fr)',
+            gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)',
             gap: 14,
             marginBottom: 18,
           }}>
@@ -220,7 +223,7 @@ export default function HomePage() {
 
           {/* Product Grid */}
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 14 }}>
               {Array(8).fill(0).map((_, i) => (
                 <div key={i} style={{
                   background: 'var(--surface-2)', borderRadius: 'var(--radius)',
@@ -238,7 +241,7 @@ export default function HomePage() {
             <div style={{
               display: 'grid', gap: 14,
               gridTemplateColumns: gridView
-                ? 'repeat(auto-fill, minmax(180px, 1fr))'
+                ? (isMobile ? 'repeat(2,1fr)' : 'repeat(auto-fill, minmax(180px, 1fr))')
                 : '1fr',
             }}>
               {products.map(p => (
@@ -256,6 +259,16 @@ export default function HomePage() {
                   }}
                 />
               ))}
+            </div>
+          )}
+          {isMobile && (
+            <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
+              <button
+                onClick={() => {}}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 22px', background: 'var(--ink)', color: 'var(--bg)', borderRadius: 999, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,.25)' }}>
+                <svg width={16} height={16} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={2}><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+                ตัวกรอง
+              </button>
             </div>
           )}
         </main>

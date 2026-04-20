@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { PloiWordmark } from './PloiLogo';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 interface ListingFlowProps {
   onClose: () => void;
@@ -31,7 +32,7 @@ const STEPS = [
   { n: 4, name: 'ตรวจ & โพสต์' },
 ];
 
-type Photo = { id: number; tint: number };
+type Photo = { id: number; tint: number; url?: string; file?: File; uploading?: boolean; error?: boolean };
 
 interface Form {
   title: string;
@@ -46,6 +47,7 @@ interface Form {
 }
 
 export function ListingFlow({ onClose }: ListingFlowProps) {
+  const isMobile = useBreakpoint(768);
   const [step, setStep] = useState(1);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [form, setForm] = useState<Form>({
@@ -82,6 +84,20 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
   function addPhoto() {
     const tint = photos.length % IMG_TINTS.length;
     setPhotos(p => [...p, { id: Date.now(), tint }]);
+  }
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    const slots = Math.min(files.length, 10 - photos.length);
+    const newPhotos: Photo[] = files.slice(0, slots).map((file, i) => ({
+      id: Date.now() + i,
+      tint: (photos.length + i) % IMG_TINTS.length,
+      url: URL.createObjectURL(file),
+      file,
+      uploading: false,
+    }));
+    setPhotos(p => [...p, ...newPhotos]);
+    // Reset input so same file can be re-selected
+    e.target.value = '';
   }
   function removePhoto(id: number) { setPhotos(p => p.filter(x => x.id !== id)); }
   function setAsCover(fromIdx: number) {
@@ -144,8 +160,8 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
-        zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 20, overflowY: 'auto',
+        zIndex: 300, display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center',
+        padding: isMobile ? 0 : 20, overflowY: 'auto',
       }}>
       <style>{`
         @keyframes lstFade { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:none } }
@@ -154,12 +170,12 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: 'var(--bg)', borderRadius: 16,
+          background: 'var(--bg)', borderRadius: isMobile ? '16px 16px 0 0' : 16,
           width: '100%', maxWidth: 680,
           display: 'flex', flexDirection: 'column',
           boxShadow: '0 40px 80px rgba(0,0,0,.3)',
           animation: 'lstFade .22s cubic-bezier(.2,.8,.2,1)',
-          maxHeight: '94vh', overflow: 'hidden',
+          maxHeight: isMobile ? '96vh' : '94vh', overflow: 'hidden',
         }}>
 
         {/* Close */}
@@ -177,10 +193,12 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
 
         {/* Stepper header */}
         <div style={{
-          padding: '20px 28px', borderBottom: '1px solid var(--line)',
+          padding: isMobile ? '14px 18px' : '20px 28px', borderBottom: '1px solid var(--line)',
           display: 'flex', alignItems: 'center', gap: 20, background: 'var(--surface)',
         }}>
-          <PloiWordmark size={16} markSize={26} />
+          <div style={{ display: isMobile ? 'none' : undefined }}>
+            <PloiWordmark size={16} markSize={26} />
+          </div>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 0 }}>
             {STEPS.map((s, i) => (
               <div key={s.n} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 0 }}>
@@ -196,7 +214,7 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
                     {step > s.n ? '✓' : String(s.n).padStart(2, '0')}
                   </div>
                   <span style={{
-                    fontSize: 11, fontWeight: step === s.n ? 600 : 400,
+                    fontSize: isMobile ? 10 : 11, fontWeight: step === s.n ? 600 : 400,
                     color: step === s.n ? 'var(--ink)' : 'var(--ink-3)',
                     whiteSpace: 'nowrap',
                   }}>{s.name}</span>
@@ -217,7 +235,7 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '18px 16px' : '24px 28px' }}>
 
           {/* ── Step 1: Photos ── */}
           {step === 1 && (
@@ -236,7 +254,8 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
                     <div key={p.id} style={{ position: 'relative' }}>
                       <div style={{
                         aspectRatio: '1/1', borderRadius: 'var(--radius-sm)',
-                        background: `linear-gradient(135deg,${t[0]},${t[1]})`,
+                        background: p.url ? `url(${p.url}) center/cover` : `linear-gradient(135deg,${t[0]},${t[1]})`,
+                        backgroundSize: 'cover',
                         border: i === 0 ? '2px solid var(--ink)' : '1px solid var(--line)',
                         display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 6,
                       }}>
@@ -272,7 +291,7 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
                 {photos.length < 10 && (
                   <button
                     data-testid="add-photo-btn"
-                    onClick={addPhoto}
+                    onClick={() => fileInputRef.current?.click()}
                     style={{
                       aspectRatio: '1/1', borderRadius: 'var(--radius-sm)',
                       border: '2px dashed var(--line-2)', background: 'var(--surface-2)',
@@ -348,7 +367,7 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
                 <div style={helpStyle}>{form.title.length}/80 · ใส่ยี่ห้อ รุ่น และสภาพให้ชัด</div>
               </Field>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 14 }}>
                 <Field label="หมวดหมู่" required>
                   <select
                     data-testid="listing-category"
@@ -518,9 +537,11 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
                   {/* Cover image */}
                   <div style={{
                     aspectRatio: '1/1',
-                    background: photos[0]
-                      ? `linear-gradient(135deg,${IMG_TINTS[photos[0].tint % IMG_TINTS.length][0]},${IMG_TINTS[photos[0].tint % IMG_TINTS.length][1]})`
-                      : 'var(--surface-2)',
+                    background: photos[0]?.url
+                      ? `url(${photos[0].url}) center/cover`
+                      : photos[0]
+                        ? `linear-gradient(135deg,${IMG_TINTS[photos[0].tint % IMG_TINTS.length][0]},${IMG_TINTS[photos[0].tint % IMG_TINTS.length][1]})`
+                        : 'var(--surface-2)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: 'var(--ink-3)', fontSize: 12,
                   }}>
@@ -575,12 +596,21 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
               </div>
             </div>
           )}
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept="image/*"
+            multiple
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
         </div>
 
         {/* Footer */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '16px 28px', borderTop: '1px solid var(--line)', background: 'var(--surface)',
+          padding: isMobile ? '14px 16px' : '16px 28px', borderTop: '1px solid var(--line)', background: 'var(--surface)',
         }}>
           <button
             onClick={step === 1 ? onClose : prev}

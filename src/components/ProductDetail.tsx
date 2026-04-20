@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 interface Product {
   id: number;
@@ -48,6 +49,7 @@ function nowTime() {
 }
 
 export function ProductDetail({ product, onClose }: ProductDetailProps) {
+  const isMobile = useBreakpoint(768);
   const [imgIdx, setImgIdx] = useState(0);
   const [msgs, setMsgs] = useState<Msg[]>([
     { who: 'seller', text: 'สวัสดีครับ สินค้ายังว่างนะครับ 😊', time: '14:02' },
@@ -105,8 +107,8 @@ export function ProductDetail({ product, onClose }: ProductDetailProps) {
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
-        zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 24, overflowY: 'auto',
+        zIndex: 200, display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center',
+        padding: isMobile ? 0 : 24, overflowY: 'auto',
         animation: 'fadeIn .15s ease',
       }}>
       <style>{`
@@ -118,10 +120,10 @@ export function ProductDetail({ product, onClose }: ProductDetailProps) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: 'var(--bg)', borderRadius: 16, width: '100%',
-          maxWidth: 1240, maxHeight: '92vh',
-          display: 'grid', gridTemplateColumns: '1.15fr 1fr',
-          overflow: 'hidden', position: 'relative',
+          background: 'var(--bg)', borderRadius: isMobile ? '16px 16px 0 0' : 16, width: '100%',
+          maxWidth: isMobile ? '100%' : 1240, maxHeight: isMobile ? '96vh' : '92vh',
+          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.15fr 1fr',
+          overflowY: 'auto', position: 'relative',
           boxShadow: '0 40px 80px rgba(0,0,0,.35)',
           animation: 'slideUp .25s cubic-bezier(.2,.8,.2,1)',
         }}>
@@ -143,7 +145,7 @@ export function ProductDetail({ product, onClose }: ProductDetailProps) {
         {/* ── LEFT: Gallery ── */}
         <section style={{ background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)' }}>
           {/* Hero image */}
-          <div style={{ flex: 1, minHeight: 380, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ flex: 1, minHeight: isMobile ? 220 : 380, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{
               position: 'absolute', inset: 0,
               background: `linear-gradient(135deg, ${getTint(imgIdx)[0]}, ${getTint(imgIdx)[1]})`,
@@ -193,7 +195,7 @@ export function ProductDetail({ product, onClose }: ProductDetailProps) {
             {imgs.map((img, i) => (
               <button key={i} onClick={() => setImgIdx(i)}
                 style={{
-                  width: 70, height: 70, borderRadius: 'var(--radius-sm)',
+                  width: isMobile ? 54 : 70, height: isMobile ? 54 : 70, borderRadius: 'var(--radius-sm)',
                   border: `2px solid ${i === imgIdx ? 'var(--ink)' : 'transparent'}`,
                   overflow: 'hidden', cursor: 'pointer', flexShrink: 0, padding: 0,
                   background: `linear-gradient(135deg, ${getTint(i)[0]}, ${getTint(i)[1]})`,
@@ -208,14 +210,14 @@ export function ProductDetail({ product, onClose }: ProductDetailProps) {
         <section style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', background: 'var(--surface)' }}>
 
           {/* Header */}
-          <div style={{ padding: '22px 26px 18px', borderBottom: '1px solid var(--line)' }}>
+          <div style={{ padding: isMobile ? '16px 18px 14px' : '22px 26px 18px', borderBottom: '1px solid var(--line)' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', letterSpacing: '.08em', marginBottom: 10 }}>
               {(product.category ?? 'สินค้า').toUpperCase()} · {product.location ?? ''} · {timeAgo(product.created_at)}
             </div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: '-.015em', lineHeight: 1.3, marginBottom: 10, color: 'var(--ink)' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: isMobile ? 18 : 22, fontWeight: 700, letterSpacing: '-.015em', lineHeight: 1.3, marginBottom: 10, color: 'var(--ink)' }}>
               {product.title}
             </h1>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--ink)' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: isMobile ? 26 : 32, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--ink)' }}>
               ฿{Number(price).toLocaleString()}
               {product.original_price && product.original_price > price && (
                 <s style={{ color: 'var(--ink-3)', fontWeight: 400, fontSize: 18, marginLeft: 10 }}>
@@ -231,7 +233,7 @@ export function ProductDetail({ product, onClose }: ProductDetailProps) {
           </div>
 
           {/* Seller strip */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 26px', borderBottom: '1px solid var(--line)', background: 'var(--surface-2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: isMobile ? '12px 18px' : '16px 26px', borderBottom: '1px solid var(--line)', background: 'var(--surface-2)' }}>
             <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 14, color: 'var(--ink)', flexShrink: 0 }}>
               {sellerInitial}
             </div>
@@ -250,7 +252,7 @@ export function ProductDetail({ product, onClose }: ProductDetailProps) {
           </div>
 
           {/* Description + specs */}
-          <div style={{ padding: '18px 26px', borderBottom: '1px solid var(--line)' }}>
+          <div style={{ padding: isMobile ? '14px 18px' : '18px 26px', borderBottom: '1px solid var(--line)' }}>
             <SectionTitle>รายละเอียด</SectionTitle>
             <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--ink-2)' }}>
               {product.description ?? 'เครื่องศูนย์ไทย ใช้งานปกติทุกฟังก์ชัน อุปกรณ์ครบกล่อง มีรอยขนแมวเล็กน้อย ไม่กระทบการใช้งาน'}
@@ -290,7 +292,7 @@ export function ProductDetail({ product, onClose }: ProductDetailProps) {
 
             {/* Messages */}
             <div ref={chatRef}
-              style={{ maxHeight: 280, overflowY: 'auto', padding: '14px 20px', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              style={{ maxHeight: isMobile ? 200 : 280, overflowY: 'auto', padding: '14px 20px', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
 
               {/* Product pin */}
               <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: 10, marginBottom: 4 }}>
