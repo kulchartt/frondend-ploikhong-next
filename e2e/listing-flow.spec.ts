@@ -348,12 +348,31 @@ test.describe('Listing Flow', () => {
     await expect(page.getByText('ขั้นตอน 1 จาก 4')).not.toBeVisible();
   });
 
-  test('clicking backdrop closes listing modal', async ({ page }) => {
+  test('clicking backdrop closes listing modal when no photos (step 1 empty)', async ({ page }) => {
     await openListing(page);
     await expect(page.getByText('ขั้นตอน 1 จาก 4')).toBeVisible();
     // Click far left edge of screen (backdrop area)
     await page.mouse.click(10, page.viewportSize()!.height / 2);
     await expect(page.getByText('ขั้นตอน 1 จาก 4')).not.toBeVisible();
+  });
+
+  test('backdrop does NOT close modal after photos are added', async ({ page }) => {
+    await openListing(page);
+    await addPhoto(page);
+    await expect(page.getByText('ขั้นตอน 1 จาก 4')).toBeVisible();
+    // Click backdrop — should be ignored
+    await page.mouse.click(10, page.viewportSize()!.height / 2);
+    await expect(page.getByText('ขั้นตอน 1 จาก 4')).toBeVisible();
+    // ESC still works though
+    await page.keyboard.press('Escape');
+    await expect(page.getByText('ขั้นตอน 1 จาก 4')).not.toBeVisible();
+  });
+
+  test('backdrop does NOT close modal on step 2 or later', async ({ page }) => {
+    await goToStep2(page);
+    await expect(page.getByText('ขั้นตอน 2 จาก 4')).toBeVisible();
+    await page.mouse.click(10, page.viewportSize()!.height / 2);
+    await expect(page.getByText('ขั้นตอน 2 จาก 4')).toBeVisible();
   });
 
 });

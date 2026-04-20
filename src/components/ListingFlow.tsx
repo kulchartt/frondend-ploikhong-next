@@ -210,9 +210,12 @@ export function ListingFlow({ onClose, onPosted }: ListingFlowProps) {
     );
   }
 
+  // Only allow backdrop-click to close when there's no progress yet
+  const hasProgress = photos.length > 0 || step > 1 || posting;
+
   return (
     <div
-      onClick={onClose}
+      onClick={hasProgress ? undefined : onClose}
       style={{
         position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
         zIndex: 300, display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center',

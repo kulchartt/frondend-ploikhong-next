@@ -223,13 +223,13 @@ export function ProductDetail({ product, onClose }: ProductDetailProps) {
         {/* ── LEFT: Gallery ── */}
         <section style={{ background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)' }}>
           {/* Hero image */}
-          <div style={{ flex: 1, minHeight: isMobile ? 220 : 380, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ height: isMobile ? 240 : 420, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
             <div style={{
               position: 'absolute', inset: 0,
               background: `linear-gradient(135deg, ${getTint(imgIdx)[0]}, ${getTint(imgIdx)[1]})`,
             }}>
               {imgs[imgIdx] && (
-                <img src={imgs[imgIdx]!} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={imgs[imgIdx]!} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               )}
             </div>
 
