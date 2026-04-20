@@ -15,6 +15,7 @@ interface Product {
   location?: string;
   created_at?: string;
   seller_name?: string;
+  seller_id?: number;
   condition?: string;
   is_boosted?: boolean;
   category?: string;
@@ -156,7 +157,7 @@ export function ProductDetail({ product, onClose }: ProductDetailProps) {
   const sellerInitial = (product.seller_name ?? 'S')[0].toUpperCase();
 
   function getTint(i: number) {
-    return IMG_TINTS[(product.id + i) % IMG_TINTS.length];
+    return IMG_TINTS[((product?.id ?? 0) + i) % IMG_TINTS.length];
   }
 
   async function send(text: string) {
