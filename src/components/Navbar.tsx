@@ -5,6 +5,7 @@ import { PloiWordmark } from './PloiLogo';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 const SUBNAV = ['สำหรับคุณ', 'ใกล้ฉัน', 'ของใหม่', 'Boost เด่น', 'ส่งฟรี', 'ลดราคา', 'ของสะสม', 'ดีลพนักงาน', 'นัดรับ'];
 
@@ -21,6 +22,7 @@ export function Navbar({ onSearch, onOpenAuth, onOpenChat, onOpenHub, onOpenList
   const { data: session } = useSession();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dark, setDark] = useState(false);
+  const isMobile = useBreakpoint(768);
   const avatarLetter = session?.user?.name?.[0]?.toUpperCase() ?? '?';
 
   function toggleDark() {
@@ -34,13 +36,13 @@ export function Navbar({ onSearch, onOpenAuth, onOpenChat, onOpenHub, onOpenList
       borderBottom: '1px solid var(--line)' }}>
 
       {/* Row 1 — gap:14px, padding:12px 20px, maxWidth:1440 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14,
-        padding: '12px 20px', maxWidth: 1440, margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14,
+        padding: isMobile ? '10px 14px' : '12px 20px', maxWidth: 1440, margin: '0 auto' }}>
 
         <Link href="/"><PloiWordmark /></Link>
 
         {/* Search — radius-sm, max 640px, border 1px */}
-        <div style={{ flex: 1, maxWidth: 640, display: 'flex',
+        <div style={{ flex: 1, maxWidth: isMobile ? undefined : 640, display: 'flex',
           border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)',
           overflow: 'hidden', background: 'var(--surface)' }}>
           <input type="text" placeholder="ค้นหาของมือสอง..."
@@ -71,18 +73,19 @@ export function Navbar({ onSearch, onOpenAuth, onOpenChat, onOpenHub, onOpenList
           ].map(({ icon, label, badge, action }) => (
             <button key={label} onClick={action}
               style={{
-                /* HORIZONTAL: icon + text side by side */
-                display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 6,
-                padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer',
+                display: 'flex', flexDirection: 'row', alignItems: 'center',
+                gap: isMobile ? 0 : 6,
+                padding: isMobile ? '8px' : '8px 12px',
+                background: 'none', border: 'none', cursor: 'pointer',
                 color: 'var(--ink-2)', fontSize: 13, position: 'relative',
                 borderRadius: 'var(--radius-sm)', whiteSpace: 'nowrap',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
               {icon}
-              {label}
+              {!isMobile && label}
               {!!badge && (
-                <span style={{ position: 'absolute', top: 6, right: 8,
+                <span style={{ position: 'absolute', top: 6, right: isMobile ? 4 : 8,
                   width: 6, height: 6, background: 'var(--accent)', borderRadius: '50%' }} />
               )}
             </button>
@@ -91,7 +94,8 @@ export function Navbar({ onSearch, onOpenAuth, onOpenChat, onOpenHub, onOpenList
           {/* Dark mode toggle */}
           <button onClick={toggleDark}
             title={dark ? 'Light mode' : 'Dark mode'}
-            style={{ padding: '8px 10px', border: 'none', borderRadius: 'var(--radius-sm)',
+            style={{ padding: isMobile ? '8px' : '8px 10px', border: 'none',
+              borderRadius: 'var(--radius-sm)',
               background: 'none', color: 'var(--ink-2)', cursor: 'pointer', display: 'flex' }}
             onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
@@ -100,15 +104,17 @@ export function Navbar({ onSearch, onOpenAuth, onOpenChat, onOpenHub, onOpenList
 
           {/* + ลงขาย — 13px, 9px 16px */}
           <button onClick={onOpenListing}
-            style={{ padding: '9px 16px', background: 'var(--accent)', color: '#fff',
+            style={{ padding: isMobile ? '8px 12px' : '9px 16px',
+              background: 'var(--accent)', color: '#fff',
               border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 600,
-              fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              fontSize: isMobile ? 12 : 13, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
             + ลงขาย
           </button>
 
-          {/* User avatar dropdown */}
+          {/* User avatar dropdown — desktop only */}
           {session?.user && (
-            <div style={{ position: 'relative', marginLeft: 4 }}>
+            <div style={{ position: 'relative', marginLeft: 4,
+              display: isMobile ? 'none' : undefined }}>
               <button onClick={() => setDropdownOpen(o => !o)}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
                   background: 'var(--surface-2)', border: '1px solid var(--line)',
@@ -168,16 +174,18 @@ export function Navbar({ onSearch, onOpenAuth, onOpenChat, onOpenHub, onOpenList
         </div>
       </div>
 
-      {/* Row 2 — subnav: padding 11px 16px, gap 2px, maxWidth 1440 */}
+      {/* Row 2 — subnav */}
       <div style={{ borderTop: '1px solid var(--line)', background: 'var(--surface)',
         overflowX: 'auto', scrollbarWidth: 'none' }}>
-        <div style={{ display: 'flex', gap: 2, padding: '0 20px',
+        <div style={{ display: 'flex', gap: 2, padding: isMobile ? '0 14px' : '0 20px',
           maxWidth: 1440, margin: '0 auto' }}>
           {SUBNAV.map((item, i) => (
             <button key={item}
-              style={{ padding: '11px 16px', background: 'none', border: 'none', cursor: 'pointer',
+              style={{ padding: isMobile ? '9px 10px' : '11px 16px',
+                background: 'none', border: 'none', cursor: 'pointer',
                 borderBottom: i === 0 ? '2px solid var(--ink)' : '2px solid transparent',
-                fontWeight: i === 0 ? 600 : 400, fontSize: 13,
+                fontWeight: i === 0 ? 600 : 400,
+                fontSize: isMobile ? 12 : 13,
                 color: i === 0 ? 'var(--ink)' : 'var(--ink-2)', whiteSpace: 'nowrap' }}
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink)')}
               onMouseLeave={e => (e.currentTarget.style.color = i === 0 ? 'var(--ink)' : 'var(--ink-2)')}>
