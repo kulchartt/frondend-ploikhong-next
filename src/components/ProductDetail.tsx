@@ -1,0 +1,408 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+
+interface Product {
+  id: number;
+  title: string;
+  price: number;
+  original_price?: number;
+  flash_price?: number;
+  images?: string[];
+  location?: string;
+  created_at?: string;
+  seller_name?: string;
+  condition?: string;
+  is_boosted?: boolean;
+  category?: string;
+  description?: string;
+}
+
+interface ProductDetailProps {
+  product: Product | null;
+  onClose: () => void;
+}
+
+const IMG_TINTS = [
+  ['#d4a59a','#c8866e'],['#a5c4d4','#7ba8c8'],['#b8d4a5','#8ec87b'],
+  ['#d4c4a5','#c8a87b'],['#c4a5d4','#a87bc8'],['#a5d4c4','#7bc8a8'],
+  ['#d4d4a5','#c8c87b'],['#c4a5a5','#c87b7b'],['#a5b4d4','#7b8ec8'],
+  ['#d4b4a5','#c8987b'],['#b4d4a5','#98c87b'],['#d4a5c4','#c87ba8'],
+];
+
+const QUICK = ['ยังว่างไหมครับ?', 'ลดราคาได้ไหม?', 'นัดดูของได้ที่ไหน?', 'ส่งได้ไหม?'];
+
+function timeAgo(dateStr?: string) {
+  if (!dateStr) return '';
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+  if (diff === 0) return 'วันนี้';
+  if (diff === 1) return 'เมื่อวาน';
+  return `${diff} วันที่แล้ว`;
+}
+
+type Msg = { who: 'me' | 'seller'; text: string; time: string };
+
+function nowTime() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+export function ProductDetail({ product, onClose }: ProductDetailProps) {
+  const [imgIdx, setImgIdx] = useState(0);
+  const [msgs, setMsgs] = useState<Msg[]>([
+    { who: 'seller', text: 'สวัสดีครับ สินค้ายังว่างนะครับ 😊', time: '14:02' },
+    { who: 'me',     text: 'สนใจครับ ของสภาพยังไงบ้าง?', time: '14:03' },
+    { who: 'seller', text: 'สภาพประมาณ 95% ครับ ใช้มา 4 เดือน ไม่มีรอยร้าว มีรอยขนแมวเล็กน้อย', time: '14:04' },
+  ]);
+  const [draft, setDraft] = useState('');
+  const [typing, setTyping] = useState(false);
+  const chatRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+  }, [msgs, typing]);
+
+  // Lock body scroll when open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  // ESC to close
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  if (!product) return null;
+
+  const tints = IMG_TINTS[product.id % IMG_TINTS.length];
+  const imgs = product.images?.length
+    ? product.images
+    : [null, null, null, null]; // 4 placeholder slots
+
+  const price = product.flash_price || product.price;
+  const sellerInitial = (product.seller_name ?? 'S')[0].toUpperCase();
+
+  function getTint(i: number) {
+    return IMG_TINTS[(product.id + i) % IMG_TINTS.length];
+  }
+
+  function send(text: string) {
+    if (!text.trim()) return;
+    setMsgs(m => [...m, { who: 'me', text, time: nowTime() }]);
+    setDraft('');
+    setTyping(true);
+    setTimeout(() => {
+      setTyping(false);
+      setMsgs(m => [...m, { who: 'seller', text: 'เดี๋ยวตอบให้นะครับ ขอเช็คของก่อน 🙏', time: nowTime() }]);
+    }, 1800);
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
+        zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 24, overflowY: 'auto',
+        animation: 'fadeIn .15s ease',
+      }}>
+      <style>{`
+        @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+        @keyframes slideUp { from { opacity:0; transform:translateY(20px) scale(.98) } to { opacity:1; transform:none } }
+        @keyframes bop { 0%,60%,100% { transform:translateY(0);opacity:.4 } 30% { transform:translateY(-4px);opacity:1 } }
+      `}</style>
+
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--bg)', borderRadius: 16, width: '100%',
+          maxWidth: 1240, maxHeight: '92vh',
+          display: 'grid', gridTemplateColumns: '1.15fr 1fr',
+          overflow: 'hidden', position: 'relative',
+          boxShadow: '0 40px 80px rgba(0,0,0,.35)',
+          animation: 'slideUp .25s cubic-bezier(.2,.8,.2,1)',
+        }}>
+
+        {/* Close */}
+        <button onClick={onClose}
+          style={{
+            position: 'absolute', top: 12, right: 12, zIndex: 10,
+            width: 36, height: 36, borderRadius: '50%',
+            background: 'rgba(255,255,255,.92)', border: '1px solid var(--line)',
+            display: 'grid', placeItems: 'center', cursor: 'pointer',
+            backdropFilter: 'blur(6px)',
+          }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" stroke="var(--ink)" fill="none" strokeWidth={2}>
+            <path d="M6 6l12 12M18 6L6 18"/>
+          </svg>
+        </button>
+
+        {/* ── LEFT: Gallery ── */}
+        <section style={{ background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)' }}>
+          {/* Hero image */}
+          <div style={{ flex: 1, minHeight: 380, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: `linear-gradient(135deg, ${getTint(imgIdx)[0]}, ${getTint(imgIdx)[1]})`,
+            }}>
+              {imgs[imgIdx] && (
+                <img src={imgs[imgIdx]!} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
+            </div>
+
+            {/* Prev */}
+            {imgIdx > 0 && (
+              <button onClick={() => setImgIdx(i => i - 1)}
+                style={{
+                  position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)',
+                  width: 40, height: 40, borderRadius: '50%', fontSize: 22,
+                  background: 'rgba(255,255,255,.88)', border: '1px solid var(--line)',
+                  display: 'grid', placeItems: 'center', cursor: 'pointer', zIndex: 2,
+                  backdropFilter: 'blur(4px)',
+                }}>‹</button>
+            )}
+            {/* Next */}
+            {imgIdx < imgs.length - 1 && (
+              <button onClick={() => setImgIdx(i => i + 1)}
+                style={{
+                  position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)',
+                  width: 40, height: 40, borderRadius: '50%', fontSize: 22,
+                  background: 'rgba(255,255,255,.88)', border: '1px solid var(--line)',
+                  display: 'grid', placeItems: 'center', cursor: 'pointer', zIndex: 2,
+                  backdropFilter: 'blur(4px)',
+                }}>›</button>
+            )}
+
+            {/* Counter */}
+            <span style={{
+              position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
+              fontFamily: 'var(--font-mono)', fontSize: 11, color: '#fff',
+              background: 'rgba(0,0,0,.45)', padding: '3px 10px',
+              borderRadius: 999, backdropFilter: 'blur(4px)',
+            }}>{imgIdx + 1} / {imgs.length}</span>
+          </div>
+
+          {/* Thumbnails */}
+          <div style={{
+            display: 'flex', gap: 8, padding: 12,
+            background: 'var(--surface)', borderTop: '1px solid var(--line)',
+          }}>
+            {imgs.map((img, i) => (
+              <button key={i} onClick={() => setImgIdx(i)}
+                style={{
+                  width: 70, height: 70, borderRadius: 'var(--radius-sm)',
+                  border: `2px solid ${i === imgIdx ? 'var(--ink)' : 'transparent'}`,
+                  overflow: 'hidden', cursor: 'pointer', flexShrink: 0, padding: 0,
+                  background: `linear-gradient(135deg, ${getTint(i)[0]}, ${getTint(i)[1]})`,
+                }}>
+                {img && <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* ── RIGHT: Details + Chat ── */}
+        <section style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', background: 'var(--surface)' }}>
+
+          {/* Header */}
+          <div style={{ padding: '22px 26px 18px', borderBottom: '1px solid var(--line)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', letterSpacing: '.08em', marginBottom: 10 }}>
+              {(product.category ?? 'สินค้า').toUpperCase()} · {product.location ?? ''} · {timeAgo(product.created_at)}
+            </div>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: '-.015em', lineHeight: 1.3, marginBottom: 10, color: 'var(--ink)' }}>
+              {product.title}
+            </h1>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--ink)' }}>
+              ฿{Number(price).toLocaleString()}
+              {product.original_price && product.original_price > price && (
+                <s style={{ color: 'var(--ink-3)', fontWeight: 400, fontSize: 18, marginLeft: 10 }}>
+                  ฿{Number(product.original_price).toLocaleString()}
+                </s>
+              )}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+              {product.condition && <Tag>{product.condition}</Tag>}
+              {product.is_boosted && <Tag boost>BOOST</Tag>}
+              {product.flash_price && <Tag accent>SALE</Tag>}
+            </div>
+          </div>
+
+          {/* Seller strip */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 26px', borderBottom: '1px solid var(--line)', background: 'var(--surface-2)' }}>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 14, color: 'var(--ink)', flexShrink: 0 }}>
+              {sellerInitial}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                {product.seller_name ?? 'ผู้ขาย'}
+                <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, background: 'var(--pos)', color: '#fff', fontWeight: 500 }}>ยืนยันตัวตน</span>
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
+                4.9 ★ · 342 รีวิว · ตอบภายใน 10 นาที
+              </div>
+            </div>
+            <button style={{ padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', fontSize: 13, cursor: 'pointer', color: 'var(--ink)' }}>
+              ดูร้าน
+            </button>
+          </div>
+
+          {/* Description + specs */}
+          <div style={{ padding: '18px 26px', borderBottom: '1px solid var(--line)' }}>
+            <SectionTitle>รายละเอียด</SectionTitle>
+            <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--ink-2)' }}>
+              {product.description ?? 'เครื่องศูนย์ไทย ใช้งานปกติทุกฟังก์ชัน อุปกรณ์ครบกล่อง มีรอยขนแมวเล็กน้อย ไม่กระทบการใช้งาน'}
+            </p>
+
+            <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 18px' }}>
+              {[
+                ['สภาพ', product.condition ?? '-'],
+                ['หมวดหมู่', product.category ?? '-'],
+                ['พื้นที่', product.location ?? '-'],
+                ['วิธีรับของ', 'นัดรับ / ส่งไปรษณีย์'],
+                ['ลงประกาศ', timeAgo(product.created_at)],
+                ['ยอดเข้าชม', '1,284 ครั้ง · 47 ถูกใจ'],
+              ].map(([label, val]) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '6px 0', borderBottom: '1px dashed var(--line)' }}>
+                  <span style={{ color: 'var(--ink-3)' }}>{label}</span>
+                  <span style={{ color: 'var(--ink)', fontWeight: 500, fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{val}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Safety notice */}
+            <div style={{ marginTop: 14, padding: '10px 12px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, color: 'var(--ink-2)', border: '1px solid var(--line)' }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" stroke="var(--pos)" fill="none" strokeWidth={1.8} style={{ flexShrink: 0 }}>
+                <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/>
+              </svg>
+              ซื้อ-ขายกันเอง นัดที่สาธารณะ ตรวจสอบของก่อนจ่ายเงินเสมอ
+            </div>
+          </div>
+
+          {/* Chat section */}
+          <div style={{ display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--line)' }}>
+            <div style={{ padding: '16px 26px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)' }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, letterSpacing: '-.005em' }}>คุยกับผู้ขาย</div>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>ออนไลน์ · ปลอดภัยกว่าใช้เบอร์โทร</span>
+            </div>
+
+            {/* Messages */}
+            <div ref={chatRef}
+              style={{ maxHeight: 280, overflowY: 'auto', padding: '14px 20px', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+              {/* Product pin */}
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: 10, marginBottom: 4 }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 'var(--radius-sm)', background: `linear-gradient(135deg, ${tints[0]}, ${tints[1]})`, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{product.title}</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, marginTop: 2 }}>฿{Number(price).toLocaleString()}</div>
+                  </div>
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', textAlign: 'center', marginTop: 6, paddingTop: 6, borderTop: '1px dashed var(--line)', letterSpacing: '.06em', textTransform: 'uppercase' }}>เริ่มคุยเกี่ยวกับสินค้านี้</div>
+              </div>
+
+              {msgs.map((m, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: '85%', alignSelf: m.who === 'me' ? 'flex-end' : 'flex-start', flexDirection: m.who === 'me' ? 'row-reverse' : 'row' }}>
+                  {m.who === 'seller' && (
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 600, flexShrink: 0 }}>{sellerInitial}</div>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: m.who === 'me' ? 'flex-end' : 'flex-start' }}>
+                    <div style={{
+                      padding: '9px 13px', borderRadius: 16, fontSize: 13.5, lineHeight: 1.45, wordBreak: 'break-word',
+                      background: m.who === 'me' ? 'var(--accent)' : 'var(--surface)',
+                      color: m.who === 'me' ? '#fff' : 'var(--ink)',
+                      border: m.who === 'me' ? 'none' : '1px solid var(--line)',
+                      borderBottomRightRadius: m.who === 'me' ? 4 : 16,
+                      borderBottomLeftRadius: m.who === 'seller' ? 4 : 16,
+                    }}>{m.text}</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', padding: '0 6px' }}>{m.time}</div>
+                  </div>
+                </div>
+              ))}
+
+              {typing && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: '85%' }}>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 600, flexShrink: 0 }}>{sellerInitial}</div>
+                  <div style={{ padding: '12px 14px', borderRadius: 16, borderBottomLeftRadius: 4, background: 'var(--surface)', border: '1px solid var(--line)', display: 'flex', gap: 4, alignItems: 'center' }}>
+                    {[0, 150, 300].map(d => (
+                      <span key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ink-3)', display: 'inline-block', animation: `bop 1.2s ${d}ms infinite ease-in-out` }} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quick replies */}
+            <div style={{ display: 'flex', gap: 6, padding: '10px 16px', overflowX: 'auto', background: 'var(--surface)', borderTop: '1px solid var(--line)', scrollbarWidth: 'none' }}>
+              {QUICK.map(q => (
+                <button key={q} onClick={() => send(q)}
+                  style={{ whiteSpace: 'nowrap', padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 999, fontSize: 12, color: 'var(--ink-2)', background: 'var(--surface)', cursor: 'pointer' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--ink)'; e.currentTarget.style.color = 'var(--ink)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.color = 'var(--ink-2)'; }}>
+                  {q}
+                </button>
+              ))}
+            </div>
+
+            {/* Input */}
+            <form onSubmit={e => { e.preventDefault(); send(draft); }}
+              style={{ display: 'flex', gap: 8, padding: '12px 16px', alignItems: 'center', background: 'var(--surface)', borderTop: '1px solid var(--line)' }}>
+              <button type="button" style={{ padding: 8, color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)', display: 'flex' }}>
+                <svg width={18} height={18} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5-11 11"/>
+                </svg>
+              </button>
+              <input value={draft} onChange={e => setDraft(e.target.value)}
+                placeholder="พิมพ์ข้อความ..."
+                style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--line)', borderRadius: 999, background: 'var(--surface-2)', fontFamily: 'inherit', fontSize: 13.5, color: 'var(--ink)', outline: 'none' }} />
+              <button type="submit" disabled={!draft.trim()}
+                style={{ padding: '8px 18px', background: draft.trim() ? 'var(--accent)' : 'var(--line)', color: draft.trim() ? '#fff' : 'var(--ink-3)', border: 'none', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: draft.trim() ? 'pointer' : 'not-allowed', transition: '.15s' }}>
+                ส่ง
+              </button>
+            </form>
+          </div>
+
+          {/* Related from seller */}
+          <div style={{ padding: '16px 26px 26px' }}>
+            <SectionTitle>จากผู้ขายคนนี้</SectionTitle>
+            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+              {[1, 2, 3, 4].map(i => {
+                const t = IMG_TINTS[(product.id + i * 3) % IMG_TINTS.length];
+                return (
+                  <div key={i} style={{ flex: 1, cursor: 'pointer' }}>
+                    <div style={{ aspectRatio: '1/1', borderRadius: 'var(--radius-sm)', background: `linear-gradient(135deg,${t[0]},${t[1]})`, marginBottom: 4 }} />
+                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13 }}>฿{(Math.floor(Math.random() * 40 + 5) * 1000).toLocaleString()}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function Tag({ children, boost, accent }: { children: React.ReactNode; boost?: boolean; accent?: boolean }) {
+  const bg = boost ? 'linear-gradient(90deg,#111,#333)'
+    : accent ? 'var(--accent)'
+    : 'var(--surface)';
+  const color = (boost || accent) ? '#fff' : 'var(--ink-2)';
+  const border = (boost || accent) ? 'none' : '1px solid var(--line)';
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 999, background: bg, color, border }}>
+      {children}
+    </span>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink-3)', marginBottom: 10, fontWeight: 600 }}>
+      {children}
+    </h3>
+  );
+}

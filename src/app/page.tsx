@@ -5,6 +5,7 @@ import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { ProductCard } from '@/components/ProductCard';
 import { AuthModal } from '@/components/AuthModal';
+import { ProductDetail } from '@/components/ProductDetail';
 import * as api from '@/lib/api';
 
 const MONEY_RAIL = [
@@ -43,6 +44,7 @@ export default function HomePage() {
   const [authOpen, setAuthOpen] = useState(false);
   const [filters, setFilters] = useState<any>({});
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -235,6 +237,7 @@ export default function HomePage() {
                   key={p.id}
                   product={p}
                   inWishlist={wishlistIds.has(p.id)}
+                  onClick={id => setSelectedProduct(products.find(x => x.id === id))}
                   onWishlist={id => {
                     setWishlistIds(prev => {
                       const next = new Set(prev);
@@ -250,6 +253,9 @@ export default function HomePage() {
       </div>
 
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+      {selectedProduct && (
+        <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+      )}
     </>
   );
 }
