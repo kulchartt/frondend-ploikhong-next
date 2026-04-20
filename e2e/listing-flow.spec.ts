@@ -225,6 +225,52 @@ test.describe('Listing Flow', () => {
     await expect(page.getByText('โพสต์สำเร็จแล้ว!')).toBeVisible({ timeout: 10000 });
   });
 
+  test('step 4: upload failure shows error message', async ({ page }) => {
+    await page.route('**/api/products/upload', r =>
+      r.fulfill({ status: 500, json: { error: 'Cloudinary ไม่พร้อมใช้งาน' } }),
+    );
+    await goToStep4(page);
+    await page.getByTestId('listing-post-btn').click();
+    await expect(page.getByText('Cloudinary ไม่พร้อมใช้งาน')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('step 4: create product failure shows error message', async ({ page }) => {
+    await page.route('**/api/products/upload', r => r.fulfill({ json: { url: 'https://example.com/img.jpg' } }));
+    await page.route('**/api/products', r =>
+      r.fulfill({ status: 400, json: { error: 'กรุณากรอกข้อมูลให้ครบ' } }),
+    );
+    await goToStep4(page);
+    await page.getByTestId('listing-post-btn').click();
+    await expect(page.getByText('กรุณากรอกข้อมูลให้ครบ')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('step 4: upload endpoint receives the photo file', async ({ page }) => {
+    let uploadCalled = false;
+    await page.route('**/api/products/upload', async r => {
+      uploadCalled = true;
+      await r.fulfill({ json: { url: 'https://example.com/img.jpg' } });
+    });
+    await page.route('**/api/products', r => r.fulfill({ json: { id: 99 } }));
+    await goToStep4(page);
+    await page.getByTestId('listing-post-btn').click();
+    await expect(page.getByText('โพสต์สำเร็จแล้ว!')).toBeVisible({ timeout: 10000 });
+    expect(uploadCalled).toBe(true);
+  });
+
+  test('step 4: "โพสต์" button becomes disabled while posting', async ({ page }) => {
+    // Delay the upload response so we can observe the loading state
+    await page.route('**/api/products/upload', async r => {
+      await new Promise(res => setTimeout(res, 400));
+      await r.fulfill({ json: { url: 'https://example.com/img.jpg' } });
+    });
+    await page.route('**/api/products', r => r.fulfill({ json: { id: 99 } }));
+    await goToStep4(page);
+    await page.getByTestId('listing-post-btn').click();
+    // Button should be disabled right after click (posting = true)
+    await expect(page.getByTestId('listing-post-btn')).toBeDisabled();
+    await expect(page.getByText('โพสต์สำเร็จแล้ว!')).toBeVisible({ timeout: 10000 });
+  });
+
   // ─── Close button in header ────────────────────────────────────────────────
 
   test('× button in header closes modal on step 1', async ({ page }) => {
