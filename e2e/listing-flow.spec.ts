@@ -257,6 +257,29 @@ test.describe('Listing Flow', () => {
     expect(uploadCalled).toBe(true);
   });
 
+  test('step 4: product list refreshes immediately after successful post', async ({ page }) => {
+    await page.route('**/api/products/upload', r => r.fulfill({ json: { url: 'https://example.com/img.jpg' } }));
+    await page.route('**/api/products', async r => {
+      if (r.request().method() === 'POST') {
+        await r.fulfill({ json: { id: 99, title: 'iPhone 14 Pro' } });
+      }
+      // GET requests fall through to beforeEach's **/api/products* handler
+    });
+    await goToStep4(page);
+
+    // Start listening for the product-list GET *before* clicking post
+    const refreshPromise = page.waitForRequest(
+      req => req.url().includes('/api/products') && req.method() === 'GET',
+      { timeout: 10000 },
+    );
+
+    await page.getByTestId('listing-post-btn').click();
+    await expect(page.getByText('โพสต์สำเร็จแล้ว!')).toBeVisible({ timeout: 10000 });
+
+    // loadProducts() must have fired (the GET should be intercepted)
+    await refreshPromise;
+  });
+
   test('step 4: "โพสต์" button becomes disabled while posting', async ({ page }) => {
     // Delay the upload response so we can observe the loading state
     await page.route('**/api/products/upload', async r => {

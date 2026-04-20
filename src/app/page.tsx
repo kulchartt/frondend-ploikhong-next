@@ -333,7 +333,7 @@ export default function HomePage() {
         />
       )}
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
-      {listingOpen && <ListingFlow onClose={() => setListingOpen(false)} />}
+      {listingOpen && <ListingFlow onClose={() => setListingOpen(false)} onPosted={loadProducts} />}
       {hubOpen && (
         <MyHub
           onClose={() => setHubOpen(false)}

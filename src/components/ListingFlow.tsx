@@ -8,6 +8,7 @@ import * as api from '@/lib/api';
 
 interface ListingFlowProps {
   onClose: () => void;
+  onPosted?: () => void;
 }
 
 const IMG_TINTS = [
@@ -48,7 +49,7 @@ interface Form {
   boost: boolean;
 }
 
-export function ListingFlow({ onClose }: ListingFlowProps) {
+export function ListingFlow({ onClose, onPosted }: ListingFlowProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
   const isMobile = useBreakpoint(768);
@@ -186,6 +187,7 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
       }, token);
 
       setPosted(true);
+      onPosted?.();
       setTimeout(onClose, 2200);
     } catch (err: any) {
       setPostError(err?.message || 'โพสต์ไม่สำเร็จ กรุณาลองใหม่');
