@@ -66,7 +66,7 @@ export default function HomePage() {
   const debouncedSearch = useDebounce(search, 400);
 
   function openListing() {
-    if (session) setListingOpen(true);
+    if (session?.user) setListingOpen(true);
     else setAuthOpen(true);
   }
 
@@ -125,9 +125,9 @@ export default function HomePage() {
         onSearch={setSearch}
         onOpenAuth={() => setAuthOpen(true)}
         onOpenListing={openListing}
-        onOpenChat={() => { if (!session) { setAuthOpen(true); return; } setChatOpen(true); }}
+        onOpenChat={() => { if (!session?.user) { setAuthOpen(true); return; } setChatOpen(true); }}
         onOpenHub={(mode) => {
-          if (!session) { setAuthOpen(true); return; }
+          if (!session?.user) { setAuthOpen(true); return; }
           if (mode === 'sell') setHubOpen(true);
           else setWishlistOpen(true);
         }}

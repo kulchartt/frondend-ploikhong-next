@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ProductCardProps {
   product: {
@@ -47,6 +47,9 @@ function timeAgo(dateStr?: string) {
 
 export function ProductCard({ product, inWishlist = false, onWishlist, onClick }: ProductCardProps) {
   const [liked, setLiked] = useState(inWishlist);
+
+  // Sync when parent updates inWishlist (e.g. after wishlist API loads)
+  useEffect(() => { setLiked(inWishlist); }, [inWishlist]);
   const [hovered, setHovered] = useState(false);
   const tints = IMG_TINTS[product.id % IMG_TINTS.length];
   const price = product.flash_price || product.price;

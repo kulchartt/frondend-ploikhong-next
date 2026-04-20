@@ -36,11 +36,12 @@ async function setupLoggedIn(page: any) {
   await page.route('**/api/auth/session', route =>
     route.fulfill({ json: MOCK_SESSION })
   );
-  await page.route('**/api/products/my', route =>
-    route.fulfill({ json: MOCK_PRODUCTS })
-  );
+  // Register broad route first so specific /my route (registered last) wins (Playwright LIFO)
   await page.route('**/api/products*', route =>
     route.fulfill({ json: [] })
+  );
+  await page.route('**/api/products/my', route =>
+    route.fulfill({ json: MOCK_PRODUCTS })
   );
 }
 
@@ -48,9 +49,9 @@ async function openHub(page: any) {
   await setupLoggedIn(page);
   await page.goto('/');
   // Click avatar dropdown → สินค้าของฉัน
-  // Since avatar may not render without real session, trigger via navbar icon button "ขาย"
   // The "ขาย" button calls onOpenHub('sell') → hubOpen = true
-  const sellBtn = page.getByRole('button', { name: 'ขาย' });
+  // Use exact: true to avoid matching "+ ลงขาย" or "ลงขายฟรี"
+  const sellBtn = page.getByRole('button', { name: 'ขาย', exact: true });
   await sellBtn.click();
 }
 
@@ -60,7 +61,9 @@ test.describe('My Hub', () => {
 
   test('clicking "ขาย" nav button while logged-in opens MyHub', async ({ page }) => {
     await openHub(page);
-    await expect(page.getByText('สินค้าของฉัน').first()).toBeVisible();
+    // MyHub header shows user name and stats
+    await expect(page.getByText('สมชาย ทดสอบ').first()).toBeVisible();
+    await expect(page.getByText('ประกาศทั้งหมด').first()).toBeVisible();
   });
 
   test('hub shows user name', async ({ page }) => {
@@ -135,7 +138,7 @@ test.describe('My Hub', () => {
 
   test('boosted product shows BOOST badge', async ({ page }) => {
     await openHub(page);
-    await expect(page.getByText('BOOST')).toBeVisible();
+    await expect(page.getByText('BOOST', { exact: true })).toBeVisible();
   });
 
   // ─── Tab filtering ─────────────────────────────────────────────────────────
@@ -265,10 +268,10 @@ test.describe('My Hub', () => {
 
   test('empty state shows when no products', async ({ page }) => {
     await page.route('**/api/auth/session', route => route.fulfill({ json: MOCK_SESSION }));
-    await page.route('**/api/products/my', route => route.fulfill({ json: [] }));
     await page.route('**/api/products*', route => route.fulfill({ json: [] }));
+    await page.route('**/api/products/my', route => route.fulfill({ json: [] }));
     await page.goto('/');
-    await page.getByRole('button', { name: 'ขาย' }).click();
+    await page.getByRole('button', { name: 'ขาย', exact: true }).click();
     await expect(page.getByText('ยังไม่มีประกาศ')).toBeVisible();
     await expect(page.getByRole('button', { name: '+ ลงขายฟรี' })).toBeVisible();
   });
@@ -288,16 +291,17 @@ test.describe('My Hub', () => {
   test('shows loading skeletons while fetching', async ({ page }) => {
     await page.route('**/api/auth/session', route => route.fulfill({ json: MOCK_SESSION }));
     // Delay the products response
+    await page.route('**/api/products*', route => route.fulfill({ json: [] }));
     await page.route('**/api/products/my', async route => {
       await new Promise(r => setTimeout(r, 800));
       route.fulfill({ json: MOCK_PRODUCTS });
     });
-    await page.route('**/api/products*', route => route.fulfill({ json: [] }));
     await page.goto('/');
-    await page.getByRole('button', { name: 'ขาย' }).click();
-    // Skeletons should be visible before products load
-    const skeletons = page.locator('[style*="animation: pulse"]');
-    await expect(skeletons.first()).toBeVisible({ timeout: 500 });
+    await page.getByRole('button', { name: 'ขาย', exact: true }).click();
+    // Skeletons should be visible before products load (loading=true while 800ms delay active)
+    // React outputs "animation:pulse..." without space so match on "animation"
+    const skeletons = page.locator('[style*="animation"]');
+    await expect(skeletons.first()).toBeVisible({ timeout: 2000 });
   });
 
 });

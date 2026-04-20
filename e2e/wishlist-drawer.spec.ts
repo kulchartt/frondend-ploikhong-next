@@ -54,7 +54,8 @@ test.describe('Wishlist Drawer', () => {
     await page.route('**/api/products*', r => r.fulfill({ json: [] }));
     await page.goto('/');
     await page.getByRole('button', { name: 'ถูกใจ' }).click();
-    await expect(page.getByText('เข้าสู่ระบบ')).toBeVisible();
+    // Auth modal should open — check for the submit button specifically
+    await expect(page.getByRole('button', { name: 'เข้าสู่ระบบ' })).toBeVisible();
     await expect(page.getByText('รายการถูกใจ')).not.toBeVisible();
   });
 
@@ -223,10 +224,19 @@ test.describe('Wishlist Drawer', () => {
     });
     await page.route('**/api/wishlist/**', r => r.fulfill({ json: { success: true } }));
 
+    // Capture wishlist response BEFORE navigating
+    const wishlistResponse = page.waitForResponse(
+      r => r.url().includes('/api/wishlist') && r.request().method() === 'GET'
+    );
     await page.goto('/');
-    // Wait for grid to load, heart should be filled
+
+    // Wait for both: grid visible AND wishlist API loaded (so wishlistIds are populated)
     await expect(page.getByText('iPhone 14 Pro 256GB')).toBeVisible();
-    const gridHeart = page.locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
+    await wishlistResponse;
+
+    // Now heart should be red (inWishlist=true from wishlistIds)
+    // Scope to main to avoid matching Navbar's ถูกใจ button (same SVG path)
+    const gridHeart = page.locator('main').locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
     await expect(gridHeart.locator('svg')).toHaveAttribute('stroke', '#b83216');
 
     // Open wishlist and remove
