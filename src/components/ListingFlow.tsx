@@ -235,10 +235,11 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
         {/* Close */}
         <button onClick={onClose}
           style={{
-            position: 'absolute', top: 14, right: 14, zIndex: 10,
+            position: 'absolute', top: 14, right: 14, zIndex: 300,
             width: 36, height: 36, borderRadius: '50%',
-            background: 'rgba(255,255,255,.9)', border: '1px solid var(--line)',
+            background: 'var(--surface)', border: '1px solid var(--line)',
             display: 'grid', placeItems: 'center', cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,.12)',
           }}>
           <svg width={18} height={18} viewBox="0 0 24 24" stroke="var(--ink)" fill="none" strokeWidth={2}>
             <path d="M6 6l12 12M18 6L6 18"/>
