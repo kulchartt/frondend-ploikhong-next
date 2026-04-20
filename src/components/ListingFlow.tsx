@@ -232,20 +232,6 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
           maxHeight: isMobile ? '96vh' : '94vh', overflow: 'hidden',
         }}>
 
-        {/* Close */}
-        <button onClick={onClose}
-          style={{
-            position: 'absolute', top: 14, right: 14, zIndex: 300,
-            width: 36, height: 36, borderRadius: '50%',
-            background: 'var(--surface)', border: '1px solid var(--line)',
-            display: 'grid', placeItems: 'center', cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,.12)',
-          }}>
-          <svg width={18} height={18} viewBox="0 0 24 24" stroke="var(--ink)" fill="none" strokeWidth={2}>
-            <path d="M6 6l12 12M18 6L6 18"/>
-          </svg>
-        </button>
-
         {/* Stepper header */}
         <div style={{
           padding: isMobile ? '14px 18px' : '20px 28px', borderBottom: '1px solid var(--line)',
@@ -284,8 +270,20 @@ export function ListingFlow({ onClose }: ListingFlowProps) {
               </div>
             ))}
           </div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>
-            ลงฟรี · ไม่จำกัด
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', whiteSpace: 'nowrap', display: isMobile ? 'none' : undefined }}>
+              ลงฟรี · ไม่จำกัด
+            </div>
+            <button onClick={onClose}
+              style={{
+                width: 32, height: 32, borderRadius: '50%',
+                background: 'var(--surface-2)', border: '1px solid var(--line)',
+                display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0,
+              }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" stroke="var(--ink)" fill="none" strokeWidth={2}>
+                <path d="M6 6l12 12M18 6L6 18"/>
+              </svg>
+            </button>
           </div>
         </div>
 
