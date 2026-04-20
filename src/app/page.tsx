@@ -5,11 +5,13 @@ import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { useDebounce } from '@/hooks/useDebounce';
 import { ProductCard } from '@/components/ProductCard';
 import { AuthModal } from '@/components/AuthModal';
 import { ProductDetail } from '@/components/ProductDetail';
 import { ListingFlow } from '@/components/ListingFlow';
 import { MyHub } from '@/components/MyHub';
+import { FilterDrawer } from '@/components/FilterDrawer';
 import * as api from '@/lib/api';
 
 const MONEY_RAIL = [
@@ -49,10 +51,13 @@ export default function HomePage() {
   const [authOpen, setAuthOpen] = useState(false);
   const [listingOpen, setListingOpen] = useState(false);
   const [hubOpen, setHubOpen] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [filters, setFilters] = useState<any>({});
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const isMobile = useBreakpoint(768);
+  const token: string | undefined = (session as any)?.token;
+  const debouncedSearch = useDebounce(search, 400);
 
   function openListing() {
     if (session) setListingOpen(true);
@@ -63,7 +68,7 @@ export default function HomePage() {
     setLoading(true);
     try {
       const params: Record<string, string> = {};
-      if (search) params.search = search;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (sort) params.sort = sort;
       if (filters.activeCat && filters.activeCat !== 'ทั้งหมด') params.category = filters.activeCat;
       if (filters.minPrice) params.min_price = filters.minPrice;
@@ -75,9 +80,38 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  }, [search, sort, filters]);
+  }, [debouncedSearch, sort, filters]);
 
   useEffect(() => { loadProducts(); }, [loadProducts]);
+
+  // Load wishlist from API when logged in
+  useEffect(() => {
+    if (!token) return;
+    api.getWishlist(token)
+      .then((items: any[]) => {
+        const ids = new Set(items.map((x: any) => x.product_id ?? x.id));
+        setWishlistIds(ids as Set<number>);
+      })
+      .catch(() => {});
+  }, [token]);
+
+  async function handleWishlist(id: number) {
+    setWishlistIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+    if (token) {
+      try { await api.toggleWishlist(id, token); } catch {
+        // revert on error
+        setWishlistIds(prev => {
+          const next = new Set(prev);
+          next.has(id) ? next.delete(id) : next.add(id);
+          return next;
+        });
+      }
+    }
+  }
 
   return (
     <>
@@ -257,13 +291,7 @@ export default function HomePage() {
                   product={p}
                   inWishlist={wishlistIds.has(p.id)}
                   onClick={id => setSelectedProduct(products.find(x => x.id === id))}
-                  onWishlist={id => {
-                    setWishlistIds(prev => {
-                      const next = new Set(prev);
-                      next.has(id) ? next.delete(id) : next.add(id);
-                      return next;
-                    });
-                  }}
+                  onWishlist={handleWishlist}
                 />
               ))}
             </div>
@@ -271,7 +299,7 @@ export default function HomePage() {
           {isMobile && (
             <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
               <button
-                onClick={() => {}}
+                onClick={() => setFilterDrawerOpen(true)}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 22px', background: 'var(--ink)', color: 'var(--bg)', borderRadius: 999, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,.25)' }}>
                 <svg width={16} height={16} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={2}><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
                 ตัวกรอง
@@ -281,6 +309,14 @@ export default function HomePage() {
         </main>
       </div>
 
+      {filterDrawerOpen && (
+        <FilterDrawer
+          onClose={() => setFilterDrawerOpen(false)}
+          onFilter={setFilters}
+          initialFilters={filters}
+          resultCount={products.length}
+        />
+      )}
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       {listingOpen && <ListingFlow onClose={() => setListingOpen(false)} />}
       {hubOpen && (
