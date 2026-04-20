@@ -9,6 +9,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { AuthModal } from '@/components/AuthModal';
 import { ProductDetail } from '@/components/ProductDetail';
 import { ListingFlow } from '@/components/ListingFlow';
+import { MyHub } from '@/components/MyHub';
 import * as api from '@/lib/api';
 
 const MONEY_RAIL = [
@@ -47,6 +48,7 @@ export default function HomePage() {
   const [sort, setSort] = useState('newest');
   const [authOpen, setAuthOpen] = useState(false);
   const [listingOpen, setListingOpen] = useState(false);
+  const [hubOpen, setHubOpen] = useState(false);
   const [filters, setFilters] = useState<any>({});
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -83,6 +85,11 @@ export default function HomePage() {
         onSearch={setSearch}
         onOpenAuth={() => setAuthOpen(true)}
         onOpenListing={openListing}
+        onOpenHub={(mode) => {
+          if (!session) { setAuthOpen(true); return; }
+          if (mode === 'sell') setHubOpen(true);
+          else setAuthOpen(true);
+        }}
       />
 
       {/* Main wrapper */}
@@ -276,6 +283,12 @@ export default function HomePage() {
 
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       {listingOpen && <ListingFlow onClose={() => setListingOpen(false)} />}
+      {hubOpen && (
+        <MyHub
+          onClose={() => setHubOpen(false)}
+          onNewListing={() => { setHubOpen(false); setListingOpen(true); }}
+        />
+      )}
       {selectedProduct && (
         <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
       )}

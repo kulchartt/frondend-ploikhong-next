@@ -145,11 +145,12 @@ export function Navbar({ onSearch, onOpenAuth, onOpenChat, onOpenHub, onOpenList
                     <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{session.user.email}</div>
                   </div>
                   {[
-                    { label: 'สินค้าของฉัน', icon: <Store size={14} /> },
-                    { label: 'การซื้อของฉัน', icon: <ShoppingBag size={14} /> },
-                    { label: 'รายการถูกใจ', icon: <Heart size={14} /> },
-                  ].map(({ label, icon }) => (
+                    { label: 'สินค้าของฉัน', icon: <Store size={14} />, action: () => onOpenHub?.('sell') },
+                    { label: 'การซื้อของฉัน', icon: <ShoppingBag size={14} />, action: () => onOpenHub?.('buy') },
+                    { label: 'รายการถูกใจ',   icon: <Heart size={14} />,    action: () => onOpenHub?.('buy') },
+                  ].map(({ label, icon, action }) => (
                     <button key={label}
+                      onClick={() => { setDropdownOpen(false); action?.(); }}
                       style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                         padding: '10px 14px', background: 'none', border: 'none',
                         fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer', textAlign: 'left' }}
