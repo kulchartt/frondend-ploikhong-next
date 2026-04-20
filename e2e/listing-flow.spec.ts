@@ -222,7 +222,7 @@ test.describe('Listing Flow', () => {
     await page.route('**/api/products', r => r.fulfill({ json: { id: 99, title: 'iPhone 14 Pro' } }));
     await goToStep4(page);
     await page.getByTestId('listing-post-btn').click();
-    await expect(page.getByText('โพสต์สำเร็จแล้ว!')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('โพสต์สำเร็จเรียบร้อย')).toBeVisible({ timeout: 10000 });
   });
 
   test('step 4: upload failure shows error message', async ({ page }) => {
@@ -253,7 +253,7 @@ test.describe('Listing Flow', () => {
     await page.route('**/api/products', r => r.fulfill({ json: { id: 99 } }));
     await goToStep4(page);
     await page.getByTestId('listing-post-btn').click();
-    await expect(page.getByText('โพสต์สำเร็จแล้ว!')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('โพสต์สำเร็จเรียบร้อย')).toBeVisible({ timeout: 10000 });
     expect(uploadCalled).toBe(true);
   });
 
@@ -274,7 +274,7 @@ test.describe('Listing Flow', () => {
     );
 
     await page.getByTestId('listing-post-btn').click();
-    await expect(page.getByText('โพสต์สำเร็จแล้ว!')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('โพสต์สำเร็จเรียบร้อย')).toBeVisible({ timeout: 10000 });
 
     // loadProducts() must have fired (the GET should be intercepted)
     await refreshPromise;
@@ -291,7 +291,7 @@ test.describe('Listing Flow', () => {
     await page.getByTestId('listing-post-btn').click();
     // Button should be disabled right after click (posting = true)
     await expect(page.getByTestId('listing-post-btn')).toBeDisabled();
-    await expect(page.getByText('โพสต์สำเร็จแล้ว!')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('โพสต์สำเร็จเรียบร้อย')).toBeVisible({ timeout: 10000 });
   });
 
   // ─── Close button in header ────────────────────────────────────────────────

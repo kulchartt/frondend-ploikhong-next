@@ -201,9 +201,9 @@ export function ListingFlow({ onClose, onPosted }: ListingFlowProps) {
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ background: 'var(--surface)', borderRadius: 16, padding: '48px 40px', textAlign: 'center', maxWidth: 360 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>โพสต์สำเร็จแล้ว!</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>โพสต์สำเร็จเรียบร้อย</div>
           <div style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.6 }}>
-            ประกาศของคุณกำลังแสดงบนฟีด{form.boost ? ' พร้อม Boost 48 ชม.' : ''} สุ่มขายกันเลย!
+            ประกาศของคุณกำลังแสดงบนฟีดแล้ว{form.boost ? ' พร้อม Boost 48 ชม.' : ''}
           </div>
         </div>
       </div>
