@@ -57,6 +57,7 @@ export function ProductDetail({ product, onClose, onViewShop }: ProductDetailPro
   const token: string | undefined = (session as any)?.token;
   const isMobile = useBreakpoint(768);
   const [imgIdx, setImgIdx] = useState(0);
+  const [chatOpen, setChatOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [draft, setDraft] = useState('');
   const [typing, setTyping] = useState(false);
@@ -209,6 +210,7 @@ export function ProductDetail({ product, onClose, onViewShop }: ProductDetailPro
 
         {/* Close */}
         <button onClick={onClose}
+          data-testid="pd-close"
           style={{
             position: 'absolute', top: 12, right: 12, zIndex: 10,
             width: 36, height: 36, borderRadius: '50%',
@@ -364,88 +366,24 @@ export function ProductDetail({ product, onClose, onViewShop }: ProductDetailPro
             </div>
           </div>
 
-          {/* Chat section */}
-          <div style={{ display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--line)' }}>
-            <div style={{ padding: '16px 26px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)' }}>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, letterSpacing: '-.005em' }}>คุยกับผู้ขาย</div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>ออนไลน์ · ปลอดภัยกว่าใช้เบอร์โทร</span>
-            </div>
-
-            {/* Messages */}
-            <div ref={chatRef}
-              style={{ maxHeight: isMobile ? 200 : 280, overflowY: 'auto', padding: '14px 20px', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-
-              {/* Product pin */}
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: 10, marginBottom: 4 }}>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <div style={{ width: 42, height: 42, borderRadius: 'var(--radius-sm)', background: `linear-gradient(135deg, ${tints[0]}, ${tints[1]})`, flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{product.title}</div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, marginTop: 2 }}>฿{Number(price).toLocaleString()}</div>
-                  </div>
-                </div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', textAlign: 'center', marginTop: 6, paddingTop: 6, borderTop: '1px dashed var(--line)', letterSpacing: '.06em', textTransform: 'uppercase' }}>เริ่มคุยเกี่ยวกับสินค้านี้</div>
-              </div>
-
-              {msgs.map((m, i) => (
-                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: '85%', alignSelf: m.who === 'me' ? 'flex-end' : 'flex-start', flexDirection: m.who === 'me' ? 'row-reverse' : 'row' }}>
-                  {m.who === 'seller' && (
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 600, flexShrink: 0 }}>{sellerInitial}</div>
-                  )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: m.who === 'me' ? 'flex-end' : 'flex-start' }}>
-                    <div style={{
-                      padding: '9px 13px', borderRadius: 16, fontSize: 13.5, lineHeight: 1.45, wordBreak: 'break-word',
-                      background: m.who === 'me' ? 'var(--accent)' : 'var(--surface)',
-                      color: m.who === 'me' ? '#fff' : 'var(--ink)',
-                      border: m.who === 'me' ? 'none' : '1px solid var(--line)',
-                      borderBottomRightRadius: m.who === 'me' ? 4 : 16,
-                      borderBottomLeftRadius: m.who === 'seller' ? 4 : 16,
-                    }}>{m.text}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', padding: '0 6px' }}>{m.time}</div>
-                  </div>
-                </div>
-              ))}
-
-              {typing && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: '85%' }}>
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 600, flexShrink: 0 }}>{sellerInitial}</div>
-                  <div style={{ padding: '12px 14px', borderRadius: 16, borderBottomLeftRadius: 4, background: 'var(--surface)', border: '1px solid var(--line)', display: 'flex', gap: 4, alignItems: 'center' }}>
-                    {[0, 150, 300].map(d => (
-                      <span key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ink-3)', display: 'inline-block', animation: `bop 1.2s ${d}ms infinite ease-in-out` }} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Quick replies */}
-            <div style={{ display: 'flex', gap: 6, padding: '10px 16px', overflowX: 'auto', background: 'var(--surface)', borderTop: '1px solid var(--line)', scrollbarWidth: 'none' }}>
-              {QUICK.map(q => (
-                <button key={q} onClick={() => send(q)}
-                  style={{ whiteSpace: 'nowrap', padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 999, fontSize: 12, color: 'var(--ink-2)', background: 'var(--surface)', cursor: 'pointer' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--ink)'; e.currentTarget.style.color = 'var(--ink)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.color = 'var(--ink-2)'; }}>
-                  {q}
-                </button>
-              ))}
-            </div>
-
-            {/* Input */}
-            <form onSubmit={e => { e.preventDefault(); send(draft); }}
-              style={{ display: 'flex', gap: 8, padding: '12px 16px', alignItems: 'center', background: 'var(--surface)', borderTop: '1px solid var(--line)' }}>
-              <button type="button" style={{ padding: 8, color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-sm)', display: 'flex' }}>
-                <svg width={18} height={18} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
-                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5-11 11"/>
-                </svg>
-              </button>
-              <input value={draft} onChange={e => setDraft(e.target.value)}
-                placeholder="พิมพ์ข้อความ..."
-                style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--line)', borderRadius: 999, background: 'var(--surface-2)', fontFamily: 'inherit', fontSize: 13.5, color: 'var(--ink)', outline: 'none' }} />
-              <button type="submit" disabled={!draft.trim()}
-                style={{ padding: '8px 18px', background: draft.trim() ? 'var(--accent)' : 'var(--line)', color: draft.trim() ? '#fff' : 'var(--ink-3)', border: 'none', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: draft.trim() ? 'pointer' : 'not-allowed', transition: '.15s' }}>
-                ส่ง
-              </button>
-            </form>
+          {/* Chat CTA button */}
+          <div style={{ padding: isMobile ? '14px 18px' : '16px 26px', borderBottom: '1px solid var(--line)' }}>
+            <button
+              data-testid="pd-chat-btn"
+              onClick={() => setChatOpen(true)}
+              style={{
+                width: '100%', padding: '14px 0',
+                background: 'var(--accent)', color: '#fff',
+                border: 'none', borderRadius: 'var(--radius-sm)',
+                fontSize: 15, fontWeight: 700, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                fontFamily: 'inherit',
+              }}>
+              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              แชทกับผู้ขาย
+            </button>
           </div>
 
           {/* Related from seller */}
@@ -465,6 +403,116 @@ export function ProductDetail({ product, onClose, onViewShop }: ProductDetailPro
           </div>
         </section>
       </div>
+
+      {/* ── Chat popup ── */}
+      {chatOpen && (
+        <div
+          data-testid="pd-chat-popup"
+          onClick={e => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            bottom: isMobile ? 0 : 24,
+            right: isMobile ? 0 : 24,
+            left: isMobile ? 0 : 'auto',
+            width: isMobile ? '100%' : 360,
+            maxHeight: isMobile ? '70vh' : 480,
+            background: 'var(--surface)',
+            border: isMobile ? 'none' : '1px solid var(--line)',
+            borderRadius: isMobile ? '16px 16px 0 0' : 16,
+            boxShadow: '0 20px 60px rgba(0,0,0,.3)',
+            zIndex: 310,
+            display: 'flex', flexDirection: 'column',
+            animation: 'slideUp .2s cubic-bezier(.2,.8,.2,1)',
+          }}>
+          {/* Popup header */}
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 13, color: 'var(--ink)', flexShrink: 0 }}>
+              {sellerInitial}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{product.seller_name ?? 'ผู้ขาย'}</div>
+              <div style={{ fontSize: 12, color: 'var(--pos)' }}>ออนไลน์อยู่</div>
+            </div>
+            <button
+              data-testid="pd-chat-close"
+              onClick={() => setChatOpen(false)}
+              style={{ width: 30, height: 30, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%', flexShrink: 0 }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div ref={chatRef} style={{ flex: 1, overflowY: 'auto', padding: '14px 16px', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Product pin */}
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: 10, marginBottom: 4 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <div style={{ width: 42, height: 42, borderRadius: 'var(--radius-sm)', background: `linear-gradient(135deg, ${tints[0]}, ${tints[1]})`, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', color: 'var(--ink)' }}>{product.title}</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, marginTop: 2, color: 'var(--ink)' }}>฿{Number(price).toLocaleString()}</div>
+                </div>
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', textAlign: 'center', marginTop: 6, paddingTop: 6, borderTop: '1px dashed var(--line)', letterSpacing: '.06em', textTransform: 'uppercase' }}>เริ่มคุยเกี่ยวกับสินค้านี้</div>
+            </div>
+
+            {msgs.map((m, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: '85%', alignSelf: m.who === 'me' ? 'flex-end' : 'flex-start', flexDirection: m.who === 'me' ? 'row-reverse' : 'row' }}>
+                {m.who === 'seller' && (
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 600, flexShrink: 0, color: 'var(--ink)' }}>{sellerInitial}</div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: m.who === 'me' ? 'flex-end' : 'flex-start' }}>
+                  <div style={{
+                    padding: '9px 13px', borderRadius: 16, fontSize: 13.5, lineHeight: 1.45, wordBreak: 'break-word',
+                    background: m.who === 'me' ? 'var(--accent)' : 'var(--surface)',
+                    color: m.who === 'me' ? '#fff' : 'var(--ink)',
+                    border: m.who === 'me' ? 'none' : '1px solid var(--line)',
+                    borderBottomRightRadius: m.who === 'me' ? 4 : 16,
+                    borderBottomLeftRadius: m.who === 'seller' ? 4 : 16,
+                  }}>{m.text}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', padding: '0 6px' }}>{m.time}</div>
+                </div>
+              </div>
+            ))}
+
+            {typing && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: '85%' }}>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 600, flexShrink: 0, color: 'var(--ink)' }}>{sellerInitial}</div>
+                <div style={{ padding: '12px 14px', borderRadius: 16, borderBottomLeftRadius: 4, background: 'var(--surface)', border: '1px solid var(--line)', display: 'flex', gap: 4, alignItems: 'center' }}>
+                  {[0, 150, 300].map(d => (
+                    <span key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ink-3)', display: 'inline-block', animation: `bop 1.2s ${d}ms infinite ease-in-out` }} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quick replies */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 12px', flexShrink: 0, borderTop: '1px solid var(--line)', background: 'var(--surface)' }}>
+            {QUICK.map(q => (
+              <button key={q} onClick={() => send(q)}
+                style={{ padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 999, fontSize: 12, color: 'var(--ink-2)', background: 'var(--surface)', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--ink)'; e.currentTarget.style.color = 'var(--ink)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.color = 'var(--ink-2)'; }}>
+                {q}
+              </button>
+            ))}
+          </div>
+
+          {/* Input */}
+          <form onSubmit={e => { e.preventDefault(); send(draft); }}
+            style={{ display: 'flex', gap: 8, padding: '10px 12px', alignItems: 'center', background: 'var(--surface)', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
+            <input
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              placeholder="พิมพ์ข้อความ..."
+              style={{ flex: 1, padding: '9px 14px', border: '1px solid var(--line)', borderRadius: 999, background: 'var(--surface-2)', fontFamily: 'inherit', fontSize: 13, color: 'var(--ink)', outline: 'none' }} />
+            <button type="submit" disabled={!draft.trim()}
+              style={{ padding: '8px 16px', background: draft.trim() ? 'var(--accent)' : 'var(--line)', color: draft.trim() ? '#fff' : 'var(--ink-3)', border: 'none', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: draft.trim() ? 'pointer' : 'not-allowed', transition: '.15s', fontFamily: 'inherit' }}>
+              ส่ง
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

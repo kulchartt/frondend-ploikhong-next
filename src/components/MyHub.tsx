@@ -926,7 +926,10 @@ function BuySaved({ token, onOpenChat, onViewProduct }: { token?: string; onOpen
                       <button onClick={() => onOpenChat?.()} style={{ flex: 1, padding: '7px 0', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                         แชทกับผู้ขาย
                       </button>
-                      <button onClick={() => onViewProduct?.(p)} style={{ flex: 1, padding: '7px 0', background: 'none', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <button onClick={() => onViewProduct?.({
+                        ...p,
+                        images: p.images?.length ? p.images : (p.image_url ? [p.image_url] : []),
+                      })} style={{ flex: 1, padding: '7px 0', background: 'none', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
                         ดูสินค้า
                       </button>
                     </div>

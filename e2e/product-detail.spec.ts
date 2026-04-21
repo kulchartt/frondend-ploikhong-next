@@ -92,13 +92,32 @@ test.describe('Product Detail', () => {
 
   // ─── Chat ──────────────────────────────────────────────────────────────────
 
-  test('modal shows initial chat messages', async ({ page }) => {
+  async function openProductChat(page: any) {
     await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
+    await page.getByTestId('pd-chat-btn').click();
+  }
+
+  test('"แชทกับผู้ขาย" button opens chat popup', async ({ page }) => {
+    await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
+    await expect(page.getByTestId('pd-chat-popup')).not.toBeVisible();
+    await page.getByTestId('pd-chat-btn').click();
+    await expect(page.getByTestId('pd-chat-popup')).toBeVisible();
+  });
+
+  test('chat popup close button hides the popup', async ({ page }) => {
+    await openProductChat(page);
+    await expect(page.getByTestId('pd-chat-popup')).toBeVisible();
+    await page.getByTestId('pd-chat-close').click();
+    await expect(page.getByTestId('pd-chat-popup')).not.toBeVisible();
+  });
+
+  test('modal shows initial chat messages', async ({ page }) => {
+    await openProductChat(page);
     await expect(page.getByText('สวัสดีครับ สินค้ายังว่างนะครับ')).toBeVisible();
   });
 
   test('sending a message appends it to chat', async ({ page }) => {
-    await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
+    await openProductChat(page);
     const input = page.getByPlaceholder('พิมพ์ข้อความ...');
     await input.fill('สนใจมากครับ');
     await page.getByRole('button', { name: 'ส่ง' }).click();
@@ -106,19 +125,19 @@ test.describe('Product Detail', () => {
   });
 
   test('send button is disabled when input is empty', async ({ page }) => {
-    await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
+    await openProductChat(page);
     const sendBtn = page.getByRole('button', { name: 'ส่ง' });
     await expect(sendBtn).toBeDisabled();
   });
 
   test('quick reply "ยังว่างไหมครับ?" sends a message', async ({ page }) => {
-    await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
+    await openProductChat(page);
     await page.getByRole('button', { name: 'ยังว่างไหมครับ?' }).click();
     await expect(page.getByText('ยังว่างไหมครับ?').last()).toBeVisible();
   });
 
   test('seller typing indicator appears after sending', async ({ page }) => {
-    await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
+    await openProductChat(page);
     const input = page.getByPlaceholder('พิมพ์ข้อความ...');
     await input.fill('สวัสดีครับ');
     await page.getByRole('button', { name: 'ส่ง' }).click();
@@ -127,7 +146,7 @@ test.describe('Product Detail', () => {
   });
 
   test('seller auto-reply appears within 3 seconds', async ({ page }) => {
-    await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
+    await openProductChat(page);
     await page.getByRole('button', { name: 'ลดราคาได้ไหม?' }).click();
     await expect(page.getByText('เดี๋ยวตอบให้นะครับ')).toBeVisible({ timeout: 3000 });
   });

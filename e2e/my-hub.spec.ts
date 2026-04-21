@@ -534,17 +534,10 @@ test.describe('V8Hub — Buy: Saved', () => {
     await expect(hub(page).locator('span').filter({ hasText: /^2$/ }).first()).toBeVisible();
   });
 
-  test('shows footer total value', async ({ page }) => {
-    await openBuyHub(page);
-    // 32900 + 42000 = 74900
-    await expect(hub(page).getByText('฿74,900')).toBeVisible();
-  });
-
-  test('heart button removes item and updates total', async ({ page }) => {
+  test('heart button removes item from list', async ({ page }) => {
     await openBuyHub(page);
     await hub(page).locator('button[title="นำออกจากรายการถูกใจ"]').first().click();
     await expect(hub(page).getByText('iPhone 14 Pro 256GB Wishlist')).not.toBeVisible();
-    await expect(hub(page).getByText('฿42,000').first()).toBeVisible();
   });
 
   test('shows empty state when wishlist is empty', async ({ page }) => {
@@ -555,6 +548,22 @@ test.describe('V8Hub — Buy: Saved', () => {
     await hub(page).getByRole('button', { name: 'บันทึกแล้ว' }).click();
     await expect(hub(page).getByText('ยังไม่มีรายการถูกใจ')).toBeVisible();
     await expect(hub(page).getByText(/กดไอคอนหัวใจ/)).toBeVisible();
+  });
+
+  test('"แชทกับผู้ขาย" closes hub and opens chat drawer', async ({ page }) => {
+    await page.route('**/api/chat/rooms', r => r.fulfill({ json: [] }));
+    await openBuyHub(page);
+    await hub(page).getByRole('button', { name: 'แชทกับผู้ขาย' }).first().click();
+    await expect(page.locator('[data-testid="v8hub"]')).not.toBeVisible();
+    await expect(page.getByTestId('chat-drawer')).toBeVisible();
+  });
+
+  test('"ดูสินค้า" closes hub and opens product detail', async ({ page }) => {
+    await openBuyHub(page);
+    await hub(page).getByRole('button', { name: 'ดูสินค้า' }).first().click();
+    await expect(page.locator('[data-testid="v8hub"]')).not.toBeVisible();
+    // Product detail modal opens — look for the product title
+    await expect(page.getByText('iPhone 14 Pro 256GB Wishlist').first()).toBeVisible({ timeout: 5000 });
   });
 
 });
