@@ -74,20 +74,44 @@ test.describe('Product Detail', () => {
     await expect(page.getByText(/1 \/ \d+/)).toBeVisible();
   });
 
-  test('gallery shows 4 thumbnails when images has 1 entry (pads to 4)', async ({ page }) => {
+  test('gallery shows 4 thumbnails when product has 4 images', async ({ page }) => {
+    await page.route('**/api/products*', r => r.fulfill({
+      json: [{ ...MOCK_PRODUCTS[0],
+        images: [
+          'https://placekitten.com/400/400',
+          'https://placekitten.com/401/401',
+          'https://placekitten.com/402/402',
+          'https://placekitten.com/403/403',
+        ],
+      }],
+    }));
+    await page.goto('/');
+    await expect(page.getByText('iPhone 14 Pro 256GB สีม่วง')).toBeVisible();
     await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
-    // Thumbnail row: 4 buttons in the thumbnail strip
-    const thumbs = page.locator('[style*="width: 70px"]');
-    await expect(thumbs).toHaveCount(4);
+    const strip = page.getByTestId('thumb-strip');
+    await expect(strip.locator('button')).toHaveCount(4);
+  });
+
+  test('gallery shows 1 thumbnail when product has 1 image', async ({ page }) => {
+    await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
+    const strip = page.getByTestId('thumb-strip');
+    await expect(strip.locator('button')).toHaveCount(1);
   });
 
   test('clicking thumbnail changes active thumbnail border', async ({ page }) => {
-    await page.getByText('iPhone 14 Pro 256GB สีM').click();
-    const thumbs = page.locator('[style*="width: 70px"]');
-    await thumbs.nth(1).click();
-    // Second thumb should now have ink border
-    const secondThumb = thumbs.nth(1);
-    await expect(secondThumb).toHaveCSS('border-style', 'solid');
+    await page.route('**/api/products*', r => r.fulfill({
+      json: [{ ...MOCK_PRODUCTS[0],
+        images: [
+          'https://placekitten.com/400/400',
+          'https://placekitten.com/401/401',
+        ],
+      }],
+    }));
+    await page.goto('/');
+    await expect(page.getByText('iPhone 14 Pro 256GB สีม่วง')).toBeVisible();
+    await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
+    await page.getByTestId('thumb-1').click();
+    await expect(page.getByTestId('thumb-1')).toHaveCSS('border-style', 'solid');
   });
 
   // ─── Chat ──────────────────────────────────────────────────────────────────
@@ -118,37 +142,38 @@ test.describe('Product Detail', () => {
 
   test('sending a message appends it to chat', async ({ page }) => {
     await openProductChat(page);
-    const input = page.getByPlaceholder('พิมพ์ข้อความ...');
-    await input.fill('สนใจมากครับ');
-    await page.getByRole('button', { name: 'ส่ง' }).click();
-    await expect(page.getByText('สนใจมากครับ')).toBeVisible();
+    const popup = page.getByTestId('pd-chat-popup');
+    await popup.getByPlaceholder('พิมพ์ข้อความ...').fill('สนใจมากครับ');
+    await popup.getByRole('button', { name: 'ส่ง', exact: true }).click();
+    await expect(popup.getByText('สนใจมากครับ')).toBeVisible();
   });
 
   test('send button is disabled when input is empty', async ({ page }) => {
     await openProductChat(page);
-    const sendBtn = page.getByRole('button', { name: 'ส่ง' });
+    const sendBtn = page.getByTestId('pd-chat-popup').getByRole('button', { name: 'ส่ง', exact: true });
     await expect(sendBtn).toBeDisabled();
   });
 
   test('quick reply "ยังว่างไหมครับ?" sends a message', async ({ page }) => {
     await openProductChat(page);
-    await page.getByRole('button', { name: 'ยังว่างไหมครับ?' }).click();
-    await expect(page.getByText('ยังว่างไหมครับ?').last()).toBeVisible();
+    const popup = page.getByTestId('pd-chat-popup');
+    await popup.getByRole('button', { name: 'ยังว่างไหมครับ?' }).click();
+    await expect(popup.getByText('ยังว่างไหมครับ?').last()).toBeVisible();
   });
 
   test('seller typing indicator appears after sending', async ({ page }) => {
     await openProductChat(page);
-    const input = page.getByPlaceholder('พิมพ์ข้อความ...');
-    await input.fill('สวัสดีครับ');
-    await page.getByRole('button', { name: 'ส่ง' }).click();
-    // Typing indicator: 3 animated dots in a bubble
+    const popup = page.getByTestId('pd-chat-popup');
+    await popup.getByPlaceholder('พิมพ์ข้อความ...').fill('สวัสดีครับ');
+    await popup.getByRole('button', { name: 'ส่ง', exact: true }).click();
     await expect(page.locator('[style*="bop"]').first()).toBeVisible({ timeout: 500 });
   });
 
   test('seller auto-reply appears within 3 seconds', async ({ page }) => {
     await openProductChat(page);
-    await page.getByRole('button', { name: 'ลดราคาได้ไหม?' }).click();
-    await expect(page.getByText('เดี๋ยวตอบให้นะครับ')).toBeVisible({ timeout: 3000 });
+    const popup = page.getByTestId('pd-chat-popup');
+    await popup.getByRole('button', { name: 'ลดราคาได้ไหม?' }).click();
+    await expect(popup.getByText('เดี๋ยวตอบให้นะครับ')).toBeVisible({ timeout: 3000 });
   });
 
   // ─── Closing ───────────────────────────────────────────────────────────────

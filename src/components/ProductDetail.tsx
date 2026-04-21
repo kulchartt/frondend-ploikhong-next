@@ -269,12 +269,12 @@ export function ProductDetail({ product, onClose, onViewShop }: ProductDetailPro
           </div>
 
           {/* Thumbnails */}
-          <div style={{
+          <div data-testid="thumb-strip" style={{
             display: 'flex', gap: 8, padding: 12,
             background: 'var(--surface)', borderTop: '1px solid var(--line)',
           }}>
             {imgs.map((img, i) => (
-              <button key={i} onClick={() => setImgIdx(i)}
+              <button key={i} data-testid={`thumb-${i}`} onClick={() => setImgIdx(i)}
                 style={{
                   width: isMobile ? 54 : 70, height: isMobile ? 54 : 70, borderRadius: 'var(--radius-sm)',
                   border: `2px solid ${i === imgIdx ? 'var(--ink)' : 'transparent'}`,
