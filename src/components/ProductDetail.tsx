@@ -374,8 +374,8 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer }
               onClick={() => setChatOpen(true)}
               style={{
                 width: '100%', padding: '14px 0',
-                background: 'rgba(255,45,31,.07)', color: 'var(--accent)',
-                border: '1.5px solid rgba(255,45,31,.22)', borderRadius: 'var(--radius-sm)',
+                background: 'var(--surface-2)', color: 'var(--ink)',
+                border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)',
                 fontSize: 15, fontWeight: 700, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 fontFamily: 'inherit',

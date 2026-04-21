@@ -128,19 +128,19 @@ test.describe('Product Detail', () => {
     await expect(page.getByTestId('pd-chat-popup')).toBeVisible();
   });
 
-  test('chat CTA button has soft ghost background (not solid accent)', async ({ page }) => {
+  test('chat CTA button has neutral (non-red) color', async ({ page }) => {
     await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
     const btn = page.getByTestId('pd-chat-btn');
-    // Should NOT be solid white or solid accent — background should contain rgba with low opacity
-    const bg = await btn.evaluate(el => getComputedStyle(el).backgroundColor);
-    // rgba(255, 45, 31, 0.07) — alpha < 0.5, not fully opaque
-    const alphaMatch = bg.match(/rgba\(\s*\d+,\s*\d+,\s*\d+,\s*([\d.]+)\s*\)/);
-    if (alphaMatch) {
-      expect(parseFloat(alphaMatch[1])).toBeLessThan(0.5);
-    }
-    // Text color should be accent-like (red-ish), not white
+    // Text color should not be red (accent)
     const color = await btn.evaluate(el => getComputedStyle(el).color);
-    expect(color).not.toBe('rgb(255, 255, 255)');
+    // accent red is roughly rgb(255, 45, 31) — red channel >> green/blue
+    const match = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    if (match) {
+      const [, r, g, b] = match.map(Number);
+      // Not strongly red: red channel should not dominate by >100 over both green and blue
+      expect(r - g).toBeLessThan(100);
+      expect(r - b).toBeLessThan(100);
+    }
   });
 
   test('chat popup shows product image when product has an image', async ({ page }) => {
