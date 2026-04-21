@@ -43,11 +43,11 @@ function IconClose() {
     </svg>
   );
 }
-function IconCompose() {
+function IconNewChat() {
   return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 20h9"/>
-      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      <path d="M12 10v4M10 12h4"/>
     </svg>
   );
 }
@@ -307,15 +307,16 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
           }}>
 
             {/* Header */}
-            <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ flex: 1, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--ink)' }}>แชท</span>
-              <button style={{ width: 30, height: 30, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%' }}>
-                <IconCompose />
-              </button>
+            <div style={{ padding: '14px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <button
                 onClick={onClose}
-                style={{ width: 30, height: 30, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%' }}>
-                <IconClose />
+                style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%', flexShrink: 0 }}
+                aria-label="กลับ">
+                <IconBack />
+              </button>
+              <h1 style={{ flex: 1, margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--ink)', letterSpacing: '-0.01em' }}>แชท</h1>
+              <button style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%' }}>
+                <IconNewChat />
               </button>
             </div>
 
@@ -370,7 +371,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
               {token && loadingRooms && (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {[1,2,3].map(i => (
-                    <div key={i} style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <div key={i} style={{ padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'center' }}>
                       <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surface-2)', flexShrink: 0 }} />
                       <div style={{ flex: 1 }}>
                         <div style={{ height: 13, width: '55%', background: 'var(--surface-2)', borderRadius: 4, marginBottom: 6 }} />
@@ -400,9 +401,8 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                     data-testid={`room-${room.id}`}
                     onClick={() => setSelectedRoom(room)}
                     style={{
-                      width: '100%', padding: '14px 12px', border: 'none', cursor: 'pointer', textAlign: 'left',
+                      width: '100%', padding: '12px 12px', border: 'none', cursor: 'pointer', textAlign: 'left',
                       background: isSelected ? '#fff5f5' : 'var(--surface)',
-                      borderBottom: '1px solid var(--line)',
                       display: 'flex', gap: 10, alignItems: 'center',
                       transition: 'background .12s',
                     }}
@@ -668,7 +668,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
             background: 'var(--surface)',
           }}>
             {/* Profile hero */}
-            <div style={{ padding: '24px 16px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, borderBottom: '1px solid var(--line)' }}>
+            <div style={{ padding: '24px 16px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
               <div style={{
                 width: 96, height: 96, borderRadius: '50%',
                 background: `linear-gradient(135deg,${tints[0]},${tints[1]})`,
@@ -681,8 +681,8 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
             </div>
 
             {/* สินค้าที่คุยกันอยู่ */}
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase' as const, letterSpacing: '.06em', marginBottom: 10 }}>สินค้าที่คุยกันอยู่</div>
+            <div style={{ padding: '0 16px 16px' }}>
+              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>สินค้าที่คุยกันอยู่</h4>
               {selectedRoom.product_image ? (
                 <div style={{
                   width: '100%', height: 180, borderRadius: 'var(--radius)',
@@ -708,8 +708,8 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
             </div>
 
             {/* การดำเนินการ */}
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase' as const, letterSpacing: '.06em', marginBottom: 6 }}>การดำเนินการ</div>
+            <div style={{ padding: '14px 16px 8px' }}>
+              <h4 style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>การดำเนินการ</h4>
               {[
                 { icon: '📎', label: 'ไฟล์ที่แชร์', color: 'var(--ink-2)' },
                 { icon: '🔕', label: 'ปิดการแจ้งเตือน', color: 'var(--ink-2)' },
@@ -732,7 +732,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
 
             {/* สินค้าอื่นจากผู้ขาย */}
             <div style={{ padding: '14px 16px 20px' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase' as const, letterSpacing: '.06em', marginBottom: 10 }}>สินค้าอื่นจากผู้ขาย</div>
+              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>สินค้าอื่นจากผู้ขาย</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {[
                   { t: 'iPhone 15 Pro 256GB สีดำ', p: 38900, idx: 0 },
