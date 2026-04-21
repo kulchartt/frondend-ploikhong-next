@@ -74,114 +74,145 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
   const setTab = (t: string) => mode === 'sell' ? setSellTab(t) : setBuyTab(t);
 
   return (
-    <div data-testid="v8hub" style={{ position: 'fixed', inset: 0, background: 'var(--bg)', zIndex: 190, display: 'flex', flexDirection: 'column' }}>
+    <div data-testid="v8hub" style={{ position: 'fixed', inset: 0, background: 'var(--bg)', zIndex: 190, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
         @keyframes fadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
         @keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
       `}</style>
 
-      {/* ── Top bar (mobile: full header; desktop: logo row) ── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: isMobile ? '14px 16px' : '14px 20px',
-        background: 'var(--surface)', borderBottom: '1px solid var(--line)',
-        flexShrink: 0,
-      }}>
-        <button onClick={onClose}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', fontSize: 13, padding: '6px 10px', borderRadius: 'var(--radius-sm)', flexShrink: 0 }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
-          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
-          {!isMobile && 'Marketplace'}
-        </button>
-
-        {/* Mode switch */}
-        <div style={{
-          display: 'flex', borderRadius: 'var(--radius-sm)',
-          border: '1px solid var(--line)', background: 'var(--surface-2)',
-          overflow: 'hidden', flexShrink: 0,
-        }}>
-          {(['sell', 'buy'] as const).map(m => (
-            <button key={m} onClick={() => setMode(m)}
-              style={{
-                padding: isMobile ? '7px 16px' : '7px 20px', border: 'none', cursor: 'pointer',
-                fontSize: 13, fontWeight: 600,
-                background: mode === m ? 'var(--ink)' : 'transparent',
-                color: mode === m ? 'var(--bg)' : 'var(--ink-2)',
-                transition: '.15s',
-              }}>
-              {m === 'sell' ? 'ขาย' : 'ซื้อ'}
-            </button>
-          ))}
+      {/* ── Mobile top bar: back + mode tabs ── */}
+      {isMobile && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+          <button onClick={onClose}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', fontSize: 13, padding: '6px 0', flexShrink: 0 }}>
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', flex: 1 }}>
+            {(['sell', 'buy'] as const).map(m => (
+              <button key={m} onClick={() => setMode(m)}
+                style={{
+                  flex: 1, padding: '8px 0', border: 'none', background: 'none', cursor: 'pointer',
+                  fontSize: 15, fontWeight: mode === m ? 700 : 400,
+                  color: mode === m ? 'var(--ink)' : 'var(--ink-2)',
+                  borderBottom: mode === m ? '2px solid var(--ink)' : '2px solid transparent',
+                  marginBottom: -1, fontFamily: 'inherit',
+                }}>
+                {m === 'sell' ? 'ขาย' : 'ซื้อ'}
+              </button>
+            ))}
+          </div>
         </div>
+      )}
 
-        {/* Mobile: current tab label */}
-        {isMobile && (
-          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', flex: 1, textAlign: 'center' }}>
-            {nav.find(n => n.k === activeTab)?.label ?? ''}
-          </span>
-        )}
+      {/* ── Body: sidebar + content ── */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', maxWidth: 1440, width: '100%', margin: '0 auto', flexDirection: isMobile ? 'column' : 'row' }}>
 
-        <div style={{ marginLeft: 'auto' }}>
-          {mode === 'sell' && (
-            <button onClick={onNewListing}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M12 5v14M5 12h14"/></svg>
-              {isMobile ? 'ลงขายใหม่' : 'สร้างรายการสินค้าใหม่'}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── Body: sidebar + content (max-width container, centered) ── */}
-      <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)' }}>
-      <div style={{ maxWidth: 1440, margin: '0 auto', height: '100%', display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : undefined, gridTemplateColumns: isMobile ? undefined : '300px 1fr' }}>
-
-        {/* ── Sidebar (desktop) / Tab strip (mobile) ── */}
+        {/* ── Sidebar ── */}
         <aside style={{
+          width: isMobile ? '100%' : 280,
+          background: 'var(--surface)',
           borderRight: isMobile ? 'none' : '1px solid var(--line)',
           borderBottom: isMobile ? '1px solid var(--line)' : 'none',
-          background: 'var(--surface)',
-          display: 'flex', flexDirection: isMobile ? 'row' : 'column',
-          overflowX: isMobile ? 'auto' : 'hidden',
-          overflowY: isMobile ? 'hidden' : 'auto',
+          display: 'flex',
+          flexDirection: isMobile ? 'row' : 'column',
           flexShrink: 0,
-          scrollbarWidth: 'none',
-          padding: isMobile ? '0 8px' : '12px 0',
+          overflow: 'hidden',
         }}>
-          {nav.map(item => {
-            const active = activeTab === item.k;
-            return (
-              <button key={item.k} onClick={() => setTab(item.k)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: isMobile ? 0 : 12,
-                  padding: isMobile ? '10px 14px' : '10px 20px',
-                  background: active ? 'var(--surface-2)' : 'none',
-                  border: 'none',
-                  borderBottom: isMobile ? (active ? '2px solid var(--ink)' : '2px solid transparent') : 'none',
-                  borderLeft: isMobile ? 'none' : (active ? '3px solid var(--ink)' : '3px solid transparent'),
-                  cursor: 'pointer', fontSize: 13,
-                  fontWeight: active ? 600 : 400,
-                  color: active ? 'var(--ink)' : 'var(--ink-2)',
-                  whiteSpace: 'nowrap',
-                  borderRadius: isMobile ? 0 : undefined,
-                  transition: '.12s',
-                  textAlign: 'left',
-                }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--surface-2)'; }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'none'; }}>
-                {!isMobile && <NavIcon k={item.k} mode={mode} />}
-                {item.label}
+
+          {/* Desktop sidebar header: back + mode tabs */}
+          {!isMobile && (
+            <div style={{ padding: '20px 16px 0', flexShrink: 0 }}>
+              {/* Back button */}
+              <button onClick={onClose}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', fontSize: 13, padding: '4px 0', marginBottom: 18, fontFamily: 'inherit' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-2)')}>
+                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M15 18l-6-6 6-6"/></svg>
+                Marketplace
               </button>
-            );
-          })}
+
+              {/* Mode tabs: ขาย | ซื้อ */}
+              <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', marginBottom: 8 }}>
+                {(['sell', 'buy'] as const).map(m => (
+                  <button key={m} onClick={() => setMode(m)}
+                    style={{
+                      flex: 1, padding: '10px 0', border: 'none', background: 'none', cursor: 'pointer',
+                      fontSize: 15, fontWeight: mode === m ? 700 : 400,
+                      color: mode === m ? 'var(--ink)' : 'var(--ink-2)',
+                      borderBottom: mode === m ? '2px solid var(--ink)' : '2px solid transparent',
+                      marginBottom: -1, fontFamily: 'inherit', transition: '.12s',
+                    }}>
+                    {m === 'sell' ? 'ขาย' : 'ซื้อ'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Nav items */}
+          <div style={{
+            flex: 1,
+            overflowY: isMobile ? 'hidden' : 'auto',
+            overflowX: isMobile ? 'auto' : 'hidden',
+            display: 'flex',
+            flexDirection: isMobile ? 'row' : 'column',
+            scrollbarWidth: 'none',
+            padding: isMobile ? '0 8px' : '8px 8px 0',
+          }}>
+            {nav.map(item => {
+              const active = activeTab === item.k;
+              return (
+                <button key={item.k} onClick={() => setTab(item.k)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: isMobile ? 0 : 10,
+                    padding: isMobile ? '10px 14px' : '10px 12px',
+                    background: active ? 'rgba(255,45,31,.08)' : 'transparent',
+                    border: 'none',
+                    borderBottom: isMobile ? (active ? '2px solid var(--accent)' : '2px solid transparent') : 'none',
+                    borderRadius: isMobile ? 0 : 'var(--radius)',
+                    cursor: 'pointer', fontSize: 13,
+                    fontWeight: active ? 600 : 400,
+                    color: active ? 'var(--accent)' : 'var(--ink-2)',
+                    whiteSpace: 'nowrap',
+                    transition: '.12s',
+                    textAlign: 'left',
+                    flexShrink: 0,
+                    fontFamily: 'inherit',
+                  }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--surface-2)'; }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}>
+                  {!isMobile && <NavIcon k={item.k} mode={mode} active={active} />}
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Desktop: new listing button at bottom of sidebar */}
+          {!isMobile && mode === 'sell' && (
+            <div style={{ padding: '12px 12px 20px', flexShrink: 0 }}>
+              <button onClick={onNewListing}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '10px 0', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M12 5v14M5 12h14"/></svg>
+                สร้างรายการสินค้าใหม่
+              </button>
+            </div>
+          )}
         </aside>
 
         {/* ── Main content ── */}
-        <main style={{ flex: 1, background: 'var(--bg)', minWidth: 0 }}>
+        <main style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)', minWidth: 0 }}>
+          {/* Mobile: new listing button at top of content */}
+          {isMobile && mode === 'sell' && (
+            <div style={{ padding: '12px 16px 0' }}>
+              <button onClick={onNewListing}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '10px 0', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M12 5v14M5 12h14"/></svg>
+                สร้างรายการสินค้าใหม่
+              </button>
+            </div>
+          )}
           {mode === 'sell' && sellTab === 'listings'  && <SellListings token={token} onNewListing={onNewListing} />}
           {mode === 'sell' && sellTab === 'insights'  && <SellInsights token={token} />}
           {mode === 'sell' && sellTab === 'news'      && <SellNews />}
@@ -193,15 +224,14 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
           {mode === 'buy'  && buyTab === 'profile'       && <HubProfile session={session} mode="buy" />}
         </main>
       </div>
-      </div>
     </div>
   );
 }
 
 // ─── Nav icon helper ──────────────────────────────────────────────────────────
 
-function NavIcon({ k, mode }: { k: string; mode: string }) {
-  const ic: React.CSSProperties = { flexShrink: 0, display: 'block' };
+function NavIcon({ k, mode, active }: { k: string; mode: string; active?: boolean }) {
+  const ic: React.CSSProperties = { flexShrink: 0, display: 'block', color: active ? 'var(--accent)' : 'currentColor' };
   if (k === 'listings')  return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg>;
   if (k === 'insights')  return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>;
   if (k === 'news')      return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M4 6h16M4 10h12M4 14h8M4 18h6"/></svg>;
