@@ -186,7 +186,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
       .then(data => {
         const list = Array.isArray(data) ? data : [];
         setRooms(list);
-        if (list.length > 0 && !isMobile) setSelectedRoom(list[0]);
+        if (list.length > 0 && window.innerWidth >= 768) setSelectedRoom(list[0]);
       })
       .catch(() => setRooms([]))
       .finally(() => setLoadingRooms(false));
@@ -279,6 +279,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
 
   return (
     <div
+      data-testid="chat-drawer"
       style={{ position: 'fixed', inset: 0, zIndex: 250, background: 'var(--bg)', display: 'flex', flexDirection: 'column', animation: 'chatFadeIn .15s ease' }}>
       <style>{`
         @keyframes chatFadeIn { from { opacity:0 } to { opacity:1 } }
@@ -485,6 +486,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                 <div style={{ padding: '12px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                   {isMobile && (
                     <button onClick={() => setSelectedRoom(null)}
+                      aria-label="กลับรายการแชท"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--ink-2)', display: 'flex', flexShrink: 0 }}>
                       <IconBack />
                     </button>
@@ -651,6 +653,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                   ) : (
                     <button
                       type="button"
+                      data-testid="chat-like-btn"
                       style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', flexShrink: 0 }}
                       title="ไลค์"
                       onClick={() => { handleSend('👍'); }}>

@@ -47,13 +47,25 @@ async function openChat(page: any, rooms = MOCK_ROOMS) {
   await page.getByRole('button', { name: 'แชท' }).click();
 }
 
+/** Helper: chat drawer is visible */
+function chatDrawer(page: any) {
+  return page.getByTestId('chat-drawer');
+}
+
+/** Helper: wait for room list to load then click a room */
+async function clickRoom(page: any, id: number) {
+  await page.getByTestId(`room-${id}`).waitFor({ state: 'visible' });
+  await page.getByTestId(`room-${id}`).click();
+}
+
 test.describe('Chat Drawer', () => {
 
   // ─── Opening ────────────────────────────────────────────────────────────────
 
   test('clicking "แชท" navbar button opens chat drawer when logged in', async ({ page }) => {
     await openChat(page);
-    await expect(page.getByText('ข้อความ')).toBeVisible();
+    await expect(chatDrawer(page)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'แชท' })).toBeVisible();
   });
 
   test('unauthenticated user gets auth modal instead of chat drawer', async ({ page }) => {
@@ -61,56 +73,43 @@ test.describe('Chat Drawer', () => {
     await page.route('**/api/products*', r => r.fulfill({ json: [] }));
     await page.goto('/');
     await page.getByRole('button', { name: 'แชท' }).click();
-    await expect(page.getByText('เข้าสู่ระบบ')).toBeVisible();
-    await expect(page.getByText('ข้อความ')).not.toBeVisible();
+    await expect(page.getByTestId('auth-modal')).toBeVisible();
+    await expect(chatDrawer(page)).not.toBeVisible();
   });
 
   // ─── Closing ────────────────────────────────────────────────────────────────
 
   test('ESC closes the drawer when no room selected', async ({ page }) => {
     await openChat(page);
-    await expect(page.getByText('ข้อความ')).toBeVisible();
+    await expect(chatDrawer(page)).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(page.getByText('ข้อความ')).not.toBeVisible();
+    await expect(chatDrawer(page)).not.toBeVisible();
   });
 
-  test('clicking backdrop closes the drawer', async ({ page }) => {
+  test('back button closes the drawer', async ({ page }) => {
     await openChat(page);
-    await page.mouse.click(5, 5);
-    await expect(page.getByText('ข้อความ')).not.toBeVisible();
-  });
-
-  test('clicking × button closes the drawer', async ({ page }) => {
-    await openChat(page);
-    const closeBtn = page.locator('button').filter({
-      has: page.locator('svg path[d*="M6 6l12 12"]'),
-    }).first();
-    await closeBtn.click();
-    await expect(page.getByText('ข้อความ')).not.toBeVisible();
+    await page.getByRole('button', { name: 'กลับ' }).first().click();
+    await expect(chatDrawer(page)).not.toBeVisible();
   });
 
   // ─── Room list ──────────────────────────────────────────────────────────────
 
-  test('shows conversation count', async ({ page }) => {
-    await openChat(page);
-    await expect(page.getByText('2 การสนทนา')).toBeVisible();
-  });
-
   test('shows all rooms with seller names', async ({ page }) => {
     await openChat(page);
-    await expect(page.getByText('สมชาย')).toBeVisible();
-    await expect(page.getByText('วิชัย')).toBeVisible();
+    await expect(page.getByText('สมชาย').first()).toBeVisible();
+    await expect(page.getByText('วิชัย').first()).toBeVisible();
   });
 
   test('shows product title in room list', async ({ page }) => {
     await openChat(page);
-    await expect(page.getByText('iPhone 14 Pro 256GB')).toBeVisible();
+    await expect(page.getByText('iPhone 14 Pro 256GB').first()).toBeVisible();
   });
 
   test('shows relative time in room list', async ({ page }) => {
     await openChat(page);
-    // 5 min ago
-    await expect(page.getByText('5 นาที')).toBeVisible();
+    await page.getByTestId('room-1').waitFor({ state: 'visible' });
+    // 5 min ago — use first() to avoid matching "15 นาที" in sidebar bio
+    await expect(page.getByText('5 นาที').first()).toBeVisible();
   });
 
   test('empty state shown when no rooms', async ({ page }) => {
@@ -120,7 +119,6 @@ test.describe('Chat Drawer', () => {
   });
 
   test('not-logged-in state shows lock icon and login prompt', async ({ page }) => {
-    // session exists but no token
     await page.route('**/api/auth/session', r => r.fulfill({
       json: { user: { name: 'test' }, expires: new Date(Date.now() + 86400000).toISOString() },
     }));
@@ -134,51 +132,49 @@ test.describe('Chat Drawer', () => {
 
   test('clicking a room loads the thread', async ({ page }) => {
     await openChat(page);
-    await page.getByTestId('room-1').click();
-    // Thread header shows seller name
+    await clickRoom(page, 1);
     await expect(page.getByText('สมชาย').first()).toBeVisible();
-    // Messages load
     await expect(page.getByText('สวัสดีครับ สนใจสินค้าไหม')).toBeVisible();
-    await expect(page.getByText('สนใจครับ')).toBeVisible();
+    await expect(page.getByText('สนใจครับ').first()).toBeVisible();
   });
 
   test('thread header shows product title', async ({ page }) => {
     await openChat(page);
-    await page.getByTestId('room-1').click();
+    await clickRoom(page, 1);
     await expect(page.getByText('iPhone 14 Pro 256GB').first()).toBeVisible();
   });
 
   test('messages from others appear on left', async ({ page }) => {
     await openChat(page);
-    await page.getByTestId('room-1').click();
+    await clickRoom(page, 1);
     await expect(page.getByText('สวัสดีครับ สนใจสินค้าไหม')).toBeVisible();
   });
 
   test('own messages appear on right (accent background)', async ({ page }) => {
     await openChat(page);
-    await page.getByTestId('room-1').click();
-    const myMsg = page.getByText('สนใจครับ');
+    await clickRoom(page, 1);
+    // Use nth(1) — first occurrence is in room list preview, second is chat bubble
+    const myMsg = page.getByText('สนใจครับ').nth(1);
     await expect(myMsg).toBeVisible();
-    // Own messages have accent background
     const bubble = myMsg.locator('..');
     await expect(bubble).toHaveCSS('background-color', /rgb/);
   });
 
   // ─── Sending ────────────────────────────────────────────────────────────────
 
-  test('send button is disabled when input is empty', async ({ page }) => {
+  test('like button shown when input is empty', async ({ page }) => {
     await openChat(page);
-    await page.getByTestId('room-1').click();
-    const sendBtn = page.getByTestId('chat-send-btn');
-    await expect(sendBtn).toBeDisabled();
+    await clickRoom(page, 1);
+    await expect(page.getByTestId('chat-like-btn')).toBeVisible();
+    await expect(page.getByTestId('chat-send-btn')).not.toBeVisible();
   });
 
-  test('send button enables when text is typed', async ({ page }) => {
+  test('send button shown when text is typed', async ({ page }) => {
     await openChat(page);
-    await page.getByTestId('room-1').click();
+    await clickRoom(page, 1);
     await page.getByTestId('chat-input').fill('ราคาเท่าไหร่ครับ');
-    const sendBtn = page.getByTestId('chat-send-btn');
-    await expect(sendBtn).toBeEnabled();
+    await expect(page.getByTestId('chat-send-btn')).toBeVisible();
+    await expect(page.getByTestId('chat-like-btn')).not.toBeVisible();
   });
 
   test('typing and sending adds message optimistically', async ({ page }) => {
@@ -194,10 +190,10 @@ test.describe('Chat Drawer', () => {
     });
     await page.goto('/');
     await page.getByRole('button', { name: 'แชท' }).click();
-    await page.getByTestId('room-1').click();
+    await clickRoom(page, 1);
     await page.getByTestId('chat-input').fill('ราคาเท่าไหร่ครับ');
     await page.getByTestId('chat-send-btn').click();
-    await expect(page.getByText('ราคาเท่าไหร่ครับ')).toBeVisible();
+    await expect(page.getByText('ราคาเท่าไหร่ครับ').first()).toBeVisible();
     expect(sendCalled).toBe(true);
   });
 
@@ -214,10 +210,10 @@ test.describe('Chat Drawer', () => {
     });
     await page.goto('/');
     await page.getByRole('button', { name: 'แชท' }).click();
-    await page.getByTestId('room-1').click();
+    await clickRoom(page, 1);
     await page.getByTestId('chat-input').fill('Hello');
     await page.getByTestId('chat-input').press('Enter');
-    await expect(page.getByText('Hello')).toBeVisible();
+    await expect(page.getByText('Hello').first()).toBeVisible();
     expect(sendCalled).toBe(true);
   });
 
@@ -229,7 +225,7 @@ test.describe('Chat Drawer', () => {
     });
     await page.goto('/');
     await page.getByRole('button', { name: 'แชท' }).click();
-    await page.getByTestId('room-1').click();
+    await clickRoom(page, 1);
     await page.getByTestId('chat-input').fill('test');
     await page.getByTestId('chat-send-btn').click();
     await expect(page.getByTestId('chat-input')).toHaveValue('');
@@ -240,24 +236,20 @@ test.describe('Chat Drawer', () => {
   test('mobile: ESC while thread open goes back to room list', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await openChat(page);
-    await page.getByTestId('room-1').click();
+    await clickRoom(page, 1);
     await expect(page.getByText('สวัสดีครับ สนใจสินค้าไหม')).toBeVisible();
     await page.keyboard.press('Escape');
-    // Should go back to room list, not close drawer
-    await expect(page.getByText('ข้อความ')).toBeVisible();
+    await expect(chatDrawer(page)).toBeVisible();
     await expect(page.getByText('สวัสดีครับ สนใจสินค้าไหม')).not.toBeVisible();
   });
 
   test('mobile: back button returns to room list', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await openChat(page);
-    await page.getByTestId('room-1').click();
-    // Back arrow button (chevron-left svg path)
-    const backBtn = page.locator('button').filter({
-      has: page.locator('svg path[d*="M19 12H5"]'),
-    }).first();
-    await backBtn.click();
-    await expect(page.getByText('ข้อความ')).toBeVisible();
+    await clickRoom(page, 1);
+    await expect(page.getByText('สวัสดีครับ สนใจสินค้าไหม')).toBeVisible();
+    await page.getByRole('button', { name: 'กลับรายการแชท' }).click();
+    await expect(chatDrawer(page)).toBeVisible();
     await expect(page.getByText('สวัสดีครับ สนใจสินค้าไหม')).not.toBeVisible();
   });
 
@@ -271,11 +263,9 @@ test.describe('Chat Drawer', () => {
     });
     await page.goto('/');
     await page.getByRole('button', { name: 'แชท' }).click();
-    await page.getByTestId('room-1').click();
+    await clickRoom(page, 1);
     await page.getByTestId('chat-input').fill('นัดรับได้ที่ไหน');
     await page.getByTestId('chat-send-btn').click();
-    // On desktop the room list is still visible
-    // The room list last_message should update (check text appears somewhere)
     await expect(page.getByText('นัดรับได้ที่ไหน').first()).toBeVisible();
   });
 
