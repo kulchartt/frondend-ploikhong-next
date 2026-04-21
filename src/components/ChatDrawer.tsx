@@ -275,23 +275,17 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
 
   return (
     <div
-      onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 250, background: 'rgba(0,0,0,.45)', display: 'flex', justifyContent: 'flex-end' }}>
+      style={{ position: 'fixed', inset: 0, zIndex: 250, background: 'var(--bg)', display: 'flex', flexDirection: 'column', animation: 'chatFadeIn .15s ease' }}>
       <style>{`
-        @keyframes hubSlide { from { transform:translateX(100%) } to { transform:translateX(0) } }
+        @keyframes chatFadeIn { from { opacity:0 } to { opacity:1 } }
         @keyframes spin { to { transform:rotate(360deg) } }
       `}</style>
 
       <div
-        onClick={e => e.stopPropagation()}
         style={{
-          width: isMobile ? '100%' : 1100,
-          height: '100%',
-          background: 'var(--bg)',
+          flex: 1,
           display: 'flex',
           flexDirection: 'row',
-          boxShadow: '-8px 0 40px rgba(0,0,0,.2)',
-          animation: 'hubSlide .28s cubic-bezier(.2,.8,.2,1)',
           overflow: 'hidden',
         }}>
 
