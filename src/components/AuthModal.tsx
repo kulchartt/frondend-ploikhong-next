@@ -86,7 +86,7 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
         style={{ background: 'var(--surface)', borderRadius: 12, padding: 36, width: '100%',
           maxWidth: 420, boxShadow: '0 30px 80px rgba(0,0,0,.35)', position: 'relative' }}>
 
-        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16,
+        <button data-testid="auth-close" onClick={onClose} style={{ position: 'absolute', top: 16, right: 16,
           background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>
           <X size={20} />
         </button>

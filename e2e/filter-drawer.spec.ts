@@ -88,7 +88,8 @@ test.describe('Filter Drawer (mobile)', () => {
 
     const filtered = calls.filter(u => u.includes('category='));
     expect(filtered.length).toBeGreaterThanOrEqual(1);
-    expect(filtered[filtered.length - 1]).toContain('คอมพิวเตอร์');
+    const lastUrl = decodeURIComponent(filtered[filtered.length - 1]);
+    expect(lastUrl).toContain('คอมพิวเตอร์');
   });
 
   // ─── Price filter ──────────────────────────────────────────────────────────

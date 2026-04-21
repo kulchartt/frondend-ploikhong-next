@@ -24,10 +24,7 @@ test.describe('Auth Modal', () => {
 
   test('modal: closes when X button is clicked', async ({ page }) => {
     await openAuthModal(page);
-    await page.getByRole('button', { name: '' }).first().click(); // X button via lucide X
-    // Try the close button by its position (top-right)
-    const closeBtn = page.locator('button').filter({ has: page.locator('svg') }).first();
-    await closeBtn.click();
+    await page.getByTestId('auth-close').click();
     await expect(page.getByText('ยินดีต้อนรับกลับ')).not.toBeVisible({ timeout: 3000 });
   });
 
@@ -89,7 +86,7 @@ test.describe('Auth Modal', () => {
     await openAuthModal(page);
     await page.getByPlaceholder('อีเมล').fill('wrong@example.com');
     await page.getByPlaceholder('รหัสผ่าน').fill('wrongpass');
-    await page.getByRole('button', { name: 'เข้าสู่ระบบ' }).click();
+    await page.getByTestId('auth-modal').getByRole('button', { name: 'เข้าสู่ระบบ' }).click();
     // Error message should appear (NextAuth returns error)
     await expect(page.getByText(/ไม่ถูกต้อง|ไม่สำเร็จ|error/i)).toBeVisible({ timeout: 8000 });
   });
@@ -105,7 +102,7 @@ test.describe('Auth Modal', () => {
       await route.continue();
     });
 
-    await page.getByRole('button', { name: 'เข้าสู่ระบบ' }).click();
+    await page.getByTestId('auth-modal').getByRole('button', { name: 'เข้าสู่ระบบ' }).click();
     await expect(page.getByText('กำลังดำเนินการ…')).toBeVisible({ timeout: 3000 });
   });
 
@@ -154,7 +151,7 @@ test.describe('Auth Modal', () => {
     await openAuthModal(page);
     await page.getByRole('button', { name: 'สมัครสมาชิก' }).click();
     await expect(page.getByText('สร้างบัญชีใหม่')).toBeVisible();
-    await page.getByRole('button', { name: 'เข้าสู่ระบบ' }).click();
+    await page.getByTestId('auth-modal').getByRole('button', { name: 'เข้าสู่ระบบ' }).click();
     await expect(page.getByText('ยินดีต้อนรับกลับ')).toBeVisible();
   });
 
@@ -179,7 +176,7 @@ test.describe('Auth Modal', () => {
     await page.getByRole('button', { name: 'ลืมรหัสผ่าน?' }).click();
     await page.getByPlaceholder('อีเมล').fill('test@example.com');
     await page.getByRole('button', { name: 'ส่งลิงก์รีเซ็ต' }).click();
-    await expect(page.getByText(/ส่งลิงก์รีเซ็ต/)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลแล้ว')).toBeVisible({ timeout: 5000 });
   });
 
   test('reset: "← กลับไปเข้าสู่ระบบ" link returns to login', async ({ page }) => {

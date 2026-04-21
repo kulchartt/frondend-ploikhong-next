@@ -38,7 +38,7 @@ test.describe('Wishlist', () => {
     await page.goto('/');
     await expect(page.getByText('iPhone 14 Pro')).toBeVisible();
     // Heart button: svg inside absolute-positioned button
-    const hearts = page.locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') });
+    const hearts = page.locator('main').locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') });
     await expect(hearts.first()).toBeVisible();
   });
 
@@ -47,7 +47,7 @@ test.describe('Wishlist', () => {
     await setupGuest(page);
     await page.route('**/api/wishlist/**', r => { wishlistCalled = true; r.continue(); });
     await page.goto('/');
-    const heart = page.locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
+    const heart = page.locator('main').locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
     await heart.click();
     // Should toggle visually but NOT call the API
     expect(wishlistCalled).toBe(false);
@@ -60,7 +60,7 @@ test.describe('Wishlist', () => {
     await page.goto('/');
     await expect(page.getByText('iPhone 14 Pro')).toBeVisible();
     // Product 1 heart should be filled (stroke = #b83216)
-    const firstHeart = page.locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
+    const firstHeart = page.locator('main').locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
     const svg = firstHeart.locator('svg');
     await expect(svg).toHaveAttribute('stroke', '#b83216');
   });
@@ -68,7 +68,7 @@ test.describe('Wishlist', () => {
   test('product not in wishlist shows unfilled heart', async ({ page }) => {
     await setupLoggedIn(page, []); // nothing wishlisted
     await page.goto('/');
-    const firstHeart = page.locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
+    const firstHeart = page.locator('main').locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
     const svg = firstHeart.locator('svg');
     await expect(svg).not.toHaveAttribute('stroke', '#b83216');
   });
@@ -78,7 +78,7 @@ test.describe('Wishlist', () => {
     await setupLoggedIn(page, []);
     await page.route('**/api/wishlist/1', r => { toggleCalled = true; r.fulfill({ json: { success: true } }); });
     await page.goto('/');
-    const firstHeart = page.locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
+    const firstHeart = page.locator('main').locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
     await firstHeart.click();
     expect(toggleCalled).toBe(true);
   });
@@ -91,7 +91,7 @@ test.describe('Wishlist', () => {
       r.fulfill({ json: { success: true } });
     });
     await page.goto('/');
-    const firstHeart = page.locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
+    const firstHeart = page.locator('main').locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
     await firstHeart.click();
     // Should be filled immediately, not after 500ms
     const svg = firstHeart.locator('svg');
@@ -102,7 +102,7 @@ test.describe('Wishlist', () => {
     await setupLoggedIn(page, []);
     await page.route('**/api/wishlist/1', r => r.fulfill({ status: 500, json: { error: 'fail' } }));
     await page.goto('/');
-    const firstHeart = page.locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
+    const firstHeart = page.locator('main').locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
     await firstHeart.click();
     // After error + revert, should be unfilled again
     const svg = firstHeart.locator('svg');
@@ -113,7 +113,7 @@ test.describe('Wishlist', () => {
     await setupLoggedIn(page, [1]);
     await page.route('**/api/wishlist/1', r => r.fulfill({ json: { success: true } }));
     await page.goto('/');
-    const firstHeart = page.locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
+    const firstHeart = page.locator('main').locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') }).first();
     // Already filled → click to remove
     await firstHeart.click();
     const svg = firstHeart.locator('svg');
@@ -123,7 +123,7 @@ test.describe('Wishlist', () => {
   test('second product heart is independent of first', async ({ page }) => {
     await setupLoggedIn(page, [1]);
     await page.goto('/');
-    const hearts = page.locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') });
+    const hearts = page.locator('main').locator('button').filter({ has: page.locator('svg path[d*="M12 21"]') });
     const first = hearts.nth(0);
     const second = hearts.nth(1);
     await expect(first.locator('svg')).toHaveAttribute('stroke', '#b83216');

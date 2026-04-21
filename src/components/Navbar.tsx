@@ -94,11 +94,11 @@ export function Navbar({
           </button>
         </div>
 
-        {/* ── Right section ────────────────────────────────────────────────────── */}
+        {/* ── Right section ── order: แชท, ถูกใจ, บัญชี, ซื้อ, ขาย, +ลงขาย ───── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 'auto' }}>
 
-          {/* Icon nav: แชท, ถูกใจ, ซื้อ, ขาย */}
-          {navItems.map(({ icon, label, badge, action }) => (
+          {/* แชท, ถูกใจ */}
+          {navItems.slice(0, 2).map(({ icon, label, badge, action }) => (
             <button key={label} onClick={action} style={iconBtn()}
               onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
               <span style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -112,25 +112,8 @@ export function Navbar({
             </button>
           ))}
 
-          {/* Dark mode toggle */}
-          <button onClick={toggleDark} title={dark ? 'Light mode' : 'Dark mode'}
-            style={iconBtn()} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-            {dark ? <SunIcon /> : <MoonIcon />}
-            {!isMobile && <span style={labelStyle}>{dark ? 'Light' : 'Dark'}</span>}
-          </button>
-
-          {/* + ลงขาย */}
-          <button onClick={onOpenListing}
-            style={{ padding: isMobile ? '8px 12px' : '9px 16px',
-              background: 'var(--accent)', color: '#fff',
-              border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 600,
-              fontSize: isMobile ? 12 : 13, cursor: 'pointer', whiteSpace: 'nowrap',
-              flexShrink: 0, marginLeft: 6, fontFamily: 'inherit' }}>
-            + ลงขาย
-          </button>
-
-          {/* ── บัญชี — far right ────────────────────────────────────────────── */}
-          <div style={{ position: 'relative', marginLeft: 4 }}>
+          {/* ── บัญชี — 3rd slot (matches spec) ─────────────────────────────── */}
+          <div style={{ position: 'relative' }}>
 
             {!session?.user ? (
               /* Not logged in → Login button */
@@ -242,6 +225,34 @@ export function Navbar({
               </>
             )}
           </div>
+
+          {/* ซื้อ, ขาย — after บัญชี */}
+          {navItems.slice(2).map(({ icon, label, action }) => (
+            <button key={label} onClick={action} style={iconBtn()}
+              onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {icon}
+              </span>
+              {!isMobile && <span style={labelStyle}>{label}</span>}
+            </button>
+          ))}
+
+          {/* Dark mode toggle */}
+          <button onClick={toggleDark} title={dark ? 'Light mode' : 'Dark mode'}
+            style={iconBtn()} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+            {dark ? <SunIcon /> : <MoonIcon />}
+            {!isMobile && <span style={labelStyle}>{dark ? 'Light' : 'Dark'}</span>}
+          </button>
+
+          {/* + ลงขาย */}
+          <button onClick={onOpenListing}
+            style={{ padding: isMobile ? '8px 12px' : '9px 16px',
+              background: 'var(--accent)', color: '#fff',
+              border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 600,
+              fontSize: isMobile ? 12 : 13, cursor: 'pointer', whiteSpace: 'nowrap',
+              flexShrink: 0, marginLeft: 6, fontFamily: 'inherit' }}>
+            + ลงขาย
+          </button>
         </div>
       </div>
 
