@@ -66,11 +66,12 @@ function IconVideo() {
     </svg>
   );
 }
-function IconBell() {
+function IconInfo() {
   return (
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      <circle cx={12} cy={12} r={10}/>
+      <line x1={12} y1={8} x2={12} y2={12}/>
+      <line x1={12} y1={16} x2={12.01} y2={16}/>
     </svg>
   );
 }
@@ -230,12 +231,12 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [token, selectedRoom, normalise, myUserId]);
 
-  async function handleSend() {
-    if (!draft.trim() || !token || !selectedRoom) return;
-    const text = draft.trim();
+  async function handleSend(overrideText?: string) {
+    const text = overrideText ?? draft.trim();
+    if (!text || !token || !selectedRoom) return;
     const optimistic = { id: Date.now(), who: 'me', text, time: nowTime() };
     setMsgs(m => [...m, optimistic]);
-    setDraft('');
+    if (!overrideText) setDraft('');
     setSending(true);
     try {
       await api.sendMessage(selectedRoom.id, text, token);
@@ -440,8 +441,13 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                       <div style={{ fontSize: 13, fontWeight: unreadCount > 0 ? 700 : 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>
                         {other}
                       </div>
+                      {room.product_title && (
+                        <div style={{ fontSize: 12, color: 'var(--ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>
+                          {room.product_title}
+                        </div>
+                      )}
                       <div style={{ fontSize: 12, color: 'var(--ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {room.last_message ?? room.product_title ?? 'เริ่มการสนทนา'}
+                        {room.last_message ?? 'เริ่มการสนทนา'}
                       </div>
                     </div>
 
@@ -494,7 +500,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                       <IconVideo />
                     </button>
                     <button style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%' }}>
-                      <IconBell />
+                      <IconInfo />
                     </button>
                   </div>
                 </div>
@@ -561,14 +567,22 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
 
                   {msgs.map((m, i) => (
                     <div key={m.id ?? i}
-                      style={{ display: 'flex', maxWidth: '78%', alignSelf: m.who === 'me' ? 'flex-end' : 'flex-start' }}>
+                      style={{ display: 'flex', maxWidth: '78%', alignSelf: m.who === 'me' ? 'flex-end' : 'flex-start', gap: 6, alignItems: 'flex-end' }}>
+                      {m.who !== 'me' && (
+                        <div style={{
+                          width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                          background: `linear-gradient(135deg,${tints[0]},${tints[1]})`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 700, fontSize: 10, color: '#fff', letterSpacing: 0.3,
+                        }}>{getInitials(sellerName)}</div>
+                      )}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: m.who === 'me' ? 'flex-end' : 'flex-start' }}>
                         <div style={{
                           padding: '9px 13px', borderRadius: 18, fontSize: 13.5, lineHeight: 1.45, wordBreak: 'break-word',
-                          background: m.who === 'me' ? 'var(--ink)' : 'var(--line-2)',
-                          color: m.who === 'me' ? 'var(--bg)' : 'var(--ink)',
+                          background: m.who === 'me' ? 'var(--accent)' : 'var(--line-2)',
+                          color: m.who === 'me' ? '#fff' : 'var(--ink)',
                           borderBottomRightRadius: m.who === 'me' ? 4 : 18,
-                          borderBottomLeftRadius: m.who === 'seller' ? 4 : 18,
+                          borderBottomLeftRadius: m.who !== 'me' ? 4 : 18,
                         }}>{m.text}</div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', padding: '0 4px' }}>{m.time}</div>
                       </div>
@@ -576,9 +590,28 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                   ))}
                 </div>
 
+                {/* Quick replies */}
+                <div style={{ display: 'flex', gap: 8, padding: '8px 14px', overflowX: 'auto', scrollbarWidth: 'none', flexShrink: 0, borderTop: '1px solid var(--line)', background: 'var(--surface)' }}>
+                  {['สวัสดีครับ ยังมีสินค้านี้อยู่ไหม?','ราคาต่อรองได้ไหมครับ?','ส่งไปรษณีย์ได้ไหมครับ?','ขอดูรูปเพิ่มเติมได้ไหมครับ?','นัดรับได้ที่ไหนบ้าง?'].map((q, i) => (
+                    <button key={i} onClick={() => { setDraft(q); }} style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 999, border: '1px solid var(--line)', background: 'var(--surface)', fontSize: 12, cursor: 'pointer', color: 'var(--ink-2)', whiteSpace: 'nowrap' }}>{q}</button>
+                  ))}
+                </div>
+
                 {/* Input */}
                 <form onSubmit={e => { e.preventDefault(); handleSend(); }}
-                  style={{ display: 'flex', gap: 8, padding: '10px 14px', borderTop: '1px solid var(--line)', background: 'var(--surface)', alignItems: 'center', flexShrink: 0 }}>
+                  style={{ display: 'flex', gap: 6, padding: '10px 14px', borderTop: '1px solid var(--line)', background: 'var(--surface)', alignItems: 'center', flexShrink: 0 }}>
+
+                  {/* Attach */}
+                  <button type="button" style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%', flexShrink: 0 }} title="แนบรูป">
+                    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m3 17 5-5 6 6 4-4 3 3"/></svg>
+                  </button>
+                  {/* Emoji */}
+                  <button type="button" style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%', flexShrink: 0 }} title="อิโมจิ">
+                    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+                  </button>
+                  {/* GIF */}
+                  <button type="button" style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%', flexShrink: 0, fontSize: 10, fontWeight: 800 }} title="GIF">GIF</button>
+
                   <input
                     data-testid="chat-input"
                     value={draft}
@@ -590,20 +623,30 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                       color: 'var(--ink)', outline: 'none',
                     }}
                   />
-                  <button
-                    data-testid="chat-send-btn"
-                    type="submit"
-                    disabled={!draft.trim() || sending}
-                    style={{
-                      width: 36, height: 36, flexShrink: 0,
-                      background: draft.trim() ? 'var(--accent)' : 'var(--line)',
-                      color: draft.trim() ? '#fff' : 'var(--ink-3)',
-                      border: 'none', borderRadius: '50%', fontSize: 13, fontWeight: 600,
-                      cursor: draft.trim() && !sending ? 'pointer' : 'not-allowed', transition: '.15s',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                    {sending ? <IconSpin /> : <IconSend />}
-                  </button>
+                  {draft.trim() ? (
+                    <button
+                      data-testid="chat-send-btn"
+                      type="submit"
+                      disabled={sending}
+                      style={{
+                        width: 36, height: 36, flexShrink: 0,
+                        background: 'var(--accent)',
+                        color: '#fff',
+                        border: 'none', borderRadius: '50%', fontSize: 13, fontWeight: 600,
+                        cursor: sending ? 'not-allowed' : 'pointer', transition: '.15s',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                      {sending ? <IconSpin /> : <IconSend />}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', flexShrink: 0 }}
+                      title="ไลค์"
+                      onClick={() => { handleSend('👍'); }}>
+                      👍
+                    </button>
+                  )}
                 </form>
               </>
             ) : (
@@ -670,11 +713,11 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
             <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)' }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase' as const, letterSpacing: '.06em', marginBottom: 6 }}>การดำเนินการ</div>
               {[
-                { icon: <IconAttach />, label: 'ไฟล์ที่แชร์', color: 'var(--ink-2)' },
-                { icon: <IconMute />, label: 'ปิดการแจ้งเตือน', color: 'var(--ink-2)' },
-                { icon: <IconPin />, label: 'ปักหมุดข้อความ', color: 'var(--ink-2)' },
-                { icon: <IconCheck />, label: 'ทำเครื่องหมายว่าขายแล้ว', color: 'var(--pos)' },
-                { icon: <IconBlock />, label: 'บล็อก & รายงาน', color: 'var(--neg)' },
+                { icon: '📎', label: 'ไฟล์ที่แชร์', color: 'var(--ink-2)' },
+                { icon: '🔕', label: 'ปิดการแจ้งเตือน', color: 'var(--ink-2)' },
+                { icon: '📌', label: 'ปักหมุดข้อความนี้', color: 'var(--ink-2)' },
+                { icon: '📦', label: 'ทำเครื่องหมายว่าขายแล้ว', color: 'var(--pos)' },
+                { icon: '🚫', label: 'บล็อก & รายงาน', color: 'var(--neg)' },
               ].map(({ icon, label, color }) => (
                 <button key={label} style={{
                   width: '100%', minHeight: 44, padding: '0 6px', border: 'none', background: 'none', cursor: 'pointer',
@@ -683,7 +726,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                 }}
                   onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-2)'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}>
-                  <span style={{ display: 'flex', flexShrink: 0 }}>{icon}</span>
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
                   <span style={{ fontSize: 13, fontFamily: 'inherit', color }}>{label}</span>
                 </button>
               ))}
