@@ -136,8 +136,9 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
         </div>
       </div>
 
-      {/* ── Body: sidebar + content ── */}
-      <div style={{ flex: 1, display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : undefined, gridTemplateColumns: isMobile ? undefined : '300px 1fr', overflow: 'hidden' }}>
+      {/* ── Body: sidebar + content (max-width container, centered) ── */}
+      <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)' }}>
+      <div style={{ maxWidth: 1440, margin: '0 auto', height: '100%', display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : undefined, gridTemplateColumns: isMobile ? undefined : '300px 1fr' }}>
 
         {/* ── Sidebar (desktop) / Tab strip (mobile) ── */}
         <aside style={{
@@ -180,7 +181,7 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
         </aside>
 
         {/* ── Main content ── */}
-        <main style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)' }}>
+        <main style={{ flex: 1, background: 'var(--bg)', minWidth: 0 }}>
           {mode === 'sell' && sellTab === 'listings'  && <SellListings token={token} onNewListing={onNewListing} />}
           {mode === 'sell' && sellTab === 'insights'  && <SellInsights token={token} />}
           {mode === 'sell' && sellTab === 'news'      && <SellNews />}
@@ -191,6 +192,7 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
           {mode === 'buy'  && buyTab === 'following'     && <BuyFollowing token={token} />}
           {mode === 'buy'  && buyTab === 'profile'       && <HubProfile session={session} mode="buy" />}
         </main>
+      </div>
       </div>
     </div>
   );
