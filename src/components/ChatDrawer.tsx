@@ -321,7 +321,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
             </div>
 
             {/* Search */}
-            <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid var(--line)' }}>
+            <div style={{ padding: '10px 12px 8px' }}>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <span style={{ position: 'absolute', left: 10, color: 'var(--ink-3)', display: 'flex' }}>
                   <IconSearch />
@@ -341,7 +341,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
             </div>
 
             {/* Tabs */}
-            <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 6 }}>
+            <div style={{ padding: '4px 12px 10px', display: 'flex', gap: 6 }}>
               {([['all','ทั้งหมด'],['unread','ยังไม่อ่าน'],['pinned','ปักหมุด']] as const).map(([key, label]) => (
                 <button
                   key={key}
