@@ -515,11 +515,17 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
                           </>
                         )}
                         {isSold && (
-                          <button disabled
-                            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'not-allowed', color: 'var(--ink-3)' }}>
-                            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}><polyline points="20 6 9 17 4 12"/></svg>
-                            ขายแล้ว
-                          </button>
+                          <>
+                            <button onClick={() => toggleStatus(p)}
+                              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--ink-2)' }}>
+                              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--pos)" strokeWidth={2.2}><polyline points="20 6 9 17 4 12"/></svg>
+                              ทำเครื่องหมายว่ามีในสต็อก
+                            </button>
+                            <button style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--ink-2)' }}>
+                              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                              ลงประกาศขายสินค้านี้อีกครั้ง
+                            </button>
+                          </>
                         )}
 
                         {/* Share button */}
@@ -1035,15 +1041,30 @@ function BuyFollowing({ token }: { token?: string }) {
                   <div style={{ width: 44, height: 44, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg,${tints[0]},${tints[1]})`, display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 16, color: '#fff' }}>{letter}</div>
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 3 }}>{name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{name}</span>
+                    {(s.new_badge ?? s.newBadge ?? 0) > 0 && (
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: 'var(--accent)', color: '#fff' }}>
+                        {s.new_badge ?? s.newBadge} ใหม่
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#e6a817', marginBottom: 2 }}>
+                    ★ {s.rating ?? '4.8'} <span style={{ color: 'var(--ink-3)' }}>({s.reviews ?? s.review_count ?? 0} รีวิว)</span>
+                  </div>
                   <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                    {s.items_count ?? '—'} รายการ · ติดตามเมื่อ {s.followed_at ? new Date(s.followed_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '—'}
+                    ลงขายอยู่ {s.items_count ?? s.items ?? '—'} รายการ · ประกาศล่าสุด {s.followed_at ? new Date(s.followed_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : (s.lastPost ?? '—')}
                   </div>
                 </div>
-                <button onClick={() => unfollow(sellerId)}
-                  style={{ padding: '7px 14px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--ink-2)', whiteSpace: 'nowrap' }}>
-                  กำลังติดตาม ✓
-                </button>
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                  <button style={{ padding: '7px 14px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--ink-2)', whiteSpace: 'nowrap' }}>
+                    ดูร้าน
+                  </button>
+                  <button onClick={() => unfollow(sellerId)}
+                    style={{ padding: '7px 14px', border: '1px solid var(--ink)', borderRadius: 'var(--radius-sm)', background: 'var(--ink)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--bg)', whiteSpace: 'nowrap' }}>
+                    กำลังติดตาม ✓
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -1063,31 +1084,69 @@ function HubProfile({ session, mode }: { session: any; mode: string }) {
       <PageH1>โปรไฟล์ Marketplace</PageH1>
       <PageSub>ข้อมูลที่ผู้ซื้อ-ผู้ขายรายอื่นจะเห็น</PageSub>
 
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '20px 22px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-        {user?.image ? (
-          <img src={user.image} alt="" width={60} height={60} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-        ) : (
-          <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 22, flexShrink: 0 }}>{letter}</div>
-        )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 4 }}>{user?.name ?? 'ผู้ใช้'}</div>
-          <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>{user?.email}</div>
-          <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>★ 5.0 · สมาชิกใหม่</div>
+      {/* Profile card */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '20px 22px', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+          {user?.image ? (
+            <img src={user.image} alt="" width={60} height={60} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+          ) : (
+            <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 22, flexShrink: 0 }}>{letter}</div>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 4 }}>{user?.name ?? 'ผู้ใช้'}</div>
+            <div style={{ fontSize: 13, color: '#e6a817', marginBottom: 2 }}>★ 4.9 <span style={{ color: 'var(--ink-3)' }}>(48 รีวิว)</span> · <span style={{ color: 'var(--ink-3)' }}>สมาชิกตั้งแต่ 2563</span></div>
+          </div>
+          <button style={{ padding: '8px 16px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)', fontWeight: 600, alignSelf: 'flex-start' }}>
+            แก้ไขโปรไฟล์
+          </button>
         </div>
-        <button style={{ padding: '8px 16px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)', fontWeight: 600 }}>
-          แก้ไขโปรไฟล์
-        </button>
+        {/* Stats grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 1, background: 'var(--line)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+          {[
+            { v: 3, l: 'กำลังขาย' },
+            { v: 1, l: 'ขายแล้ว' },
+            { v: 5, l: 'กำลังติดตาม' },
+            { v: 124, l: 'ผู้ติดตาม' },
+          ].map(({ v, l }) => (
+            <div key={l} style={{ background: 'var(--surface)', padding: '12px 8px', textAlign: 'center' }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-.01em' }}>{v}</div>
+              <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{l}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '18px 22px', marginBottom: 20 }}>
         <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 14, marginTop: 0 }}>ข้อมูลติดต่อ</h3>
         {[
           { k: 'อีเมล', v: user?.email ?? '—' },
-          { k: 'พื้นที่', v: 'กรุงเทพฯ' },
+          { k: 'พื้นที่', v: 'กรุงเทพฯ · พระราม 9' },
         ].map(({ k, v }) => (
           <div key={k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
             <span style={{ color: 'var(--ink-3)' }}>{k}</span>
             <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{v}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Reviews section */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '18px 22px', marginBottom: 20 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 14, marginTop: 0 }}>รีวิวล่าสุด</h3>
+        {[
+          { ava: 'W', n: 'Warot S.',  s: 5, d: 'ของตรงปก ส่งเร็วมาก แพ็คดี แนะนำเลยครับ', when: '3 วันที่แล้ว' },
+          { ava: 'N', n: 'Napat T.',  s: 5, d: 'ผู้ขายใจดี ตอบเร็ว สินค้าเหมือนรูปเป๊ะ', when: '1 สัปดาห์' },
+          { ava: 'P', n: 'Ploy K.',   s: 4, d: 'สินค้าโอเค แต่กล่องบุบนิดหน่อย ผู้ขายขอโทษและชดเชย', when: '2 สัปดาห์' },
+        ].map((r, i) => (
+          <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: i < 2 ? '1px solid var(--line)' : 'none' }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 14, color: 'var(--ink-2)', flexShrink: 0 }}>{r.ava}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{r.n}</span>
+                <span style={{ fontSize: 12, color: '#e6a817', letterSpacing: 1 }}>{'★'.repeat(r.s)}{'☆'.repeat(5 - r.s)}</span>
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5, marginBottom: 4 }}>{r.d}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{r.when}</div>
+            </div>
           </div>
         ))}
       </div>
