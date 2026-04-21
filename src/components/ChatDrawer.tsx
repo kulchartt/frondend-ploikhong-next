@@ -281,12 +281,16 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
         @keyframes spin { to { transform:rotate(360deg) } }
       `}</style>
 
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
           flex: 1,
           display: 'flex',
           flexDirection: 'row',
           overflow: 'hidden',
+          maxWidth: 1440,
+          width: '100%',
+          margin: '0 auto',
         }}>
 
         {/* ── LEFT PANEL: Room list (320px) ── */}
@@ -752,6 +756,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
