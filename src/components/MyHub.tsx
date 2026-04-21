@@ -779,16 +779,16 @@ function BuyActivity() {
       <PageH1>กิจกรรมล่าสุด</PageH1>
       <PageSub>ของที่คุณดู · ข้อความ · ข้อเสนอ · บันทึก</PageSub>
 
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {items.map((a, i) => {
           const tints = IMG_TINTS[i % IMG_TINTS.length];
           const color = kindColor[a.kind] ?? 'var(--ink-3)';
           const label = kindLabel[a.kind] ?? a.kind;
           return (
             <div key={i}
-              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderBottom: i < items.length - 1 ? '1px solid var(--line)' : 'none', cursor: 'pointer', borderRadius: 0, transition: 'background .12s' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', border: '1px solid var(--line)', borderRadius: 'var(--radius)', background: 'var(--surface)', cursor: 'pointer', transition: 'background .12s' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}>
 
               {/* Product thumbnail */}
               <div style={{
