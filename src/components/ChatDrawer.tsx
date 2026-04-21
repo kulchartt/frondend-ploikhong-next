@@ -7,6 +7,7 @@ import * as api from '@/lib/api';
 
 interface ChatDrawerProps {
   onClose: () => void;
+  initialRoomId?: number;
 }
 
 const IMG_TINTS = [
@@ -137,7 +138,7 @@ function IconBlock() {
   );
 }
 
-export function ChatDrawer({ onClose }: ChatDrawerProps) {
+export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
   const myUserId: number | undefined = (session as any)?.userId;
@@ -186,10 +187,16 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
       .then(data => {
         const list = Array.isArray(data) ? data : [];
         setRooms(list);
-        if (list.length > 0 && window.innerWidth >= 768) setSelectedRoom(list[0]);
+        if (list.length > 0) {
+          // If a specific room was requested (from ProductDetail), open it; else default to first on desktop
+          const target = initialRoomId ? list.find((r: any) => r.id === initialRoomId) : null;
+          if (target) setSelectedRoom(target);
+          else if (window.innerWidth >= 768) setSelectedRoom(list[0]);
+        }
       })
       .catch(() => setRooms([]))
       .finally(() => setLoadingRooms(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   // Normalise raw API messages

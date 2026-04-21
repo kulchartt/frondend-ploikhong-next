@@ -166,6 +166,17 @@ test.describe('Product Detail', () => {
     await expect(popup.getByText('iPhone 14 Pro 256GB สีม่วง').first()).toBeVisible();
   });
 
+  test('chat popup "ดูการสนทนา" button closes popup and opens chat drawer', async ({ page }) => {
+    await page.route('**/api/chat/rooms', r => r.fulfill({ json: [] }));
+    await openProductChat(page);
+    await expect(page.getByTestId('pd-chat-popup')).toBeVisible();
+    await page.getByTestId('pd-chat-to-drawer').click();
+    // Product detail and chat popup should close
+    await expect(page.locator('h1').filter({ hasText: 'iPhone 14 Pro' })).not.toBeVisible();
+    // ChatDrawer should open
+    await expect(page.getByTestId('chat-drawer')).toBeVisible();
+  });
+
   test('chat popup close button hides the popup', async ({ page }) => {
     await openProductChat(page);
     await expect(page.getByTestId('pd-chat-popup')).toBeVisible();

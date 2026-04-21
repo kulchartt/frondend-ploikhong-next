@@ -57,6 +57,7 @@ export default function HomePage() {
   const [hubOpen, setHubOpen] = useState<{ mode: 'sell' | 'buy'; tab?: string } | null>(null);
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatInitialRoomId, setChatInitialRoomId] = useState<number | undefined>();
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [filters, setFilters] = useState<any>({});
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
@@ -318,7 +319,10 @@ export default function HomePage() {
       </div>
 
       {chatOpen && (
-        <ChatDrawer onClose={() => setChatOpen(false)} />
+        <ChatDrawer
+          onClose={() => { setChatOpen(false); setChatInitialRoomId(undefined); }}
+          initialRoomId={chatInitialRoomId}
+        />
       )}
       {wishlistOpen && (
         <WishlistDrawer
@@ -352,6 +356,11 @@ export default function HomePage() {
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
           onViewShop={id => { setSelectedProduct(null); setShopSellerId(id); }}
+          onOpenChatDrawer={roomId => {
+            setSelectedProduct(null);
+            setChatInitialRoomId(roomId);
+            setChatOpen(true);
+          }}
         />
       )}
       {shopSellerId && (

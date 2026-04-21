@@ -26,6 +26,7 @@ interface ProductDetailProps {
   product: Product | null;
   onClose: () => void;
   onViewShop?: (sellerId: number) => void;
+  onOpenChatDrawer?: (roomId?: number) => void;
 }
 
 const IMG_TINTS = [
@@ -52,7 +53,7 @@ function nowTime() {
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
-export function ProductDetail({ product, onClose, onViewShop }: ProductDetailProps) {
+export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer }: ProductDetailProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
   const isMobile = useBreakpoint(768);
@@ -433,6 +434,18 @@ export function ProductDetail({ product, onClose, onViewShop }: ProductDetailPro
               <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{product.seller_name ?? 'ผู้ขาย'}</div>
               <div style={{ fontSize: 12, color: 'var(--pos)' }}>ออนไลน์อยู่</div>
             </div>
+            {onOpenChatDrawer && (
+              <button
+                data-testid="pd-chat-to-drawer"
+                onClick={() => { setChatOpen(false); onClose(); onOpenChatDrawer(roomId ?? undefined); }}
+                title="ดูการสนทนาทั้งหมด"
+                style={{ width: 30, height: 30, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%', flexShrink: 0 }}>
+                <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  <polyline points="9 10 12 13 15 10"/>
+                </svg>
+              </button>
+            )}
             <button
               data-testid="pd-chat-close"
               onClick={() => setChatOpen(false)}
