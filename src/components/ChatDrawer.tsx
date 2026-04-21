@@ -687,7 +687,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
             </div>
 
             {/* สินค้าที่คุยกันอยู่ */}
-            <div style={{ padding: '0 16px 16px' }}>
+            <div style={{ padding: '14px 16px 16px', borderTop: '1px solid var(--line)' }}>
               <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>สินค้าที่คุยกันอยู่</h4>
               {selectedRoom.product_image ? (
                 <div style={{
@@ -714,7 +714,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
             </div>
 
             {/* การดำเนินการ */}
-            <div style={{ padding: '14px 16px 8px' }}>
+            <div style={{ padding: '14px 16px 8px', borderTop: '1px solid var(--line)' }}>
               <h4 style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>การดำเนินการ</h4>
               {[
                 { icon: '📎', label: 'ไฟล์ที่แชร์', color: 'var(--ink-2)' },
@@ -737,7 +737,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
             </div>
 
             {/* สินค้าอื่นจากผู้ขาย */}
-            <div style={{ padding: '14px 16px 20px' }}>
+            <div style={{ padding: '14px 16px 20px', borderTop: '1px solid var(--line)' }}>
               <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>สินค้าอื่นจากผู้ขาย</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {[
