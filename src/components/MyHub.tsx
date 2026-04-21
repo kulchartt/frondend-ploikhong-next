@@ -74,7 +74,7 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
   const setTab = (t: string) => mode === 'sell' ? setSellTab(t) : setBuyTab(t);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'var(--bg)', zIndex: 190, display: 'flex', flexDirection: 'column' }}>
+    <div data-testid="v8hub" style={{ position: 'fixed', inset: 0, background: 'var(--bg)', zIndex: 190, display: 'flex', flexDirection: 'column' }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
         @keyframes fadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
@@ -254,13 +254,15 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState<'all' | 'active' | 'sold'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'sold' | 'draft' | 'hidden'>('all');
   const [q, setQ] = useState('');
+  const [gridView, setGridView] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ title: '', price: '', description: '' });
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [warnDismissed, setWarnDismissed] = useState(false);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -275,12 +277,17 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
   const filtered = products.filter(p => {
     if (filter === 'active' && p.status && p.status !== 'active') return false;
     if (filter === 'sold' && p.status !== 'sold' && p.status !== 'sold-out') return false;
+    if (filter === 'draft' && p.status !== 'draft') return false;
+    if (filter === 'hidden' && p.status !== 'hidden') return false;
     if (q && !p.title?.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
 
-  const active = products.filter(p => !p.status || p.status === 'active').length;
-  const sold   = products.filter(p => p.status === 'sold' || p.status === 'sold-out').length;
+  const cntAll    = products.length;
+  const cntActive = products.filter(p => !p.status || p.status === 'active').length;
+  const cntSold   = products.filter(p => p.status === 'sold' || p.status === 'sold-out').length;
+  const cntDraft  = products.filter(p => p.status === 'draft').length;
+  const cntHidden = products.filter(p => p.status === 'hidden').length;
 
   async function saveEdit() {
     if (!token || editId === null) return;
@@ -315,36 +322,73 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
 
   if (!token) return <PageWrap><Err msg="กรุณาเข้าสู่ระบบเพื่อดูรายการสินค้า" /></PageWrap>;
 
+  const filterTabs = [
+    { k: 'all',    label: 'ทั้งหมด',   count: cntAll },
+    { k: 'active', label: 'กำลังขาย',  count: cntActive },
+    { k: 'sold',   label: 'ขายแล้ว',   count: cntSold },
+    { k: 'draft',  label: 'ฉบับร่าง',  count: cntDraft },
+    { k: 'hidden', label: 'ซ่อนอยู่',  count: cntHidden },
+  ];
+
   return (
-    <PageWrap>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
-        <div>
-          <PageH1>รายการสินค้าของคุณ</PageH1>
-          <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0 }}>จัดการประกาศ แก้ไขราคา และติดตามยอดขาย</p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          {/* Search */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '7px 12px', background: 'var(--surface)', minWidth: 200 }}>
-            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth={2}><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหารายการสินค้า..."
-              style={{ border: 'none', outline: 'none', background: 'transparent', color: 'var(--ink)', fontSize: 13, fontFamily: 'inherit', width: '100%' }} />
+    <div style={{ padding: '0 0 60px', animation: 'fadeIn .2s ease' }}>
+
+      {/* Warning banner */}
+      {!warnDismissed && (
+        <div style={{ background: '#fff4ed', borderBottom: '1px solid #fbd9c2', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#7c3200', marginBottom: 2 }}>
+              อัพเดตรายการสินค้าของคุณอยู่เสมอ
+            </div>
+            <div style={{ fontSize: 12, color: '#a04500' }}>
+              รายการสินค้าที่ไม่ได้รับการอัพเดตอาจถูกซ่อนจากการค้นหา
+            </div>
           </div>
+          <button style={{ fontSize: 12, fontWeight: 600, color: '#c05000', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', flexShrink: 0, textDecoration: 'underline' }}>
+            เรียนรู้เพิ่มเติม
+          </button>
+          <button onClick={() => setWarnDismissed(true)}
+            style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,.08)', display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0, color: '#7c3200' }}>
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      )}
+
+      {/* Header row: title + search + toggle */}
+      <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--ink)', margin: 0, letterSpacing: '-.02em', flex: 1 }}>
+          รายการสินค้าของคุณ
+        </h1>
+        {/* Search */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '7px 12px', background: 'var(--surface)', minWidth: 200 }}>
+          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth={2}><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหารายการสินค้า..."
+            style={{ border: 'none', outline: 'none', background: 'transparent', color: 'var(--ink)', fontSize: 13, fontFamily: 'inherit', width: '100%' }} />
+        </div>
+        {/* List/Grid toggle */}
+        <div style={{ display: 'flex', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+          <button onClick={() => setGridView(false)}
+            style={{ width: 34, height: 34, border: 'none', background: !gridView ? 'var(--ink)' : 'var(--surface)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={!gridView ? 'var(--bg)' : 'var(--ink-3)'} strokeWidth={2}>
+              <rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/>
+            </svg>
+          </button>
+          <button onClick={() => setGridView(true)}
+            style={{ width: 34, height: 34, border: 'none', background: gridView ? 'var(--ink)' : 'var(--surface)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={gridView ? 'var(--bg)' : 'var(--ink-3)'} strokeWidth={2}>
+              <rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/>
+            </svg>
+          </button>
         </div>
       </div>
 
-      {error && <Err msg={error} onRetry={load} />}
-
-      {/* Stats + Filters */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        {[
-          { k: 'all',    label: 'ทั้งหมด',   count: products.length },
-          { k: 'active', label: 'กำลังขาย',  count: active },
-          { k: 'sold',   label: 'ขายแล้ว',   count: sold },
-        ].map(({ k, label, count }) => (
+      {/* Filter tabs */}
+      <div style={{ padding: '0 24px', display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        {filterTabs.map(({ k, label, count }) => (
           <button key={k} onClick={() => setFilter(k as any)}
             style={{
-              padding: '6px 14px', borderRadius: 999, border: `1px solid ${filter === k ? 'var(--ink)' : 'var(--line)'}`,
+              padding: '6px 14px', borderRadius: 999,
+              border: `1px solid ${filter === k ? 'var(--ink)' : 'var(--line)'}`,
               background: filter === k ? 'var(--ink)' : 'var(--surface)',
               color: filter === k ? 'var(--bg)' : 'var(--ink-2)',
               fontSize: 13, fontWeight: filter === k ? 600 : 400, cursor: 'pointer',
@@ -354,102 +398,199 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
         ))}
       </div>
 
+      {/* Error */}
+      {error && <div style={{ padding: '0 24px 12px' }}><Err msg={error} onRetry={load} /></div>}
+
       {/* List */}
-      {loading ? <Skeleton h={88} n={3} /> : filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-3)' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📦</div>
-          <div style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>
-            {q ? `ไม่พบรายการที่ค้นหา "${q}"` : filter === 'sold' ? 'ยังไม่มีสินค้าที่ขายได้' : 'ยังไม่มีประกาศ'}
+      <div style={{ padding: '0 24px' }}>
+        {loading ? <Skeleton h={180} n={3} /> : filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-3)' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>📦</div>
+            <div style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>
+              {q ? `ไม่พบรายการที่ค้นหา "${q}"` : filter === 'sold' ? 'ยังไม่มีสินค้าที่ขายได้' : 'ยังไม่มีประกาศ'}
+            </div>
+            <div style={{ fontSize: 13, marginBottom: 20 }}>เริ่มโพสต์ขายสิ่งที่ไม่ใช้แล้วเลยดีกว่า!</div>
+            {!q && <button onClick={onNewListing} style={{ padding: '10px 24px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>+ ลงขายฟรี</button>}
           </div>
-          <div style={{ fontSize: 13, marginBottom: 20 }}>เริ่มโพสต์ขายสิ่งที่ไม่ใช้แล้วเลยดีกว่า!</div>
-          {!q && <button onClick={onNewListing} style={{ padding: '10px 24px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>+ ลงขายฟรี</button>}
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {filtered.map(p => {
-            const tints = IMG_TINTS[p.id % IMG_TINTS.length];
-            const imgUrl = p.images?.[0] || p.image_url || null;
-            const st = STATUS_MAP[p.status ?? 'active'] ?? STATUS_MAP.active;
-            const isEditing = editId === p.id;
-            const isDel = deleteId === p.id;
-            return (
-              <div key={p.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', gap: 14, padding: '14px 16px', alignItems: 'flex-start' }}>
-                  {/* Thumb */}
-                  <div style={{ width: 68, height: 68, borderRadius: 'var(--radius-sm)', flexShrink: 0, background: imgUrl ? undefined : `linear-gradient(135deg,${tints[0]},${tints[1]})`, backgroundImage: imgUrl ? `url(${imgUrl})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                  {/* Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, letterSpacing: '-.01em', marginBottom: 6 }}>฿{Number(p.price).toLocaleString()}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, color: st.color, background: st.bg }}>{st.label}</span>
-                      {p.is_boosted && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, fontFamily: 'var(--font-mono)', letterSpacing: '.06em', background: 'linear-gradient(90deg,#111,#333)', color: '#fff' }}>BOOST</span>}
-                      {p.created_at && <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{new Date(p.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}</span>}
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {filtered.map(p => {
+              const tints = IMG_TINTS[p.id % IMG_TINTS.length];
+              const imgUrl = p.images?.[0] || p.image_url || null;
+              const st = STATUS_MAP[p.status ?? 'active'] ?? STATUS_MAP.active;
+              const isEditing = editId === p.id;
+              const isDel = deleteId === p.id;
+              const isActive = !p.status || p.status === 'active';
+              const isSold = p.status === 'sold' || p.status === 'sold-out';
+              const isDraft = p.status === 'draft';
+              // Mock stats based on product id
+              const mockGroups = (p.id % 5) + 1;
+              const mockClicks = Math.floor(p.id * 17 + 43) % 200 + 10;
+              // Stale warning: show for active listings (mocked: every 3rd product)
+              const isStale = isActive && p.id % 3 === 0;
+              const dateStr = p.created_at
+                ? new Date(p.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: '2-digit', year: 'numeric' }).replace(/\//g, '/')
+                : '—';
+
+              return (
+                <div key={p.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', gap: 0, alignItems: 'stretch' }}>
+                    {/* Large image */}
+                    <div style={{
+                      width: 180, minHeight: 180, flexShrink: 0,
+                      background: imgUrl ? undefined : `linear-gradient(135deg,${tints[0]},${tints[1]})`,
+                      backgroundImage: imgUrl ? `url(${imgUrl})` : undefined,
+                      backgroundSize: 'cover', backgroundPosition: 'center',
+                    }} />
+
+                    {/* Content area */}
+                    <div style={{ flex: 1, minWidth: 0, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+                      {/* Stale warning */}
+                      {isStale && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--neg)', flexShrink: 0 }} />
+                          <span style={{ fontSize: 12, color: 'var(--neg)', fontWeight: 500 }}>เตือน: ต้องอัพเดตรายการสินค้าของคุณแล้วหรือไม่?</span>
+                        </div>
+                      )}
+
+                      {/* Title */}
+                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</div>
+
+                      {/* Price row */}
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, letterSpacing: '-.01em', color: 'var(--ink)' }}>
+                          ฿{Number(p.price).toLocaleString()}
+                        </span>
+                        {p.original_price && p.original_price > p.price && (
+                          <s style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 400 }}>฿{Number(p.original_price).toLocaleString()}</s>
+                        )}
+                      </div>
+
+                      {/* Status + date */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: st.color }}>
+                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: st.color, flexShrink: 0 }} />
+                          {st.label}
+                        </span>
+                        {p.is_boosted && (
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, fontFamily: 'var(--font-mono)', letterSpacing: '.06em', background: 'linear-gradient(90deg,#111,#333)', color: '#fff' }}>BOOST</span>
+                        )}
+                        <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>ประกาศเมื่อ {dateStr}</span>
+                      </div>
+
+                      {/* Stats */}
+                      <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span>ลงประกาศใน {mockGroups} กลุ่ม · การคลิกจากการค้นหา {mockClicks} ครั้ง</span>
+                        <span title="ข้อมูลเชิงลึก" style={{ display: 'inline-flex', alignItems: 'center', cursor: 'help' }}>
+                          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth={1.8}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                        </span>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 'auto' }}>
+                        {isActive && (
+                          <>
+                            <button onClick={() => toggleStatus(p)}
+                              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--ink-2)' }}>
+                              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--pos)" strokeWidth={2.2}><polyline points="20 6 9 17 4 12"/></svg>
+                              ทำเครื่องหมายว่าขายแล้ว
+                            </button>
+                            <button style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--ink-2)' }}>
+                              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={2}><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                              โปรโมก
+                            </button>
+                          </>
+                        )}
+                        {isDraft && (
+                          <>
+                            <button onClick={() => toggleStatus(p)}
+                              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--ink-2)' }}>
+                              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                              ทำเครื่องหมายว่าขายพร้อมจำหน่าย
+                            </button>
+                            <button style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--ink-2)' }}>
+                              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                              ลงประกาศขายสินค้าอีกครั้ง
+                            </button>
+                          </>
+                        )}
+                        {isSold && (
+                          <button disabled
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'not-allowed', color: 'var(--ink-3)' }}>
+                            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}><polyline points="20 6 9 17 4 12"/></svg>
+                            ขายแล้ว
+                          </button>
+                        )}
+
+                        {/* Share button */}
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--ink-2)' }}>
+                          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                          แชร์
+                        </button>
+
+                        {/* More / Edit / Delete */}
+                        <button onClick={() => { if (isEditing) setEditId(null); else { setEditId(p.id); setEditForm({ title: p.title ?? '', price: String(p.price ?? ''), description: p.description ?? '' }); } }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: `1px solid ${isEditing ? 'var(--ink)' : 'var(--line)'}`, borderRadius: 'var(--radius-sm)', background: isEditing ? 'var(--ink)' : 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: isEditing ? 'var(--bg)' : 'var(--ink-2)' }}>
+                          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          แก้ไข
+                        </button>
+                        <button onClick={() => setDeleteId(isDel ? null : p.id)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 4, width: 32, height: 32, border: `1px solid ${isDel ? 'var(--neg)' : 'var(--line)'}`, borderRadius: 'var(--radius-sm)', background: isDel ? 'rgba(184,50,22,.08)' : 'var(--surface-2)', justifyContent: 'center', cursor: 'pointer' }}>
+                          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={isDel ? 'var(--neg)' : 'var(--ink-3)'} strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  {/* Actions */}
-                  <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                    <button onClick={() => toggleStatus(p)} title={(!p.status || p.status === 'active') ? 'ทำเครื่องหมายว่าขายแล้ว' : 'เปิดประกาศใหม่'}
-                      style={{ width: 32, height: 32, borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)', background: 'var(--surface-2)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
-                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={(!p.status || p.status === 'active') ? 'var(--pos)' : 'var(--ink-3)'} strokeWidth={2}><polyline points="20 6 9 17 4 12"/></svg>
-                    </button>
-                    <button onClick={() => { if (isEditing) setEditId(null); else { setEditId(p.id); setEditForm({ title: p.title ?? '', price: String(p.price ?? ''), description: p.description ?? '' }); } }}
-                      style={{ width: 32, height: 32, borderRadius: 'var(--radius-sm)', border: `1px solid ${isEditing ? 'var(--ink)' : 'var(--line)'}`, background: isEditing ? 'var(--ink)' : 'var(--surface-2)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
-                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={isEditing ? 'var(--bg)' : 'var(--ink-2)'} strokeWidth={2}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                    <button onClick={() => setDeleteId(isDel ? null : p.id)}
-                      style={{ width: 32, height: 32, borderRadius: 'var(--radius-sm)', border: `1px solid ${isDel ? 'var(--neg)' : 'var(--line)'}`, background: isDel ? 'rgba(184,50,22,.08)' : 'var(--surface-2)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
-                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={isDel ? 'var(--neg)' : 'var(--ink-3)'} strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                    </button>
-                  </div>
+
+                  {/* Delete confirm */}
+                  {isDel && (
+                    <div style={{ padding: '10px 16px', background: 'rgba(184,50,22,.05)', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                      <span style={{ fontSize: 13, color: 'var(--neg)' }}>ลบประกาศนี้? ย้อนกลับไม่ได้</span>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => setDeleteId(null)} style={{ padding: '6px 14px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', fontSize: 12, cursor: 'pointer', color: 'var(--ink-2)' }}>ยกเลิก</button>
+                        <button onClick={() => confirmDelete(p.id)} disabled={deleting}
+                          style={{ padding: '6px 14px', border: 'none', borderRadius: 'var(--radius-sm)', background: 'var(--neg)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {deleting && <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>}
+                          ลบเลย
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Edit form */}
+                  {isEditing && (
+                    <div style={{ padding: '14px 16px', borderTop: '1px solid var(--line)', background: 'var(--surface-2)' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px', gap: 10, marginBottom: 10 }}>
+                        <div>
+                          <label style={labelSt}>ชื่อประกาศ</label>
+                          <input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} style={inputSt} maxLength={80} />
+                        </div>
+                        <div>
+                          <label style={labelSt}>ราคา (฿)</label>
+                          <input type="number" value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))} style={inputSt} min={1} />
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: 10 }}>
+                        <label style={labelSt}>คำอธิบาย</label>
+                        <textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} rows={3} style={{ ...inputSt, resize: 'vertical' as const }} />
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                        <button onClick={() => setEditId(null)} style={{ padding: '7px 14px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', fontSize: 12, cursor: 'pointer', color: 'var(--ink-2)' }}>ยกเลิก</button>
+                        <button onClick={saveEdit} disabled={saving}
+                          style={{ padding: '7px 18px', border: 'none', borderRadius: 'var(--radius-sm)', background: 'var(--ink)', color: 'var(--bg)', fontSize: 12, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {saving && <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>}
+                          บันทึก
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {/* Delete confirm */}
-                {isDel && (
-                  <div style={{ padding: '10px 16px', background: 'rgba(184,50,22,.05)', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                    <span style={{ fontSize: 13, color: 'var(--neg)' }}>ลบประกาศนี้? ย้อนกลับไม่ได้</span>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button onClick={() => setDeleteId(null)} style={{ padding: '6px 14px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', fontSize: 12, cursor: 'pointer', color: 'var(--ink-2)' }}>ยกเลิก</button>
-                      <button onClick={() => confirmDelete(p.id)} disabled={deleting}
-                        style={{ padding: '6px 14px', border: 'none', borderRadius: 'var(--radius-sm)', background: 'var(--neg)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {deleting && <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>}
-                        ลบเลย
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {/* Edit form */}
-                {isEditing && (
-                  <div style={{ padding: '14px 16px', borderTop: '1px solid var(--line)', background: 'var(--surface-2)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px', gap: 10, marginBottom: 10 }}>
-                      <div>
-                        <label style={labelSt}>ชื่อประกาศ</label>
-                        <input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} style={inputSt} maxLength={80} />
-                      </div>
-                      <div>
-                        <label style={labelSt}>ราคา (฿)</label>
-                        <input type="number" value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))} style={inputSt} min={1} />
-                      </div>
-                    </div>
-                    <div style={{ marginBottom: 10 }}>
-                      <label style={labelSt}>คำอธิบาย</label>
-                      <textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} rows={3} style={{ ...inputSt, resize: 'vertical' as const }} />
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                      <button onClick={() => setEditId(null)} style={{ padding: '7px 14px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', fontSize: 12, cursor: 'pointer', color: 'var(--ink-2)' }}>ยกเลิก</button>
-                      <button onClick={saveEdit} disabled={saving}
-                        style={{ padding: '7px 18px', border: 'none', borderRadius: 'var(--radius-sm)', background: 'var(--ink)', color: 'var(--bg)', fontSize: 12, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {saving && <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>}
-                        บันทึก
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </PageWrap>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -578,40 +719,94 @@ function SellNews() {
 
 // ─── BUY: Activity ────────────────────────────────────────────────────────────
 
+function ActivityIcon({ kind }: { kind: string }) {
+  if (kind === 'viewed') return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth={1.8}>
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+  if (kind === 'messaged') return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth={1.8}>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  );
+  if (kind === 'saved') return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth={1.8}>
+      <path d="M6 4h12v16l-6-4-6 4z"/>
+    </svg>
+  );
+  // offered
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8}>
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+      <line x1="7" y1="7" x2="7.01" y2="7"/>
+    </svg>
+  );
+}
+
 function BuyActivity() {
-  const kinds = [
-    { k: 'viewed',   label: 'เพิ่งดู',      color: 'var(--ink-3)' },
-    { k: 'messaged', label: 'ส่งข้อความ',   color: '#2563eb' },
-    { k: 'saved',    label: 'บันทึกแล้ว',    color: '#7c3aed' },
-    { k: 'offered',  label: 'ยื่นข้อเสนอ',  color: 'var(--accent)' },
+  const items: { kind: string; title: string; seller: string; location: string; price: number; when: string }[] = [
+    { kind: 'viewed',   title: 'iPhone 15 Pro Max 256GB สีดำ',       seller: 'TechBKK',     location: 'กรุงเทพ · พระราม 9',    price: 38900, when: '5 นาทีที่แล้ว' },
+    { kind: 'messaged', title: 'MacBook Air M3 512GB Space Gray',      seller: 'iShopThana',  location: 'นนทบุรี · บางใหญ่',     price: 52000, when: '1 ชม.ที่แล้ว' },
+    { kind: 'saved',    title: 'AirPods Pro 2nd Gen ของแท้มือหนึ่ง', seller: 'GadgetHub',   location: 'กรุงเทพ · ลาดพร้าว',    price: 7800,  when: '3 ชม.ที่แล้ว' },
+    { kind: 'offered',  title: 'จักรยาน Trek FX 3 Disc Size M',       seller: 'BikeStation', location: 'เชียงใหม่ · นิมมาน',    price: 18500, when: 'วานนี้' },
+    { kind: 'viewed',   title: 'Sony WH-1000XM5 สภาพเยี่ยม',          seller: 'SoundGear',   location: 'กรุงเทพ · อโศก',        price: 8500,  when: '2 วันที่แล้ว' },
+    { kind: 'saved',    title: 'Nintendo Switch OLED สีขาว',           seller: 'GameZone',    location: 'กรุงเทพ · สยาม',        price: 11500, when: '3 วันที่แล้ว' },
   ];
-  const items = [
-    { kind: 'viewed',   title: 'iPhone 15 Pro Max 256GB สีดำ',      price: 38900, when: '5 นาทีที่แล้ว',  detail: '' },
-    { kind: 'messaged', title: 'MacBook Air M3 512GB Space Gray',     price: 52000, when: '1 ชม.ที่แล้ว',   detail: 'คุณ: ยังมีอยู่ไหมครับ?' },
-    { kind: 'saved',    title: 'AirPods Pro 2nd Gen ของแท้มือหนึ่ง',  price: 7800,  when: '3 ชม.ที่แล้ว',   detail: '' },
-    { kind: 'offered',  title: 'จักรยาน Trek FX 3 Disc Size M',       price: 18500, when: 'วานนี้',          detail: 'เสนอซื้อ ฿17,500' },
-    { kind: 'viewed',   title: 'Sony WH-1000XM5 สภาพเยี่ยม',          price: 8500,  when: '2 วันที่แล้ว',   detail: '' },
-  ];
+
+  const kindColor: Record<string, string> = {
+    viewed: 'var(--ink-3)',
+    messaged: '#2563eb',
+    saved: '#7c3aed',
+    offered: 'var(--accent)',
+  };
+  const kindLabel: Record<string, string> = {
+    viewed: 'เพิ่งดู',
+    messaged: 'ส่งข้อความ',
+    saved: 'บันทึก',
+    offered: 'ยื่นข้อเสนอ',
+  };
+
   return (
     <PageWrap>
       <PageH1>กิจกรรมล่าสุด</PageH1>
       <PageSub>ของที่คุณดู · ข้อความ · ข้อเสนอ · บันทึก</PageSub>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
         {items.map((a, i) => {
-          const kind = kinds.find(k => k.k === a.kind)!;
           const tints = IMG_TINTS[i % IMG_TINTS.length];
+          const color = kindColor[a.kind] ?? 'var(--ink-3)';
+          const label = kindLabel[a.kind] ?? a.kind;
           return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--line)', marginBottom: 8, cursor: 'pointer' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--ink)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--line)')}>
-              <div style={{ width: 52, height: 52, borderRadius: 'var(--radius-sm)', flexShrink: 0, background: `linear-gradient(135deg,${tints[0]},${tints[1]})` }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: kind.color, marginBottom: 3 }}>{kind.label}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>{a.title}</div>
-                {a.detail && <div style={{ fontSize: 12, color: 'var(--ink-2)', marginBottom: 2 }}>{a.detail}</div>}
-                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>฿{a.price.toLocaleString()}</div>
+            <div key={i}
+              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderBottom: i < items.length - 1 ? '1px solid var(--line)' : 'none', cursor: 'pointer', borderRadius: 0, transition: 'background .12s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+
+              {/* Type icon */}
+              <div style={{ width: 20, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIcon kind={a.kind} />
               </div>
-              <div style={{ fontSize: 12, color: 'var(--ink-3)', flexShrink: 0 }}>{a.when}</div>
+
+              {/* Product thumbnail */}
+              <div style={{
+                width: 56, height: 56, borderRadius: 'var(--radius-sm)', flexShrink: 0,
+                background: `linear-gradient(135deg,${tints[0]},${tints[1]})`,
+              }} />
+
+              {/* Info column */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color, marginBottom: 2 }}>{label}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>{a.title}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {a.seller} · {a.location}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>฿{a.price.toLocaleString()}</div>
+              </div>
+
+              {/* Timestamp */}
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', flexShrink: 0, whiteSpace: 'nowrap' }}>{a.when}</div>
             </div>
           );
         })}
