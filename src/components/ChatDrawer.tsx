@@ -141,6 +141,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
   const token: string | undefined = (session as any)?.token;
   const myUserId: number | undefined = (session as any)?.userId;
   const isMobile = useBreakpoint(768);
+  const isWide = !useBreakpoint(1024); // show right sidebar at ≥1024px
 
   const [rooms, setRooms] = useState<any[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
@@ -266,7 +267,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
   // On mobile: show list OR chat (not both)
   const showList = isMobile ? !selectedRoom : true;
   const showChat = isMobile ? !!selectedRoom : true;
-  const showRight = !isMobile && !!selectedRoom;
+  const showRight = !isMobile && isWide && !!selectedRoom;
 
   const sellerName = selectedRoom ? (selectedRoom.seller_name ?? selectedRoom.buyer_name ?? 'ผู้ใช้') : '';
   const tints = selectedRoom ? IMG_TINTS[selectedRoom.id % IMG_TINTS.length] : IMG_TINTS[0];
@@ -283,7 +284,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: isMobile ? '100%' : 940,
+          width: isMobile ? '100%' : 1100,
           height: '100%',
           background: 'var(--bg)',
           display: 'flex',
@@ -293,10 +294,10 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
           overflow: 'hidden',
         }}>
 
-        {/* ── LEFT PANEL: Room list (280px) ── */}
+        {/* ── LEFT PANEL: Room list (320px) ── */}
         {showList && (
           <div style={{
-            width: isMobile ? '100%' : 280,
+            width: isMobile ? '100%' : 320,
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
@@ -400,7 +401,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                     data-testid={`room-${room.id}`}
                     onClick={() => setSelectedRoom(room)}
                     style={{
-                      width: '100%', padding: '10px 12px', border: 'none', cursor: 'pointer', textAlign: 'left',
+                      width: '100%', padding: '14px 12px', border: 'none', cursor: 'pointer', textAlign: 'left',
                       background: isSelected ? '#fff5f5' : 'var(--surface)',
                       borderBottom: '1px solid var(--line)',
                       display: 'flex', gap: 10, alignItems: 'center',
@@ -563,12 +564,11 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                       style={{ display: 'flex', maxWidth: '78%', alignSelf: m.who === 'me' ? 'flex-end' : 'flex-start' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: m.who === 'me' ? 'flex-end' : 'flex-start' }}>
                         <div style={{
-                          padding: '9px 13px', borderRadius: 16, fontSize: 13.5, lineHeight: 1.45, wordBreak: 'break-word',
-                          background: m.who === 'me' ? 'var(--accent)' : 'var(--surface)',
-                          color: m.who === 'me' ? '#fff' : 'var(--ink)',
-                          border: m.who === 'me' ? 'none' : '1px solid var(--line)',
-                          borderBottomRightRadius: m.who === 'me' ? 4 : 16,
-                          borderBottomLeftRadius: m.who === 'seller' ? 4 : 16,
+                          padding: '9px 13px', borderRadius: 18, fontSize: 13.5, lineHeight: 1.45, wordBreak: 'break-word',
+                          background: m.who === 'me' ? 'var(--ink)' : 'var(--line-2)',
+                          color: m.who === 'me' ? 'var(--bg)' : 'var(--ink)',
+                          borderBottomRightRadius: m.who === 'me' ? 4 : 18,
+                          borderBottomLeftRadius: m.who === 'seller' ? 4 : 18,
                         }}>{m.text}</div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', padding: '0 4px' }}>{m.time}</div>
                       </div>
@@ -595,7 +595,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                     type="submit"
                     disabled={!draft.trim() || sending}
                     style={{
-                      width: 40, height: 40, flexShrink: 0,
+                      width: 36, height: 36, flexShrink: 0,
                       background: draft.trim() ? 'var(--accent)' : 'var(--line)',
                       color: draft.trim() ? '#fff' : 'var(--ink-3)',
                       border: 'none', borderRadius: '50%', fontSize: 13, fontWeight: 600,
@@ -617,81 +617,100 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
           </div>
         )}
 
-        {/* ── RIGHT PANEL: Seller info (220px, desktop + room selected only) ── */}
+        {/* ── RIGHT PANEL: Seller info (340px, desktop + room selected only) ── */}
         {showRight && selectedRoom && (
           <div style={{
-            width: 220, flexShrink: 0,
+            width: 340, flexShrink: 0,
             borderLeft: '1px solid var(--line)',
             display: 'flex', flexDirection: 'column',
             overflowY: 'auto',
             background: 'var(--surface)',
           }}>
-            {/* Seller card */}
-            <div style={{ padding: '20px 16px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            {/* Profile hero */}
+            <div style={{ padding: '24px 16px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, borderBottom: '1px solid var(--line)' }}>
               <div style={{
-                width: 48, height: 48, borderRadius: '50%',
+                width: 96, height: 96, borderRadius: '50%',
                 background: `linear-gradient(135deg,${tints[0]},${tints[1]})`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 700, fontSize: 16, color: '#fff', letterSpacing: 0.5,
+                fontWeight: 800, fontSize: 28, color: '#fff',
               }}>{getInitials(sellerName)}</div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)', textAlign: 'center' }}>{sellerName}</div>
-              <div style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center' }}>★ 4.8 (156 รีวิว)</div>
-              <div style={{ fontSize: 11, color: 'var(--ink-3)', textAlign: 'center', lineHeight: 1.5 }}>สมาชิกตั้งแต่ 2564 · ตอบเร็วภายใน 15 นาที</div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--ink)', textAlign: 'center' }}>{sellerName}</div>
+              <div style={{ fontSize: 13, color: '#e6a817', textAlign: 'center' }}>★ 4.8 <span style={{ color: 'var(--ink-3)' }}>(156 รีวิว)</span></div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center', lineHeight: 1.5 }}>สมาชิกตั้งแต่ 2564 · ตอบเร็วภายใน 15 นาที</div>
             </div>
 
-            <div style={{ height: 1, background: 'var(--line)', margin: '0 16px' }} />
-
-            {/* สินค้าคู่สนทนา */}
-            <div style={{ padding: '14px 16px 10px' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 10 }}>สินค้าคู่สนทนา</div>
+            {/* สินค้าที่คุยกันอยู่ */}
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase' as const, letterSpacing: '.06em', marginBottom: 10 }}>สินค้าที่คุยกันอยู่</div>
               {selectedRoom.product_image ? (
                 <div style={{
-                  width: '100%', aspectRatio: '1/1', borderRadius: 'var(--radius-sm)',
+                  width: '100%', height: 180, borderRadius: 'var(--radius)',
                   background: `url(${selectedRoom.product_image}) center/cover`,
-                  border: '1px solid var(--line)', marginBottom: 8,
+                  border: '1px solid var(--line)', marginBottom: 10,
                 }} />
               ) : (
                 <div style={{
-                  width: '100%', aspectRatio: '1/1', borderRadius: 'var(--radius-sm)',
-                  background: 'var(--surface-2)', border: '1px solid var(--line)', marginBottom: 8,
+                  width: '100%', height: 180, borderRadius: 'var(--radius)',
+                  background: `linear-gradient(135deg,${tints[0]},${tints[1]})`, marginBottom: 10,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'var(--ink-3)', fontSize: 28,
+                  color: 'rgba(255,255,255,.6)', fontSize: 36,
                 }}>📦</div>
               )}
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>
                 {selectedRoom.product_title ?? 'สินค้า'}
               </div>
               {selectedRoom.product_price && (
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-.01em' }}>
                   ฿{selectedRoom.product_price?.toLocaleString()}
                 </div>
               )}
             </div>
 
-            <div style={{ height: 1, background: 'var(--line)', margin: '0 16px' }} />
-
             {/* การดำเนินการ */}
-            <div style={{ padding: '14px 16px 16px' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 10 }}>การดำเนินการ</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase' as const, letterSpacing: '.06em', marginBottom: 6 }}>การดำเนินการ</div>
+              {[
+                { icon: <IconAttach />, label: 'ไฟล์ที่แชร์', color: 'var(--ink-2)' },
+                { icon: <IconMute />, label: 'ปิดการแจ้งเตือน', color: 'var(--ink-2)' },
+                { icon: <IconPin />, label: 'ปักหมุดข้อความ', color: 'var(--ink-2)' },
+                { icon: <IconCheck />, label: 'ทำเครื่องหมายว่าขายแล้ว', color: 'var(--pos)' },
+                { icon: <IconBlock />, label: 'บล็อก & รายงาน', color: 'var(--neg)' },
+              ].map(({ icon, label, color }) => (
+                <button key={label} style={{
+                  width: '100%', minHeight: 44, padding: '0 6px', border: 'none', background: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', borderRadius: 'var(--radius-sm)',
+                  color,
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-2)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}>
+                  <span style={{ display: 'flex', flexShrink: 0 }}>{icon}</span>
+                  <span style={{ fontSize: 13, fontFamily: 'inherit', color }}>{label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* สินค้าอื่นจากผู้ขาย */}
+            <div style={{ padding: '14px 16px 20px' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase' as const, letterSpacing: '.06em', marginBottom: 10 }}>สินค้าอื่นจากผู้ขาย</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {[
-                  { icon: <IconAttach />, label: 'ไฟล์และแชร์', color: 'var(--ink-2)' },
-                  { icon: <IconMute />, label: 'ปิดการแจ้งเตือน', color: 'var(--ink-2)' },
-                  { icon: <IconPin />, label: 'ปักหมุดข้อความนี้', color: 'var(--ink-2)' },
-                  { icon: <IconCheck />, label: 'ทำเครื่องหมายว่าขายแล้ว', color: 'var(--pos)' },
-                  { icon: <IconBlock />, label: 'บล็อก & รายงาน', color: 'var(--neg)' },
-                ].map(({ icon, label, color }) => (
-                  <button key={label} style={{
-                    width: '100%', padding: '8px 6px', border: 'none', background: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left', borderRadius: 'var(--radius-sm)',
-                    color,
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-2)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}>
-                    <span style={{ display: 'flex', flexShrink: 0 }}>{icon}</span>
-                    <span style={{ fontSize: 12, fontFamily: 'inherit', color }}>{label}</span>
-                  </button>
-                ))}
+                  { t: 'iPhone 15 Pro 256GB สีดำ', p: 38900, idx: 0 },
+                  { t: 'MacBook Air M3 512GB', p: 52000, idx: 1 },
+                  { t: 'AirPods Pro Gen 2', p: 7800, idx: 2 },
+                ].map((item, j) => {
+                  const mt = tints; // reuse tints
+                  return (
+                    <div key={j} style={{ display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'; (e.currentTarget as HTMLElement).style.borderRadius = '8px'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}>
+                      <div style={{ width: 72, height: 72, borderRadius: 'var(--radius-sm)', flexShrink: 0, background: `linear-gradient(135deg,${IMG_TINTS[(j+3)%8][0]},${IMG_TINTS[(j+3)%8][1]})` }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{item.t}</div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>฿{item.p.toLocaleString()}</div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

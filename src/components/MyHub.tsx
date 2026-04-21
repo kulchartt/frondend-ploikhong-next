@@ -137,7 +137,7 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
       </div>
 
       {/* ── Body: sidebar + content ── */}
-      <div style={{ flex: 1, display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : undefined, gridTemplateColumns: isMobile ? undefined : '260px 1fr', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : undefined, gridTemplateColumns: isMobile ? undefined : '300px 1fr', overflow: 'hidden' }}>
 
         {/* ── Sidebar (desktop) / Tab strip (mobile) ── */}
         <aside style={{

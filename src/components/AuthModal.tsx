@@ -83,8 +83,8 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
     <div data-testid="auth-modal" onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
       zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div onClick={e => e.stopPropagation()}
-        style={{ background: 'var(--surface)', borderRadius: 16, padding: 36, width: '100%',
-          maxWidth: 440, boxShadow: '0 30px 80px rgba(0,0,0,.35)', position: 'relative' }}>
+        style={{ background: 'var(--surface)', borderRadius: 12, padding: 36, width: '100%',
+          maxWidth: 420, boxShadow: '0 30px 80px rgba(0,0,0,.35)', position: 'relative' }}>
 
         <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16,
           background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>
