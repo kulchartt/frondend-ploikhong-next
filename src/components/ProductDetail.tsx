@@ -373,8 +373,8 @@ export function ProductDetail({ product, onClose, onViewShop }: ProductDetailPro
               onClick={() => setChatOpen(true)}
               style={{
                 width: '100%', padding: '14px 0',
-                background: 'var(--accent)', color: '#fff',
-                border: 'none', borderRadius: 'var(--radius-sm)',
+                background: 'rgba(255,45,31,.07)', color: 'var(--accent)',
+                border: '1.5px solid rgba(255,45,31,.22)', borderRadius: 'var(--radius-sm)',
                 fontSize: 15, fontWeight: 700, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 fontFamily: 'inherit',
@@ -446,7 +446,9 @@ export function ProductDetail({ product, onClose, onViewShop }: ProductDetailPro
             {/* Product pin */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: 10, marginBottom: 4 }}>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <div style={{ width: 42, height: 42, borderRadius: 'var(--radius-sm)', background: `linear-gradient(135deg, ${tints[0]}, ${tints[1]})`, flexShrink: 0 }} />
+                <div style={{ width: 42, height: 42, borderRadius: 'var(--radius-sm)', background: `linear-gradient(135deg, ${tints[0]}, ${tints[1]})`, flexShrink: 0, overflow: 'hidden' }}>
+                  {imgs[0] && <img src={imgs[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', color: 'var(--ink)' }}>{product.title}</div>
                   <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, marginTop: 2, color: 'var(--ink)' }}>฿{Number(price).toLocaleString()}</div>
