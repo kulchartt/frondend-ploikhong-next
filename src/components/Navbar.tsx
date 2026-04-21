@@ -37,7 +37,7 @@ export function Navbar({
   /** Shared style for all column icon-nav buttons */
   function iconBtn(extra?: React.CSSProperties): React.CSSProperties {
     return {
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
       gap: 3,
       padding: isMobile ? '6px 8px' : '6px 10px',
       minWidth: isMobile ? 34 : 44,
