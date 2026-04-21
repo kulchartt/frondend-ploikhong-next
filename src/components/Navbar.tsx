@@ -49,7 +49,7 @@ export function Navbar({
   }
 
   const labelStyle: React.CSSProperties = {
-    fontSize: 11, fontWeight: 500, color: 'var(--ink-2)',
+    fontSize: 13, fontWeight: 500, color: 'var(--ink-2)',
     lineHeight: 1, letterSpacing: '-.01em', whiteSpace: 'nowrap',
   };
 
