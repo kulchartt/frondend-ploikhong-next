@@ -95,7 +95,7 @@ export function Navbar({
         </div>
 
         {/* ── Right section ── order: แชท, ถูกใจ, บัญชี, ซื้อ, ขาย, +ลงขาย ───── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
 
           {/* แชท, ถูกใจ */}
           {navItems.slice(0, 2).map(({ icon, label, badge, action }) => (
@@ -250,7 +250,7 @@ export function Navbar({
               background: 'var(--accent)', color: '#fff',
               border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 600,
               fontSize: isMobile ? 12 : 13, cursor: 'pointer', whiteSpace: 'nowrap',
-              flexShrink: 0, marginLeft: 6, fontFamily: 'inherit' }}>
+              flexShrink: 0, marginLeft: 4, fontFamily: 'inherit' }}>
             + ลงขาย
           </button>
         </div>
