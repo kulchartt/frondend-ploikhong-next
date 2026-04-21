@@ -307,7 +307,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
           }}>
 
             {/* Header */}
-            <div style={{ padding: '14px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ padding: '14px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
               <button
                 onClick={onClose}
                 style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%', flexShrink: 0 }}
