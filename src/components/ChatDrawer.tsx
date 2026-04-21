@@ -20,6 +20,122 @@ function nowTime() {
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+// Icons
+function IconSearch() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx={11} cy={11} r={8}/>
+      <line x1={21} y1={21} x2={16.65} y2={16.65}/>
+    </svg>
+  );
+}
+function IconClose() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <line x1={6} y1={6} x2={18} y2={18}/>
+      <line x1={18} y1={6} x2={6} y2={18}/>
+    </svg>
+  );
+}
+function IconCompose() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20h9"/>
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+    </svg>
+  );
+}
+function IconPhone() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.58a16 16 0 0 0 5.95 5.95l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+    </svg>
+  );
+}
+function IconVideo() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="23 7 16 12 23 17 23 7"/>
+      <rect x={1} y={5} width={15} height={14} rx={2} ry={2}/>
+    </svg>
+  );
+}
+function IconBell() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+  );
+}
+function IconBack() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+  );
+}
+function IconSend() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <line x1={22} y1={2} x2={11} y2={13}/>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+    </svg>
+  );
+}
+function IconSpin() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }}>
+      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+    </svg>
+  );
+}
+function IconAttach() {
+  return (
+    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.64 17.2a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+    </svg>
+  );
+}
+function IconMute() {
+  return (
+    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      <line x1={1} y1={1} x2={23} y2={23}/>
+    </svg>
+  );
+}
+function IconPin() {
+  return (
+    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+      <circle cx={12} cy={10} r={3}/>
+    </svg>
+  );
+}
+function IconCheck() {
+  return (
+    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--pos)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  );
+}
+function IconBlock() {
+  return (
+    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--neg)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx={12} cy={12} r={10}/>
+      <line x1={4.93} y1={4.93} x2={19.07} y2={19.07}/>
+    </svg>
+  );
+}
+
 export function ChatDrawer({ onClose }: ChatDrawerProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
@@ -33,6 +149,8 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [search, setSearch] = useState('');
+  const [tab, setTab] = useState<'all'|'unread'|'pinned'>('all');
   const chatRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const latestId = useRef(0);
@@ -45,13 +163,13 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (selectedRoom) setSelectedRoom(null);
+        if (selectedRoom && isMobile) setSelectedRoom(null);
         else onClose();
       }
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
-  }, [onClose, selectedRoom]);
+  }, [onClose, selectedRoom, isMobile]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -120,7 +238,6 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
     setSending(true);
     try {
       await api.sendMessage(selectedRoom.id, text, token);
-      // Update last message in room list
       setRooms(rs => rs.map(r => r.id === selectedRoom.id
         ? { ...r, last_message: text, updated_at: new Date().toISOString() }
         : r
@@ -139,7 +256,20 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
     return `${Math.floor(d/1440)} วัน`;
   }
 
-  const showThreadView = isMobile ? !!selectedRoom : false; // mobile: one view at a time
+  const filteredRooms = rooms.filter(r => {
+    const name = (r.seller_name ?? r.buyer_name ?? '').toLowerCase();
+    const msg = (r.last_message ?? r.product_title ?? '').toLowerCase();
+    const q = search.toLowerCase();
+    return name.includes(q) || msg.includes(q);
+  });
+
+  // On mobile: show list OR chat (not both)
+  const showList = isMobile ? !selectedRoom : true;
+  const showChat = isMobile ? !!selectedRoom : true;
+  const showRight = !isMobile && !!selectedRoom;
+
+  const sellerName = selectedRoom ? (selectedRoom.seller_name ?? selectedRoom.buyer_name ?? 'ผู้ใช้') : '';
+  const tints = selectedRoom ? IMG_TINTS[selectedRoom.id % IMG_TINTS.length] : IMG_TINTS[0];
 
   return (
     <div
@@ -153,35 +283,81 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: isMobile ? '100%' : 520,
+          width: isMobile ? '100%' : 940,
           height: '100%',
           background: 'var(--bg)',
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : selectedRoom ? '200px 1fr' : '1fr',
+          display: 'flex',
+          flexDirection: 'row',
           boxShadow: '-8px 0 40px rgba(0,0,0,.2)',
           animation: 'hubSlide .28s cubic-bezier(.2,.8,.2,1)',
           overflow: 'hidden',
         }}>
 
-        {/* ── Room list (always on desktop, hidden on mobile when thread open) ── */}
-        {(!isMobile || !selectedRoom) && (
-          <div style={{ display: 'flex', flexDirection: 'column', borderRight: isMobile ? 'none' : '1px solid var(--line)', height: '100%', overflow: 'hidden' }}>
+        {/* ── LEFT PANEL: Room list (280px) ── */}
+        {showList && (
+          <div style={{
+            width: isMobile ? '100%' : 280,
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            borderRight: isMobile ? 'none' : '1px solid var(--line)',
+            height: '100%',
+            overflow: 'hidden',
+            background: 'var(--surface)',
+          }}>
 
             {/* Header */}
-            <div style={{ padding: '18px 18px 14px', background: 'var(--surface)', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--ink)' }}>ข้อความ</div>
-                {rooms.length > 0 && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{rooms.length} การสนทนา</div>}
-              </div>
-              <button onClick={onClose}
-                style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surface-2)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
-                <svg width={14} height={14} viewBox="0 0 24 24" stroke="var(--ink)" fill="none" strokeWidth={2}>
-                  <path d="M6 6l12 12M18 6L6 18"/>
-                </svg>
+            <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ flex: 1, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--ink)' }}>แชท</span>
+              <button style={{ width: 30, height: 30, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%' }}>
+                <IconCompose />
+              </button>
+              <button
+                onClick={onClose}
+                style={{ width: 30, height: 30, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%' }}>
+                <IconClose />
               </button>
             </div>
 
-            {/* Rooms */}
+            {/* Search */}
+            <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid var(--line)' }}>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <span style={{ position: 'absolute', left: 10, color: 'var(--ink-3)', display: 'flex' }}>
+                  <IconSearch />
+                </span>
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="ค้นหาในข้อความ"
+                  style={{
+                    width: '100%', padding: '8px 12px 8px 32px', border: 'none',
+                    borderRadius: 20, background: 'var(--surface-2)', fontSize: 13,
+                    color: 'var(--ink)', outline: 'none', fontFamily: 'inherit',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 6 }}>
+              {([['all','ทั้งหมด'],['unread','ยังไม่อ่าน'],['pinned','ปักหมุด']] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  style={{
+                    padding: '5px 12px', border: 'none', borderRadius: 999, fontSize: 12, fontFamily: 'inherit',
+                    cursor: 'pointer', fontWeight: tab === key ? 700 : 400,
+                    background: tab === key ? 'var(--ink)' : 'var(--surface-2)',
+                    color: tab === key ? 'var(--bg)' : 'var(--ink-2)',
+                    transition: '.15s',
+                  }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Room list */}
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {!token && (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-3)' }}>
@@ -194,15 +370,18 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
               {token && loadingRooms && (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {[1,2,3].map(i => (
-                    <div key={i} style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
-                      <div style={{ height: 14, width: '60%', background: 'var(--surface-2)', borderRadius: 4, marginBottom: 6, animation: 'pulse 1.5s infinite' }} />
-                      <div style={{ height: 12, width: '80%', background: 'var(--surface-2)', borderRadius: 4, animation: 'pulse 1.5s infinite' }} />
+                    <div key={i} style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surface-2)', flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ height: 13, width: '55%', background: 'var(--surface-2)', borderRadius: 4, marginBottom: 6 }} />
+                        <div style={{ height: 11, width: '75%', background: 'var(--surface-2)', borderRadius: 4 }} />
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
 
-              {token && !loadingRooms && rooms.length === 0 && (
+              {token && !loadingRooms && filteredRooms.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-3)' }}>
                   <div style={{ fontSize: 36, marginBottom: 12 }}>💬</div>
                   <div style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>ยังไม่มีการสนทนา</div>
@@ -210,40 +389,74 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                 </div>
               )}
 
-              {token && !loadingRooms && rooms.map(room => {
-                const tints = IMG_TINTS[room.id % IMG_TINTS.length];
+              {token && !loadingRooms && filteredRooms.map(room => {
+                const rtints = IMG_TINTS[room.id % IMG_TINTS.length];
                 const isSelected = selectedRoom?.id === room.id;
                 const other = room.seller_name ?? room.buyer_name ?? 'ผู้ใช้';
+                const initials = getInitials(other);
+                const unreadCount = room.unread_count ?? 0;
                 return (
                   <button key={room.id}
                     data-testid={`room-${room.id}`}
                     onClick={() => setSelectedRoom(room)}
                     style={{
-                      width: '100%', padding: '12px 16px', border: 'none', cursor: 'pointer', textAlign: 'left',
-                      background: isSelected ? 'var(--surface-2)' : 'var(--surface)',
+                      width: '100%', padding: '10px 12px', border: 'none', cursor: 'pointer', textAlign: 'left',
+                      background: isSelected ? '#fff5f5' : 'var(--surface)',
                       borderBottom: '1px solid var(--line)',
                       display: 'flex', gap: 10, alignItems: 'center',
+                      transition: 'background .12s',
                     }}
                     onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--surface-2)'; }}
                     onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'var(--surface)'; }}>
-                    <div style={{
-                      width: 44, height: 44, borderRadius: 'var(--radius-sm)', flexShrink: 0,
-                      background: room.product_image
-                        ? `url(${room.product_image}) center/cover`
-                        : `linear-gradient(135deg,${tints[0]},${tints[1]})`,
-                    }} />
+
+                    {/* Avatar with online dot */}
+                    <div style={{ position: 'relative', flexShrink: 0, width: 44, height: 44 }}>
+                      <div style={{
+                        width: 44, height: 44, borderRadius: '50%',
+                        background: `linear-gradient(135deg,${rtints[0]},${rtints[1]})`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 700, fontSize: 13, color: '#fff', letterSpacing: 0.5,
+                      }}>{initials}</div>
+                      {/* Online dot */}
+                      <div style={{
+                        position: 'absolute', bottom: 1, right: 1,
+                        width: 10, height: 10, borderRadius: '50%',
+                        background: '#22c55e', border: '2px solid var(--surface)',
+                      }} />
+                      {/* Product thumbnail */}
+                      {room.product_image && (
+                        <div style={{
+                          position: 'absolute', bottom: -2, right: -2,
+                          width: 16, height: 16, borderRadius: 3,
+                          background: `url(${room.product_image}) center/cover`,
+                          border: '1.5px solid var(--surface)',
+                        }} />
+                      )}
+                    </div>
+
+                    {/* Text */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {other}
-                        </span>
-                        <span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
-                          {timeAgo(room.updated_at ?? room.created_at)}
-                        </span>
+                      <div style={{ fontSize: 13, fontWeight: unreadCount > 0 ? 700 : 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>
+                        {other}
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {room.product_title ?? room.last_message ?? 'เริ่มการสนทนา'}
+                        {room.last_message ?? room.product_title ?? 'เริ่มการสนทนา'}
                       </div>
+                    </div>
+
+                    {/* Right: time + badge */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+                        {timeAgo(room.updated_at ?? room.created_at)}
+                      </span>
+                      {unreadCount > 0 && (
+                        <span style={{
+                          minWidth: 18, height: 18, borderRadius: 999, background: 'var(--neg)',
+                          color: '#fff', fontSize: 10, fontWeight: 700,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          padding: '0 5px',
+                        }}>{unreadCount}</span>
+                      )}
                     </div>
                   </button>
                 );
@@ -252,120 +465,235 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
           </div>
         )}
 
-        {/* ── Thread view ── */}
-        {(!isMobile || selectedRoom) && selectedRoom && (
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--surface)' }}>
+        {/* ── CENTER PANEL: Chat ── */}
+        {showChat && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--surface)', minWidth: 0 }}>
 
-            {/* Thread header */}
-            <div style={{ padding: '14px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 10 }}>
-              {isMobile && (
-                <button onClick={() => setSelectedRoom(null)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--ink-2)', display: 'flex' }}>
-                  <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <path d="M19 12H5M12 5l-7 7 7 7"/>
-                  </svg>
-                </button>
-              )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {selectedRoom.seller_name ?? selectedRoom.buyer_name ?? 'ผู้ใช้'}
-                </div>
-                {selectedRoom.product_title && (
-                  <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    📦 {selectedRoom.product_title}
+            {selectedRoom ? (
+              <>
+                {/* Chat header */}
+                <div style={{ padding: '12px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                  {isMobile && (
+                    <button onClick={() => setSelectedRoom(null)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--ink-2)', display: 'flex', flexShrink: 0 }}>
+                      <IconBack />
+                    </button>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {sellerName}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#22c55e', marginTop: 1 }}>ออนไลน์อยู่</div>
                   </div>
-                )}
-              </div>
-              {!isMobile && (
-                <button onClick={onClose}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', display: 'flex' }}>
-                  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <path d="M6 6l12 12M18 6L6 18"/>
-                  </svg>
-                </button>
-              )}
-            </div>
-
-            {/* Messages */}
-            <div ref={chatRef}
-              style={{ flex: 1, overflowY: 'auto', padding: '14px 16px', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-
-              {loadingMsgs && (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: 20, color: 'var(--ink-3)', fontSize: 13 }}>
-                  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-                    style={{ animation: 'spin 1s linear infinite', marginRight: 8 }}>
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                  </svg>
-                  กำลังโหลด…
+                  <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <button style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%' }}>
+                      <IconPhone />
+                    </button>
+                    <button style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%' }}>
+                      <IconVideo />
+                    </button>
+                    <button style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%' }}>
+                      <IconBell />
+                    </button>
+                  </div>
                 </div>
-              )}
 
-              {!loadingMsgs && msgs.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-3)', fontSize: 13 }}>
-                  เริ่มการสนทนาด้านล่าง
-                </div>
-              )}
-
-              {msgs.map((m, i) => (
-                <div key={m.id ?? i}
-                  style={{ display: 'flex', maxWidth: '80%', alignSelf: m.who === 'me' ? 'flex-end' : 'flex-start' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: m.who === 'me' ? 'flex-end' : 'flex-start' }}>
+                {/* Product info bar */}
+                {(selectedRoom.product_title || selectedRoom.product_image) && (
+                  <div style={{
+                    padding: '8px 16px', borderBottom: '1px solid var(--line)',
+                    background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
+                  }}>
                     <div style={{
-                      padding: '9px 13px', borderRadius: 16, fontSize: 13.5, lineHeight: 1.45, wordBreak: 'break-word',
-                      background: m.who === 'me' ? 'var(--accent)' : 'var(--surface)',
-                      color: m.who === 'me' ? '#fff' : 'var(--ink)',
-                      border: m.who === 'me' ? 'none' : '1px solid var(--line)',
-                      borderBottomRightRadius: m.who === 'me' ? 4 : 16,
-                      borderBottomLeftRadius: m.who === 'seller' ? 4 : 16,
-                    }}>{m.text}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', padding: '0 4px' }}>{m.time}</div>
+                      width: 40, height: 40, borderRadius: 'var(--radius-sm)', flexShrink: 0,
+                      background: selectedRoom.product_image
+                        ? `url(${selectedRoom.product_image}) center/cover`
+                        : 'var(--surface-2)',
+                      border: '1px solid var(--line)',
+                    }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {selectedRoom.product_title ?? 'สินค้า'}
+                      </div>
+                      {selectedRoom.product_price && (
+                        <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 1 }}>
+                          <span style={{ color: 'var(--accent)', fontWeight: 600 }}>฿{selectedRoom.product_price?.toLocaleString()}</span>
+                          {' '}<span style={{ textDecoration: 'line-through', marginLeft: 4 }}>฿{Math.round((selectedRoom.product_price ?? 0) * 1.15).toLocaleString()}</span>
+                          {' '}<span style={{ marginLeft: 6, background: 'var(--surface-2)', borderRadius: 4, padding: '1px 5px', fontSize: 10 }}>มือสอง</span>
+                        </div>
+                      )}
+                    </div>
+                    <button style={{
+                      padding: '5px 10px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)',
+                      background: 'none', fontSize: 11, cursor: 'pointer', color: 'var(--ink-2)', flexShrink: 0,
+                      fontFamily: 'inherit',
+                    }}>ดูสินค้า</button>
                   </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Input */}
-            <form onSubmit={e => { e.preventDefault(); handleSend(); }}
-              style={{ display: 'flex', gap: 8, padding: '12px 14px', borderTop: '1px solid var(--line)', background: 'var(--surface)', alignItems: 'center' }}>
-              <input
-                data-testid="chat-input"
-                value={draft}
-                onChange={e => setDraft(e.target.value)}
-                placeholder="พิมพ์ข้อความ…"
-                style={{
-                  flex: 1, padding: '10px 14px', border: '1px solid var(--line)', borderRadius: 999,
-                  background: 'var(--surface-2)', fontFamily: 'inherit', fontSize: 13.5,
-                  color: 'var(--ink)', outline: 'none',
-                }}
-              />
-              <button
-                data-testid="chat-send-btn"
-                type="submit"
-                disabled={!draft.trim() || sending}
-                style={{
-                  padding: '10px 18px', background: draft.trim() ? 'var(--accent)' : 'var(--line)',
-                  color: draft.trim() ? '#fff' : 'var(--ink-3)',
-                  border: 'none', borderRadius: 999, fontSize: 13, fontWeight: 600,
-                  cursor: draft.trim() && !sending ? 'pointer' : 'not-allowed', transition: '.15s',
-                  display: 'flex', alignItems: 'center', gap: 6,
-                }}>
-                {sending && (
-                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-                    style={{ animation: 'spin 1s linear infinite' }}>
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                  </svg>
                 )}
-                ส่ง
-              </button>
-            </form>
+
+                {/* Messages area */}
+                <div ref={chatRef}
+                  style={{ flex: 1, overflowY: 'auto', padding: '14px 16px', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+                  {loadingMsgs && (
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: 20, color: 'var(--ink-3)', fontSize: 13, gap: 8, alignItems: 'center' }}>
+                      <IconSpin /> กำลังโหลด…
+                    </div>
+                  )}
+
+                  {!loadingMsgs && msgs.length === 0 && (
+                    <>
+                      <div style={{ textAlign: 'center', padding: '8px 0 4px', color: 'var(--ink-3)', fontSize: 12 }}>
+                        <span style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 999, padding: '3px 12px' }}>วันนี้</span>
+                      </div>
+                      <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--ink-3)', fontSize: 13 }}>
+                        เริ่มการสนทนาด้านล่าง
+                      </div>
+                    </>
+                  )}
+
+                  {!loadingMsgs && msgs.length > 0 && (
+                    <div style={{ textAlign: 'center', padding: '4px 0 8px', color: 'var(--ink-3)', fontSize: 12 }}>
+                      <span style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 999, padding: '3px 12px' }}>วันนี้</span>
+                    </div>
+                  )}
+
+                  {msgs.map((m, i) => (
+                    <div key={m.id ?? i}
+                      style={{ display: 'flex', maxWidth: '78%', alignSelf: m.who === 'me' ? 'flex-end' : 'flex-start' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: m.who === 'me' ? 'flex-end' : 'flex-start' }}>
+                        <div style={{
+                          padding: '9px 13px', borderRadius: 16, fontSize: 13.5, lineHeight: 1.45, wordBreak: 'break-word',
+                          background: m.who === 'me' ? 'var(--accent)' : 'var(--surface)',
+                          color: m.who === 'me' ? '#fff' : 'var(--ink)',
+                          border: m.who === 'me' ? 'none' : '1px solid var(--line)',
+                          borderBottomRightRadius: m.who === 'me' ? 4 : 16,
+                          borderBottomLeftRadius: m.who === 'seller' ? 4 : 16,
+                        }}>{m.text}</div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', padding: '0 4px' }}>{m.time}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Input */}
+                <form onSubmit={e => { e.preventDefault(); handleSend(); }}
+                  style={{ display: 'flex', gap: 8, padding: '10px 14px', borderTop: '1px solid var(--line)', background: 'var(--surface)', alignItems: 'center', flexShrink: 0 }}>
+                  <input
+                    data-testid="chat-input"
+                    value={draft}
+                    onChange={e => setDraft(e.target.value)}
+                    placeholder="พิมพ์ข้อความ…"
+                    style={{
+                      flex: 1, padding: '10px 14px', border: '1px solid var(--line)', borderRadius: 999,
+                      background: 'var(--surface-2)', fontFamily: 'inherit', fontSize: 13.5,
+                      color: 'var(--ink)', outline: 'none',
+                    }}
+                  />
+                  <button
+                    data-testid="chat-send-btn"
+                    type="submit"
+                    disabled={!draft.trim() || sending}
+                    style={{
+                      width: 40, height: 40, flexShrink: 0,
+                      background: draft.trim() ? 'var(--accent)' : 'var(--line)',
+                      color: draft.trim() ? '#fff' : 'var(--ink-3)',
+                      border: 'none', borderRadius: '50%', fontSize: 13, fontWeight: 600,
+                      cursor: draft.trim() && !sending ? 'pointer' : 'not-allowed', transition: '.15s',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                    {sending ? <IconSpin /> : <IconSend />}
+                  </button>
+                </form>
+              </>
+            ) : (
+              /* Empty state - desktop only, no room selected */
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-2)', color: 'var(--ink-3)' }}>
+                <div style={{ fontSize: 48, marginBottom: 14 }}>💬</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>เลือกการสนทนา</div>
+                <div style={{ fontSize: 13 }}>เลือกการสนทนาจากรายการทางซ้าย</div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Desktop placeholder when no room selected */}
-        {!isMobile && !selectedRoom && rooms.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-2)', color: 'var(--ink-3)' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
-            <div style={{ fontSize: 14 }}>เลือกการสนทนาจากซ้ายมือ</div>
+        {/* ── RIGHT PANEL: Seller info (220px, desktop + room selected only) ── */}
+        {showRight && selectedRoom && (
+          <div style={{
+            width: 220, flexShrink: 0,
+            borderLeft: '1px solid var(--line)',
+            display: 'flex', flexDirection: 'column',
+            overflowY: 'auto',
+            background: 'var(--surface)',
+          }}>
+            {/* Seller card */}
+            <div style={{ padding: '20px 16px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: '50%',
+                background: `linear-gradient(135deg,${tints[0]},${tints[1]})`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 700, fontSize: 16, color: '#fff', letterSpacing: 0.5,
+              }}>{getInitials(sellerName)}</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)', textAlign: 'center' }}>{sellerName}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center' }}>★ 4.8 (156 รีวิว)</div>
+              <div style={{ fontSize: 11, color: 'var(--ink-3)', textAlign: 'center', lineHeight: 1.5 }}>สมาชิกตั้งแต่ 2564 · ตอบเร็วภายใน 15 นาที</div>
+            </div>
+
+            <div style={{ height: 1, background: 'var(--line)', margin: '0 16px' }} />
+
+            {/* สินค้าคู่สนทนา */}
+            <div style={{ padding: '14px 16px 10px' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 10 }}>สินค้าคู่สนทนา</div>
+              {selectedRoom.product_image ? (
+                <div style={{
+                  width: '100%', aspectRatio: '1/1', borderRadius: 'var(--radius-sm)',
+                  background: `url(${selectedRoom.product_image}) center/cover`,
+                  border: '1px solid var(--line)', marginBottom: 8,
+                }} />
+              ) : (
+                <div style={{
+                  width: '100%', aspectRatio: '1/1', borderRadius: 'var(--radius-sm)',
+                  background: 'var(--surface-2)', border: '1px solid var(--line)', marginBottom: 8,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--ink-3)', fontSize: 28,
+                }}>📦</div>
+              )}
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>
+                {selectedRoom.product_title ?? 'สินค้า'}
+              </div>
+              {selectedRoom.product_price && (
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>
+                  ฿{selectedRoom.product_price?.toLocaleString()}
+                </div>
+              )}
+            </div>
+
+            <div style={{ height: 1, background: 'var(--line)', margin: '0 16px' }} />
+
+            {/* การดำเนินการ */}
+            <div style={{ padding: '14px 16px 16px' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 10 }}>การดำเนินการ</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {[
+                  { icon: <IconAttach />, label: 'ไฟล์และแชร์', color: 'var(--ink-2)' },
+                  { icon: <IconMute />, label: 'ปิดการแจ้งเตือน', color: 'var(--ink-2)' },
+                  { icon: <IconPin />, label: 'ปักหมุดข้อความนี้', color: 'var(--ink-2)' },
+                  { icon: <IconCheck />, label: 'ทำเครื่องหมายว่าขายแล้ว', color: 'var(--pos)' },
+                  { icon: <IconBlock />, label: 'บล็อก & รายงาน', color: 'var(--neg)' },
+                ].map(({ icon, label, color }) => (
+                  <button key={label} style={{
+                    width: '100%', padding: '8px 6px', border: 'none', background: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left', borderRadius: 'var(--radius-sm)',
+                    color,
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-2)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}>
+                    <span style={{ display: 'flex', flexShrink: 0 }}>{icon}</span>
+                    <span style={{ fontSize: 12, fontFamily: 'inherit', color }}>{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
