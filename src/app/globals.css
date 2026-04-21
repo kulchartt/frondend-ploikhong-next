@@ -10,14 +10,14 @@
   --accent-hover: #e02218;
   --accent-ink:   #ffffff;
 
-  /* Backgrounds — Warm Cream */
-  --bg:           #fafaf7;
+  /* Backgrounds — Cool White */
+  --bg:           #f8f9fb;
   --surface:      #ffffff;
-  --surface-2:    #f4f3ee;
+  --surface-2:    #f0f2f5;
 
   /* Borders */
-  --line:         #e7e5dc;
-  --line-2:       #d8d6cb;
+  --line:         #e2e6ec;
+  --line-2:       #d0d5de;
 
   /* Text */
   --ink:          #111110;
