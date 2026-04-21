@@ -602,11 +602,10 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                 </div>
 
                 {/* Quick replies */}
-                <div style={{ display: 'flex', gap: 8, padding: '8px 0 8px 14px', overflowX: 'auto', scrollbarWidth: 'none', flexShrink: 0, borderTop: '1px solid var(--line)', background: 'var(--surface)' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 14px', flexShrink: 0, borderTop: '1px solid var(--line)', background: 'var(--surface)' }}>
                   {['สวัสดีครับ ยังมีสินค้านี้อยู่ไหม?','ราคาต่อรองได้ไหมครับ?','ส่งไปรษณีย์ได้ไหมครับ?','ขอดูรูปเพิ่มเติมได้ไหมครับ?','นัดรับได้ที่ไหนบ้าง?'].map((q, i) => (
-                    <button key={i} onClick={() => { setDraft(q); }} style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 999, border: '1px solid var(--line)', background: 'var(--surface)', fontSize: 12, cursor: 'pointer', color: 'var(--ink-2)', whiteSpace: 'nowrap' }}>{q}</button>
+                    <button key={i} onClick={() => { setDraft(q); }} style={{ padding: '7px 14px', borderRadius: 999, border: '1px solid var(--line)', background: 'var(--surface)', fontSize: 12, cursor: 'pointer', color: 'var(--ink-2)', whiteSpace: 'nowrap' }}>{q}</button>
                   ))}
-                  <div style={{ width: 14, flexShrink: 0 }} />
                 </div>
 
                 {/* Input */}
