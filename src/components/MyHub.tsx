@@ -12,6 +12,7 @@ interface MyHubProps {
   initialTab?: string;
   onClose: () => void;
   onNewListing: () => void;
+  inline?: boolean;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -49,7 +50,7 @@ const BUY_NAV = [
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewListing }: MyHubProps) {
+export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewListing, inline = false }: MyHubProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
   const isMobile = useBreakpoint(768);
@@ -61,20 +62,28 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
     initialMode === 'buy' && initialTab ? initialTab : 'activity'
   );
 
-  // Scroll lock + ESC
+  // Scroll lock (overlay only) + ESC
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
+    if (!inline) document.body.style.overflow = 'hidden';
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', h);
-    return () => { document.body.style.overflow = ''; window.removeEventListener('keydown', h); };
-  }, [onClose]);
+    return () => {
+      if (!inline) document.body.style.overflow = '';
+      window.removeEventListener('keydown', h);
+    };
+  }, [onClose, inline]);
 
   const nav = mode === 'sell' ? SELL_NAV : BUY_NAV;
   const activeTab = mode === 'sell' ? sellTab : buyTab;
   const setTab = (t: string) => mode === 'sell' ? setSellTab(t) : setBuyTab(t);
 
+  // Inline: render as page content (no fixed overlay)
+  const outerStyle: React.CSSProperties = inline
+    ? { display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 56px)', background: 'var(--bg)' }
+    : { position: 'fixed', inset: 0, background: 'var(--bg)', zIndex: 190, display: 'flex', flexDirection: 'column' };
+
   return (
-    <div data-testid="v8hub" style={{ position: 'fixed', inset: 0, background: 'var(--bg)', zIndex: 190, display: 'flex', flexDirection: 'column' }}>
+    <div data-testid="v8hub" style={outerStyle}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
         @keyframes fadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
