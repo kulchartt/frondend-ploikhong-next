@@ -727,24 +727,24 @@ function SellNews() {
 
 function ActivityIcon({ kind }: { kind: string }) {
   if (kind === 'viewed') return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth={1.8}>
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth={2}>
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
       <circle cx="12" cy="12" r="3"/>
     </svg>
   );
   if (kind === 'messaged') return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth={1.8}>
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth={2}>
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
     </svg>
   );
   if (kind === 'saved') return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth={1.8}>
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth={2}>
       <path d="M6 4h12v16l-6-4-6 4z"/>
     </svg>
   );
   // offered
   return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8}>
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={2}>
       <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
       <line x1="7" y1="7" x2="7.01" y2="7"/>
     </svg>
@@ -790,11 +790,6 @@ function BuyActivity() {
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
 
-              {/* Type icon */}
-              <div style={{ width: 20, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <ActivityIcon kind={a.kind} />
-              </div>
-
               {/* Product thumbnail */}
               <div style={{
                 width: 56, height: 56, borderRadius: 'var(--radius-sm)', flexShrink: 0,
@@ -803,7 +798,10 @@ function BuyActivity() {
 
               {/* Info column */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color, marginBottom: 2 }}>{label}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color, marginBottom: 2 }}>
+                  <ActivityIcon kind={a.kind} />
+                  {label}
+                </div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>{a.title}</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {a.seller} · {a.location}
