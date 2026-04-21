@@ -12,6 +12,8 @@ interface MyHubProps {
   initialTab?: string;
   onClose: () => void;
   onNewListing: () => void;
+  onOpenChat?: () => void;
+  onViewProduct?: (product: any) => void;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -49,7 +51,7 @@ const BUY_NAV = [
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewListing }: MyHubProps) {
+export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewListing, onOpenChat, onViewProduct }: MyHubProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
   const isMobile = useBreakpoint(768);
@@ -218,7 +220,7 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
           {mode === 'sell' && sellTab === 'news'      && <SellNews />}
           {mode === 'sell' && sellTab === 'profile'   && <HubProfile session={session} mode="sell" />}
           {mode === 'buy'  && buyTab === 'activity'      && <BuyActivity />}
-          {mode === 'buy'  && buyTab === 'saved'         && <BuySaved token={token} />}
+          {mode === 'buy'  && buyTab === 'saved'         && <BuySaved token={token} onOpenChat={onOpenChat ? () => { onClose(); onOpenChat(); } : undefined} onViewProduct={onViewProduct ? (p) => { onClose(); onViewProduct(p); } : undefined} />}
           {mode === 'buy'  && buyTab === 'notifications' && <BuyNotifications token={token} />}
           {mode === 'buy'  && buyTab === 'following'     && <BuyFollowing token={token} />}
           {mode === 'buy'  && buyTab === 'profile'       && <HubProfile session={session} mode="buy" />}
@@ -853,7 +855,7 @@ function BuyActivity() {
 
 // ─── BUY: Saved (Wishlist) ────────────────────────────────────────────────────
 
-function BuySaved({ token }: { token?: string }) {
+function BuySaved({ token, onOpenChat, onViewProduct }: { token?: string; onOpenChat?: () => void; onViewProduct?: (p: any) => void }) {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -873,7 +875,6 @@ function BuySaved({ token }: { token?: string }) {
     if (token) { try { await api.toggleWishlist(id, token); } catch {} }
   }
 
-  const total = items.reduce((s, x) => s + (Number(x.price) || 0), 0);
 
   if (!token) return <PageWrap><Err msg="กรุณาเข้าสู่ระบบเพื่อดูรายการบันทึก" /></PageWrap>;
 
@@ -919,16 +920,20 @@ function BuySaved({ token }: { token?: string }) {
                       )}
                     </div>
                     <div style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>{p.title}</div>
-                    {p.seller_name && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{p.seller_name}{p.location ? ` · ${p.location.split('·')[0].trim()}` : ''}</div>}
+                    {p.seller_name && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 10 }}>{p.seller_name}{p.location ? ` · ${p.location.split('·')[0].trim()}` : ''}</div>}
+                    {/* Action buttons */}
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={() => onOpenChat?.()} style={{ flex: 1, padding: '7px 0', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        แชทกับผู้ขาย
+                      </button>
+                      <button onClick={() => onViewProduct?.(p)} style={{ flex: 1, padding: '7px 0', background: 'none', color: 'var(--ink)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        ดูสินค้า
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             })}
-          </div>
-          {/* Footer total */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>มูลค่ารวม {items.length} รายการ</span>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--ink)' }}>฿{total.toLocaleString()}</span>
           </div>
         </>
       )}

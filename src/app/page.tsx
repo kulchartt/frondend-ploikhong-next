@@ -343,6 +343,8 @@ export default function HomePage() {
           initialTab={hubOpen.tab}
           onClose={() => setHubOpen(null)}
           onNewListing={() => { setHubOpen(null); setListingOpen(true); }}
+          onOpenChat={() => { setHubOpen(null); setChatOpen(true); }}
+          onViewProduct={(p) => { setHubOpen(null); setSelectedProduct(p); }}
         />
       )}
       {selectedProduct && (
