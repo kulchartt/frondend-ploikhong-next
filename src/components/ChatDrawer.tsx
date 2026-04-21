@@ -183,7 +183,11 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
     if (!token) { setLoadingRooms(false); return; }
     setLoadingRooms(true);
     api.getChatRooms(token)
-      .then(data => setRooms(Array.isArray(data) ? data : []))
+      .then(data => {
+        const list = Array.isArray(data) ? data : [];
+        setRooms(list);
+        if (list.length > 0 && !isMobile) setSelectedRoom(list[0]);
+      })
       .catch(() => setRooms([]))
       .finally(() => setLoadingRooms(false));
   }, [token]);
@@ -359,7 +363,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
             </div>
 
             {/* Room list */}
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '6px 8px' }}>
               {!token && (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-3)' }}>
                   <div style={{ fontSize: 36, marginBottom: 12 }}>🔒</div>
@@ -401,13 +405,14 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                     data-testid={`room-${room.id}`}
                     onClick={() => setSelectedRoom(room)}
                     style={{
-                      width: '100%', padding: '12px 12px', border: 'none', cursor: 'pointer', textAlign: 'left',
-                      background: isSelected ? '#fff5f5' : 'var(--surface)',
+                      width: '100%', padding: '10px 12px', border: 'none', cursor: 'pointer', textAlign: 'left',
+                      background: isSelected ? '#fff5f5' : 'transparent',
+                      borderRadius: 'var(--radius)',
                       display: 'flex', gap: 10, alignItems: 'center',
                       transition: 'background .12s',
                     }}
                     onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--surface-2)'; }}
-                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'var(--surface)'; }}>
+                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}>
 
                     {/* Avatar with online dot */}
                     <div style={{ position: 'relative', flexShrink: 0, width: 44, height: 44 }}>
@@ -686,7 +691,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
               <div style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center', lineHeight: 1.5 }}>สมาชิกตั้งแต่ 2564 · ตอบเร็วภายใน 15 นาที</div>
             </div>
 
-            <div style={{ height: 1, background: 'var(--line)', margin: '0 16px' }} />
+            <div style={{ height: 1, minHeight: 1, flexShrink: 0, background: 'var(--line)', margin: '0 16px' }} />
             {/* สินค้าที่คุยกันอยู่ */}
             <div style={{ padding: '14px 16px 16px' }}>
               <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>สินค้าที่คุยกันอยู่</h4>
@@ -714,7 +719,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
               )}
             </div>
 
-            <div style={{ height: 1, background: 'var(--line)', margin: '0 16px' }} />
+            <div style={{ height: 1, minHeight: 1, flexShrink: 0, background: 'var(--line)', margin: '0 16px' }} />
             {/* การดำเนินการ */}
             <div style={{ padding: '14px 16px 8px' }}>
               <h4 style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>การดำเนินการ</h4>
@@ -738,7 +743,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
               ))}
             </div>
 
-            <div style={{ height: 1, background: 'var(--line)', margin: '0 16px' }} />
+            <div style={{ height: 1, minHeight: 1, flexShrink: 0, background: 'var(--line)', margin: '0 16px' }} />
             {/* สินค้าอื่นจากผู้ขาย */}
             <div style={{ padding: '14px 16px 20px' }}>
               <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>สินค้าอื่นจากผู้ขาย</h4>
