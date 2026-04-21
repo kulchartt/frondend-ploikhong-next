@@ -134,22 +134,10 @@ export default function HomePage() {
         }}
       />
 
-      {/* Hub inline (replaces home content when open) */}
-      {hubOpen && (
-        <MyHub
-          mode={hubOpen.mode}
-          initialTab={hubOpen.tab}
-          onClose={() => setHubOpen(null)}
-          onNewListing={() => { setHubOpen(null); setListingOpen(true); }}
-          inline
-        />
-      )}
-
-      {/* Main wrapper — hidden when hub is open */}
+      {/* Main wrapper */}
       <div style={{ maxWidth: 1440, margin: '0 auto',
         padding: isMobile ? '12px 14px 60px' : '20px 20px 60px',
-        display: hubOpen ? 'none' : 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '240px 1fr', gap: 24, alignItems: 'flex-start' }}>
+        display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '240px 1fr', gap: 24, alignItems: 'flex-start' }}>
 
         {/* Sidebar */}
         {!isMobile && <Sidebar onFilter={setFilters} />}
@@ -349,6 +337,14 @@ export default function HomePage() {
       )}
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} initialMode={authMode} />
       {listingOpen && <ListingFlow onClose={() => setListingOpen(false)} onPosted={loadProducts} />}
+      {hubOpen && (
+        <MyHub
+          mode={hubOpen.mode}
+          initialTab={hubOpen.tab}
+          onClose={() => setHubOpen(null)}
+          onNewListing={() => { setHubOpen(null); setListingOpen(true); }}
+        />
+      )}
       {selectedProduct && (
         <ProductDetail
           product={selectedProduct}
