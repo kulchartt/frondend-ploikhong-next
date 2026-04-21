@@ -314,7 +314,7 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                 aria-label="กลับ">
                 <IconBack />
               </button>
-              <h1 style={{ flex: 1, margin: 0, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--ink)', letterSpacing: '-0.01em' }}>แชท</h1>
+              <h1 style={{ flex: 1, margin: 0, fontFamily: 'var(--font-th)', fontWeight: 600, fontSize: 17, color: 'var(--ink)' }}>แชท</h1>
               <button style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%' }}>
                 <IconNewChat />
               </button>
@@ -506,32 +506,38 @@ export function ChatDrawer({ onClose }: ChatDrawerProps) {
                 {/* Product info bar */}
                 {(selectedRoom.product_title || selectedRoom.product_image) && (
                   <div style={{
-                    padding: '8px 16px', borderBottom: '1px solid var(--line)',
+                    padding: '10px 16px', borderBottom: '1px solid var(--line)',
                     background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
                   }}>
                     <div style={{
-                      width: 40, height: 40, borderRadius: 'var(--radius-sm)', flexShrink: 0,
+                      width: 48, height: 48, borderRadius: 'var(--radius-sm)', flexShrink: 0,
                       background: selectedRoom.product_image
                         ? `url(${selectedRoom.product_image}) center/cover`
-                        : 'var(--surface-2)',
+                        : `linear-gradient(135deg,${tints[0]},${tints[1]})`,
                       border: '1px solid var(--line)',
                     }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {selectedRoom.product_title ?? 'สินค้า'}
                       </div>
-                      {selectedRoom.product_price && (
-                        <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 1 }}>
-                          <span style={{ color: 'var(--accent)', fontWeight: 600 }}>฿{selectedRoom.product_price?.toLocaleString()}</span>
-                          {' '}<span style={{ textDecoration: 'line-through', marginLeft: 4 }}>฿{Math.round((selectedRoom.product_price ?? 0) * 1.15).toLocaleString()}</span>
-                          {' '}<span style={{ marginLeft: 6, background: 'var(--surface-2)', borderRadius: 4, padding: '1px 5px', fontSize: 10 }}>มือสอง</span>
-                        </div>
-                      )}
+                      <div style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' as const }}>
+                        {selectedRoom.product_price && (
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--ink)' }}>
+                            ฿{selectedRoom.product_price.toLocaleString()}
+                          </span>
+                        )}
+                        {selectedRoom.product_price && (
+                          <s style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                            ฿{Math.round(selectedRoom.product_price * 1.2).toLocaleString()}
+                          </s>
+                        )}
+                        <span style={{ color: 'var(--ink-3)' }}>· มือสอง สภาพดี</span>
+                      </div>
                     </div>
                     <button style={{
-                      padding: '5px 10px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)',
-                      background: 'none', fontSize: 11, cursor: 'pointer', color: 'var(--ink-2)', flexShrink: 0,
-                      fontFamily: 'inherit',
+                      padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)',
+                      background: 'none', fontSize: 12, cursor: 'pointer', color: 'var(--ink)', flexShrink: 0,
+                      fontFamily: 'inherit', fontWeight: 500,
                     }}>ดูสินค้า</button>
                   </div>
                 )}
