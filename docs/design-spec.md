@@ -96,7 +96,10 @@ Overlays (fixed, full-screen หรือ drawer):
 
 ### Icon group (ขวา) — ลำดับซ้ายไปขวา:
 ```
-แชท → ถูกใจ → ซื้อ → ขาย → Dark/Light → บัญชี/เข้าสู่ระบบ || [+ ลงขาย]
+แชท → ถูกใจ → ซื้อ → ขาย → [Dark toggle*] → บัญชี/เข้าสู่ระบบ || [+ ลงขาย]
+
+* Dark toggle แสดงเป็น standalone icon เฉพาะเมื่อ NOT logged in
+  เมื่อ logged in → dark toggle ย้ายเข้าไปใน account dropdown แทน
 ```
 
 ### Icon button style (`iconBtn()`)
@@ -124,6 +127,28 @@ gap: 4   ← ระหว่างแต่ละ icon button
 ```
 color: var(--accent)
 fontWeight: 600
+```
+
+### Account dropdown (logged-in)
+เปิดด้วยปุ่ม "บัญชี" (avatar + label) — `data-testid="nav-user-btn"`
+
+ลำดับ item ใน dropdown:
+1. User info header (avatar + name + email)
+2. สินค้าของฉัน → เปิด MyHub sell
+3. การซื้อของฉัน → เปิด MyHub buy
+4. รายการถูกใจ → เปิด MyHub buy > saved tab
+5. ── divider ──
+6. **โหมดมืด / โหมดสว่าง** ← dark toggle (pill switch, ไม่ปิด dropdown)
+7. ── divider ──
+8. เปลี่ยนรหัสผ่าน
+9. ── divider ──
+10. ออกจากระบบ (สีแดง)
+
+Dark toggle row:
+```
+icon + label (โหมดมืด/โหมดสว่าง)    |  [pill switch]
+e.stopPropagation() → ไม่ปิด dropdown
+pill: width 34, height 20, background: var(--ink) เมื่อ dark
 ```
 
 ### "+ ลงขาย" button
@@ -290,7 +315,8 @@ onOpenHub?.('sell')            // เปิด MyHub sell mode
 - JWT token อยู่ใน `(session as any).token`
 
 ### Dark mode
-- Toggle ด้วยปุ่ม Dark/Light ใน Navbar
+- **ไม่ได้ login**: icon-only button (`data-testid="dark-toggle"`) ใน navbar ข้างๆ "เข้าสู่ระบบ"
+- **Login แล้ว**: toggle row อยู่ใน account dropdown พร้อม pill switch
 - Set `data-theme="dark"` บน `<html>`
 - ไม่ได้ persist (refresh แล้ว reset)
 

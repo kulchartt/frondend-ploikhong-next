@@ -123,26 +123,26 @@ export function Navbar({
             </button>
           ))}
 
-          {/* Dark mode toggle */}
-          <button onClick={toggleDark} title={dark ? 'Light mode' : 'Dark mode'}
-            style={iconBtn()} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-            {dark ? <SunIcon /> : <MoonIcon />}
-            {!isMobile && <span style={labelStyle}>{dark ? 'Light' : 'Dark'}</span>}
-          </button>
-
-          {/* ── บัญชี / เข้าสู่ระบบ — ขวาสุด ถัดจาก Dark ─────────────────────── */}
+          {/* ── บัญชี / เข้าสู่ระบบ ──────────────────────────────────────────────── */}
           <div style={{ position: 'relative' }}>
             {!session?.user ? (
-              /* Not logged in → Login button */
-              <button onClick={onOpenAuth} style={iconBtn()}
-                onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-                <UserIcon />
-                {!isMobile && (
-                  <span style={{ ...labelStyle, color: 'var(--accent)', fontWeight: 600 }}>
-                    เข้าสู่ระบบ
-                  </span>
-                )}
-              </button>
+              /* Not logged in → small dark toggle + Login button */
+              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <button onClick={toggleDark} title={dark ? 'Light mode' : 'Dark mode'}
+                  data-testid="dark-toggle"
+                  style={iconBtn()} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+                  {dark ? <SunIcon /> : <MoonIcon />}
+                </button>
+                <button onClick={onOpenAuth} style={iconBtn()}
+                  onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+                  <UserIcon />
+                  {!isMobile && (
+                    <span style={{ ...labelStyle, color: 'var(--accent)', fontWeight: 600 }}>
+                      เข้าสู่ระบบ
+                    </span>
+                  )}
+                </button>
+              </div>
             ) : (
               /* Logged in → Account button + dropdown */
               <>
@@ -211,6 +211,32 @@ export function Navbar({
                         {icon} {label}
                       </button>
                     ))}
+
+                    <div style={{ height: 1, background: 'var(--line)' }} />
+
+                    {/* Dark mode toggle — stopPropagation so dropdown stays open */}
+                    <button
+                      data-testid="dark-toggle"
+                      onClick={e => { e.stopPropagation(); toggleDark(); }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        gap: 10, width: '100%', padding: '10px 14px', background: 'none', border: 'none',
+                        fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer', textAlign: 'left',
+                        fontFamily: 'inherit' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {dark ? <DropSunIcon /> : <DropMoonIcon />}
+                        {dark ? 'โหมดสว่าง' : 'โหมดมืด'}
+                      </span>
+                      {/* Pill switch */}
+                      <span style={{ width: 34, height: 20, borderRadius: 999, position: 'relative',
+                        flexShrink: 0, display: 'inline-flex', alignItems: 'center',
+                        background: dark ? 'var(--ink)' : 'var(--line-2)', transition: 'background .2s' }}>
+                        <span style={{ position: 'absolute', top: 4,
+                          left: dark ? 18 : 4, width: 12, height: 12,
+                          borderRadius: '50%', background: 'var(--surface)', transition: 'left .2s' }} />
+                      </span>
+                    </button>
 
                     <div style={{ height: 1, background: 'var(--line)' }} />
 
@@ -334,6 +360,17 @@ function DropBagIcon() {
 function DropHeartIcon() {
   return <svg style={icSm} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
     <path d="M12 21s-7-4.5-9.5-10C1 7.5 3 4 7 4c2 0 3.5 1.5 5 3 1.5-1.5 3-3 5-3 4 0 6 3.5 4.5 7C19 16.5 12 21 12 21z"/>
+  </svg>;
+}
+function DropMoonIcon() {
+  return <svg style={icSm} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>;
+}
+function DropSunIcon() {
+  return <svg style={icSm} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
+    <circle cx="12" cy="12" r="5"/>
+    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
   </svg>;
 }
 function KeyIcon() {

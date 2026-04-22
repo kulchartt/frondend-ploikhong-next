@@ -817,6 +817,63 @@ test.describe('V8Hub — SellListings: share popover', () => {
 // AUTH GUARD
 // =============================================================================
 
+// =============================================================================
+// DARK MODE TOGGLE — logged-in (inside account dropdown)
+// =============================================================================
+
+test.describe('Navbar — Dark mode toggle (logged-in)', () => {
+
+  async function openAccountDropdown(page: Page) {
+    await setupBase(page);
+    await page.goto('/');
+    await page.locator('[data-testid="nav-user-btn"]').click();
+  }
+
+  test('dark toggle appears inside account dropdown when logged in', async ({ page }) => {
+    await openAccountDropdown(page);
+    await expect(page.locator('[data-testid="dark-toggle"]')).toBeVisible();
+  });
+
+  test('dark toggle in dropdown shows "โหมดมืด" label initially', async ({ page }) => {
+    await openAccountDropdown(page);
+    await expect(page.locator('[data-testid="dark-toggle"]')).toContainText('โหมดมืด');
+  });
+
+  test('dark toggle in dropdown activates dark mode on click', async ({ page }) => {
+    await openAccountDropdown(page);
+    await page.locator('[data-testid="dark-toggle"]').click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  });
+
+  test('dark toggle in dropdown stays open (does not close dropdown)', async ({ page }) => {
+    await openAccountDropdown(page);
+    await page.locator('[data-testid="dark-toggle"]').click();
+    // dropdown should remain open — other items still visible
+    await expect(page.getByRole('button', { name: 'สินค้าของฉัน' })).toBeVisible();
+  });
+
+  test('dark toggle label changes to "โหมดสว่าง" after enabling dark mode', async ({ page }) => {
+    await openAccountDropdown(page);
+    await page.locator('[data-testid="dark-toggle"]').click();
+    await expect(page.locator('[data-testid="dark-toggle"]')).toContainText('โหมดสว่าง');
+  });
+
+  test('no standalone dark button visible in navbar when logged in', async ({ page }) => {
+    await setupBase(page);
+    await page.goto('/');
+    // The standalone dark button only shows when NOT logged in
+    // When logged in, the only dark toggle is inside the dropdown (hidden by default)
+    const darkToggles = page.locator('[data-testid="dark-toggle"]');
+    // dropdown closed → dark toggle not visible
+    await expect(darkToggles).not.toBeVisible();
+  });
+
+});
+
+// =============================================================================
+// AUTH GUARD
+// =============================================================================
+
 test.describe('V8Hub — Auth guard', () => {
 
   test('unauthenticated user gets auth modal on clicking ขาย', async ({ page }) => {
