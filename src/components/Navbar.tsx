@@ -112,9 +112,26 @@ export function Navbar({
             </button>
           ))}
 
-          {/* ── บัญชี — 3rd slot (matches spec) ─────────────────────────────── */}
-          <div style={{ position: 'relative' }}>
+          {/* ซื้อ, ขาย */}
+          {navItems.slice(2).map(({ icon, label, action }) => (
+            <button key={label} onClick={action} style={iconBtn()}
+              onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {icon}
+              </span>
+              {!isMobile && <span style={labelStyle}>{label}</span>}
+            </button>
+          ))}
 
+          {/* Dark mode toggle */}
+          <button onClick={toggleDark} title={dark ? 'Light mode' : 'Dark mode'}
+            style={iconBtn()} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+            {dark ? <SunIcon /> : <MoonIcon />}
+            {!isMobile && <span style={labelStyle}>{dark ? 'Light' : 'Dark'}</span>}
+          </button>
+
+          {/* ── บัญชี / เข้าสู่ระบบ — ขวาสุด ถัดจาก Dark ─────────────────────── */}
+          <div style={{ position: 'relative' }}>
             {!session?.user ? (
               /* Not logged in → Login button */
               <button onClick={onOpenAuth} style={iconBtn()}
@@ -225,24 +242,6 @@ export function Navbar({
               </>
             )}
           </div>
-
-          {/* ซื้อ, ขาย — after บัญชี */}
-          {navItems.slice(2).map(({ icon, label, action }) => (
-            <button key={label} onClick={action} style={iconBtn()}
-              onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {icon}
-              </span>
-              {!isMobile && <span style={labelStyle}>{label}</span>}
-            </button>
-          ))}
-
-          {/* Dark mode toggle */}
-          <button onClick={toggleDark} title={dark ? 'Light mode' : 'Dark mode'}
-            style={iconBtn()} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-            {dark ? <SunIcon /> : <MoonIcon />}
-            {!isMobile && <span style={labelStyle}>{dark ? 'Light' : 'Dark'}</span>}
-          </button>
 
           {/* + ลงขาย */}
           <button onClick={onOpenListing}
