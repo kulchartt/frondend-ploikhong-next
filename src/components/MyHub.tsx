@@ -1512,18 +1512,18 @@ function BuyFollowing({ token }: { token?: string }) {
 // ─── Shared: Hub Profile / Shop Settings ─────────────────────────────────────
 
 const BG_PALETTE = [
-  { color: null,      label: 'ค่าเริ่มต้น', display: '#f8fafc', border: true },
-  { color: '#ffffff', label: 'ขาว',         display: '#ffffff', border: true },
-  { color: '#f1f5f9', label: 'เทาอ่อน',    display: '#f1f5f9' },
-  { color: '#eff6ff', label: 'ฟ้าอ่อน',    display: '#eff6ff' },
-  { color: '#f0fdf4', label: 'เขียวอ่อน',  display: '#f0fdf4' },
-  { color: '#fefce8', label: 'เหลืองอ่อน', display: '#fefce8' },
-  { color: '#fff7ed', label: 'ส้มอ่อน',    display: '#fff7ed' },
-  { color: '#fdf2f8', label: 'ชมพูอ่อน',   display: '#fdf2f8' },
-  { color: '#faf5ff', label: 'ม่วงอ่อน',   display: '#faf5ff' },
-  { color: '#fafaf9', label: 'ครีม',        display: '#fafaf9' },
-  { color: '#0f172a', label: 'Dark',        display: '#0f172a' },
-  { color: '#1e1b4b', label: 'Navy',        display: '#1e1b4b' },
+  { color: null,      label: 'ค่าเริ่มต้น', display: '#f8f9fb', border: true },
+  { color: '#ffffff', label: 'ขาว',          display: '#ffffff', border: true },
+  { color: '#f1f5f9', label: 'เทาอ่อน',     display: '#f1f5f9' },
+  { color: '#eff6ff', label: 'ฟ้าอ่อน',     display: '#eff6ff' },
+  { color: '#f0fdf4', label: 'เขียวอ่อน',   display: '#f0fdf4' },
+  { color: '#fefce8', label: 'เหลืองอ่อน',  display: '#fefce8' },
+  { color: '#fff7ed', label: 'ส้มอ่อน',     display: '#fff7ed' },
+  { color: '#fdf2f8', label: 'ชมพูอ่อน',    display: '#fdf2f8' },
+  { color: '#faf5ff', label: 'ม่วงอ่อน',    display: '#faf5ff' },
+  { color: '#fafaf9', label: 'ครีม',         display: '#fafaf9' },
+  { color: '#f0e6d3', label: 'น้ำตาลอ่อน',  display: '#f0e6d3' },
+  { color: '#e0f2fe', label: 'ฟ้าสด',        display: '#e0f2fe' },
 ];
 
 function HubProfile({ session, mode }: { session: any; mode: string }) {
@@ -1531,31 +1531,67 @@ function HubProfile({ session, mode }: { session: any; mode: string }) {
   const token = (user as any)?.token;
   const letter = user?.name?.[0]?.toUpperCase() ?? '?';
 
-  const [activeBg, setActiveBg] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [bgMsg, setBgMsg] = useState('');
+  // Applied state (what's actually on screen right now)
+  const [appliedBg, setAppliedBg] = useState<string | null>(null);
+  const [isDark, setIsDark]       = useState(false);
+  const [remember, setRemember]   = useState(true);
 
-  // Load saved bg from localStorage on mount
+  // Pending state (what user has selected but not yet applied)
+  const [pendingBg, setPendingBg] = useState<string | null>(null);
+
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg]       = useState('');
+  const isDirty = pendingBg !== appliedBg;
+
+  // Load from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('ploikhong_bg_color');
-    if (saved) setActiveBg(saved);
+    const bg   = localStorage.getItem('ploikhong_bg_color') || null;
+    const dark = localStorage.getItem('ploikhong_dark_mode') === '1';
+    const rem  = localStorage.getItem('ploikhong_remember_prefs') !== '0';
+    setAppliedBg(bg);
+    setPendingBg(bg);
+    setIsDark(dark);
+    setRemember(rem);
   }, []);
 
-  async function handleBgSelect(color: string | null) {
-    const apply = color ?? '';
-    document.body.style.background = apply;
-    if (color) localStorage.setItem('ploikhong_bg_color', color);
-    else localStorage.removeItem('ploikhong_bg_color');
-    setActiveBg(color);
+  // Toggle dark mode immediately (live preview)
+  function handleDarkToggle(dark: boolean) {
+    setIsDark(dark);
+    if (dark) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.body.style.background = '';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      document.body.style.background = appliedBg ?? '';
+    }
+  }
+
+  // Apply selected bg color + save all prefs
+  async function handleApply() {
+    // Apply to DOM
+    document.body.style.background = (!isDark && pendingBg) ? pendingBg : '';
+    setAppliedBg(pendingBg);
+
+    // localStorage (always — for next-visit fast load)
+    if (pendingBg) localStorage.setItem('ploikhong_bg_color', pendingBg);
+    else           localStorage.removeItem('ploikhong_bg_color');
+    if (isDark) localStorage.setItem('ploikhong_dark_mode', '1');
+    else        localStorage.removeItem('ploikhong_dark_mode');
+    localStorage.setItem('ploikhong_remember_prefs', remember ? '1' : '0');
+
     if (!token) return;
     setSaving(true);
-    setBgMsg('');
+    setMsg('');
     try {
-      await api.savePreferences({ bg_color: color ?? undefined }, token);
-      setBgMsg('บันทึกแล้ว ✓');
-      setTimeout(() => setBgMsg(''), 2000);
+      await api.savePreferences({
+        bg_color:       remember ? (pendingBg ?? null) : null,
+        dark_mode:      isDark,
+        remember_prefs: remember,
+      }, token);
+      setMsg('บันทึกแล้ว ✓');
+      setTimeout(() => setMsg(''), 2500);
     } catch {
-      setBgMsg('บันทึกไม่สำเร็จ');
+      setMsg('บันทึกไม่สำเร็จ');
     }
     setSaving(false);
   }
@@ -1594,48 +1630,113 @@ function HubProfile({ session, mode }: { session: any; mode: string }) {
         ))}
       </div>
 
-      {/* Background color preference */}
+      {/* ── Appearance Preferences ─────────────────────────────── */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '18px 22px', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>🎨 สีพื้นหลัง</h3>
-          <span style={{ fontSize: 12, color: saving ? '#f59e0b' : bgMsg.includes('✓') ? '#16a34a' : '#94a3b8', transition: 'color .2s' }}>
-            {saving ? 'กำลังบันทึก...' : bgMsg || 'จำการตั้งค่าทุกครั้งที่ login'}
-          </span>
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          {BG_PALETTE.map((item) => {
-            const isActive = activeBg === item.color;
-            return (
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 18, marginTop: 0 }}>🎨 ธีมและพื้นหลัง</h3>
+
+        {/* Light / Dark toggle */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 10 }}>โหมดสว่าง / มืด</div>
+          <div style={{ display: 'inline-flex', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--line)', background: 'var(--surface-2)' }}>
+            {[
+              { val: false, icon: '☀️', label: 'สว่าง' },
+              { val: true,  icon: '🌙', label: 'มืด'   },
+            ].map(opt => (
               <button
-                key={item.label}
-                title={item.label}
-                onClick={() => handleBgSelect(item.color)}
+                key={String(opt.val)}
+                onClick={() => handleDarkToggle(opt.val)}
                 style={{
-                  width: 40, height: 40, borderRadius: 10,
-                  background: item.display,
-                  border: isActive
-                    ? '3px solid #f59e0b'
-                    : item.border ? '1.5px solid #e2e8f0' : '1.5px solid transparent',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  boxShadow: isActive ? '0 0 0 2px #fef3c7' : 'none',
+                  padding: '8px 20px', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                  background: isDark === opt.val ? 'var(--accent)' : 'transparent',
+                  color:      isDark === opt.val ? '#fff' : 'var(--ink-2)',
                   transition: 'all .15s',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
+                  display: 'flex', alignItems: 'center', gap: 6,
                 }}
               >
-                {isActive && (
-                  <span style={{ fontSize: 16, filter: item.color === '#0f172a' || item.color === '#1e1b4b' ? 'invert(1)' : 'none' }}>✓</span>
-                )}
-                {item.color === null && !isActive && (
-                  <span style={{ fontSize: 10, color: '#94a3b8', lineHeight: 1.2, textAlign: 'center' }}>default</span>
-                )}
+                <span>{opt.icon}</span> {opt.label}
               </button>
-            );
-          })}
+            ))}
+          </div>
         </div>
-        <div style={{ marginTop: 10, fontSize: 12, color: '#94a3b8' }}>
-          คลิกสีเพื่อเปลี่ยนพื้นหลัง — บันทึกอัตโนมัติและใช้งานทุก device ที่ login
+
+        {/* Background color palette — only shown in light mode */}
+        {!isDark && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 10 }}>สีพื้นหลัง</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {BG_PALETTE.map((item) => {
+                const isPending  = pendingBg === item.color;
+                const isApplied  = appliedBg === item.color;
+                return (
+                  <button
+                    key={item.label}
+                    title={item.label}
+                    onClick={() => setPendingBg(item.color)}
+                    style={{
+                      width: 38, height: 38, borderRadius: 9,
+                      background: item.display,
+                      border: isPending
+                        ? '2.5px solid var(--accent)'
+                        : isApplied
+                          ? '2px dashed #94a3b8'
+                          : item.border ? '1.5px solid var(--line)' : '1.5px solid transparent',
+                      cursor: 'pointer',
+                      boxShadow: isPending ? '0 0 0 3px #fee2e2' : 'none',
+                      transition: 'all .12s',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0, position: 'relative',
+                    }}
+                  >
+                    {item.color === null && !isPending && (
+                      <span style={{ fontSize: 9, color: '#94a3b8', lineHeight: 1.1, textAlign: 'center', padding: '0 2px' }}>เดิม</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {pendingBg && (
+              <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-3)' }}>
+                เลือก: <strong style={{ color: 'var(--ink)' }}>{BG_PALETTE.find(p => p.color === pendingBg)?.label ?? pendingBg}</strong>
+                {isDirty && <span style={{ marginLeft: 6, color: '#f59e0b' }}>• ยังไม่ได้ Apply</span>}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Remember checkbox */}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 16, fontSize: 13 }}>
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={e => setRemember(e.target.checked)}
+            style={{ width: 16, height: 16, accentColor: 'var(--accent)', cursor: 'pointer' }}
+          />
+          <span style={{ color: 'var(--ink-2)', userSelect: 'none' }}>
+            จำการตั้งค่าทุกครั้งที่ login
+            <span style={{ color: 'var(--ink-3)', marginLeft: 4 }}>(sync ทุก device)</span>
+          </span>
+        </label>
+
+        {/* Apply button + status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={handleApply}
+            disabled={saving}
+            style={{
+              padding: '9px 24px', borderRadius: 8, border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
+              background: isDirty ? 'var(--accent)' : 'var(--surface-2)',
+              color: isDirty ? '#fff' : 'var(--ink-3)',
+              fontWeight: 700, fontSize: 14, transition: 'all .15s',
+              opacity: saving ? 0.7 : 1,
+            }}
+          >
+            {saving ? 'กำลังบันทึก...' : '✓ Apply'}
+          </button>
+          {msg && (
+            <span style={{ fontSize: 13, color: msg.includes('✓') ? '#16a34a' : '#dc2626', fontWeight: 500 }}>
+              {msg}
+            </span>
+          )}
         </div>
       </div>
 
