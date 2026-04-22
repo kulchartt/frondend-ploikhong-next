@@ -208,6 +208,9 @@ export const getActiveFeatures = (token: string) =>
   req<any[]>('/api/coins/active-features', {}, token);
 
 // Admin coin management
+export const getCoinAdminStats = (token: string) =>
+  req<any>('/api/coins/admin/stats', {}, token);
+
 export const getPaymentRequests = (status: string, token: string) =>
   req<any[]>(`/api/coins/payment-requests?status=${status}`, {}, token);
 
