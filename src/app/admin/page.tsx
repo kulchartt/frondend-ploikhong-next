@@ -481,36 +481,61 @@ function PremiumTab({ token }: { token: string }) {
             </span>
           </div>
 
-          {/* Per-feature breakdown */}
-          {stats.feature_usage && stats.feature_usage.length > 0 && (() => {
-            const maxBaht = Math.max(...stats.feature_usage.map((f: any) => f.estimated_baht || 0), 1);
-            const FEATURE_COLORS: Record<string, string> = {
-              featured:        '#f59e0b',
-              auto_relist:     '#3b82f6',
-              price_alert:     '#10b981',
-              analytics_pro:   '#8b5cf6',
-              priority_support:'#ef4444',
-            };
+          {/* Per-feature breakdown — always show all 5 features */}
+          {(() => {
+            const ALL_FEATURES = [
+              { key: 'featured',         label: '⭐ สินค้าเด่น (Featured)',      color: '#f59e0b', coins: 80 },
+              { key: 'auto_relist',      label: '🚀 ดันสินค้าขึ้นบนสุด',         color: '#3b82f6', coins: 30 },
+              { key: 'price_alert',      label: '🔔 แจ้งเตือนตั้งราคา',          color: '#10b981', coins: 25 },
+              { key: 'auto_relist_30',   label: '🔄 ลงประกาศอัตโนมัติ',          color: '#6366f1', coins: 20 },
+              { key: 'analytics_pro',    label: '📊 Analytics Pro',              color: '#8b5cf6', coins: 50 },
+              { key: 'priority_support', label: '💬 Priority Support',           color: '#ef4444', coins: 15 },
+            ];
+            const usageMap: Record<string, any> = {};
+            (stats.feature_usage || []).forEach((f: any) => { usageMap[f.feature_key] = f; });
+            // merge: known features first, then any unknown keys from DB
+            const knownKeys = new Set(ALL_FEATURES.map(f => f.key));
+            const dbOnly = (stats.feature_usage || []).filter((f: any) => !knownKeys.has(f.feature_key));
+            const rows = [
+              ...ALL_FEATURES.map(f => ({
+                feature_key: f.key,
+                label: f.label,
+                color: f.color,
+                total: usageMap[f.key]?.total || 0,
+                coins_spent: usageMap[f.key]?.coins_spent || 0,
+                estimated_baht: usageMap[f.key]?.estimated_baht || 0,
+              })),
+              ...dbOnly.map((f: any) => ({
+                feature_key: f.feature_key,
+                label: FEATURE_LABELS[f.feature_key] || f.feature_key,
+                color: '#94a3b8',
+                total: f.total || 0,
+                coins_spent: f.coins_spent || 0,
+                estimated_baht: f.estimated_baht || 0,
+              })),
+            ];
+            const maxBaht = Math.max(...rows.map(r => r.estimated_baht), 1);
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 26, borderLeft: '2px solid #f1f5f9' }}>
-                {stats.feature_usage.map((f: any) => {
-                  const pct = totalRevenue > 0 ? Math.round(((f.estimated_baht || 0) / totalRevenue) * 100) : 0;
-                  const barPct = Math.round(((f.estimated_baht || 0) / maxBaht) * 100);
-                  const color = FEATURE_COLORS[f.feature_key] || '#94a3b8';
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingLeft: 26, borderLeft: '2px solid #f1f5f9' }}>
+                {rows.map(f => {
+                  const pct = totalRevenue > 0 ? Math.round((f.estimated_baht / totalRevenue) * 100) : 0;
+                  const barPct = Math.round((f.estimated_baht / maxBaht) * 100);
                   return (
                     <div key={f.feature_key}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 13 }}>
-                        <span style={{ color: '#475569' }}>{FEATURE_LABELS[f.feature_key] || f.feature_key}</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 11, color: '#94a3b8' }}>{(f.total || 0)} ครั้ง · {(f.coins_spent || 0).toLocaleString()} 🪙</span>
-                          <strong style={{ color: '#0f172a', minWidth: 72, textAlign: 'right' }}>
-                            ฿{(f.estimated_baht || 0).toLocaleString()}
-                            <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 4 }}>({pct}%)</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5, fontSize: 13 }}>
+                        <span style={{ color: '#334155', fontWeight: 500 }}>{f.label}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontSize: 11, color: '#94a3b8' }}>
+                            {f.total} ครั้ง · {f.coins_spent.toLocaleString()} 🪙
+                          </span>
+                          <strong style={{ color: f.estimated_baht > 0 ? '#15803d' : '#94a3b8', minWidth: 80, textAlign: 'right' }}>
+                            ฿{f.estimated_baht.toLocaleString()}
+                            {totalRevenue > 0 && <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 4 }}>({pct}%)</span>}
                           </strong>
                         </span>
                       </div>
                       <div style={{ height: 6, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${barPct}%`, background: color, borderRadius: 99, transition: 'width .3s' }} />
+                        <div style={{ height: '100%', width: `${barPct || (f.total > 0 ? 2 : 0)}%`, background: f.color, borderRadius: 99, transition: 'width .3s', opacity: f.estimated_baht > 0 ? 1 : 0.3 }} />
                       </div>
                     </div>
                   );
