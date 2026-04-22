@@ -96,11 +96,10 @@ Overlays (fixed, full-screen หรือ drawer):
 
 ### Icon group (ขวา) — ลำดับซ้ายไปขวา:
 ```
-แชท → ถูกใจ → ซื้อ → ขาย → [Dark toggle*] → บัญชี/เข้าสู่ระบบ || [+ ลงขาย]
-
-* Dark toggle แสดงเป็น standalone icon เฉพาะเมื่อ NOT logged in
-  เมื่อ logged in → dark toggle ย้ายเข้าไปใน account dropdown แทน
+แชท → ถูกใจ → ซื้อ → ขาย → บัญชี/เข้าสู่ระบบ || [+ ลงขาย]
 ```
+
+> Dark toggle **ซ่อนทั้งหมดเมื่อไม่ได้ login** — เห็นได้เฉพาะใน account dropdown หลัง login
 
 ### Icon button style (`iconBtn()`)
 ```
@@ -315,7 +314,7 @@ onOpenHub?.('sell')            // เปิด MyHub sell mode
 - JWT token อยู่ใน `(session as any).token`
 
 ### Dark mode
-- **ไม่ได้ login**: icon-only button (`data-testid="dark-toggle"`) ใน navbar ข้างๆ "เข้าสู่ระบบ"
+- **ไม่ได้ login**: ซ่อน ไม่มีปุ่มแสดง
 - **Login แล้ว**: toggle row อยู่ใน account dropdown พร้อม pill switch
 - Set `data-theme="dark"` บน `<html>`
 - ไม่ได้ persist (refresh แล้ว reset)

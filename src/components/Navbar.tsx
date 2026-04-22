@@ -126,23 +126,16 @@ export function Navbar({
           {/* ── บัญชี / เข้าสู่ระบบ ──────────────────────────────────────────────── */}
           <div style={{ position: 'relative' }}>
             {!session?.user ? (
-              /* Not logged in → small dark toggle + Login button */
-              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <button onClick={toggleDark} title={dark ? 'Light mode' : 'Dark mode'}
-                  data-testid="dark-toggle"
-                  style={iconBtn()} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-                  {dark ? <SunIcon /> : <MoonIcon />}
-                </button>
-                <button onClick={onOpenAuth} style={iconBtn()}
-                  onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-                  <UserIcon />
-                  {!isMobile && (
-                    <span style={{ ...labelStyle, color: 'var(--accent)', fontWeight: 600 }}>
-                      เข้าสู่ระบบ
-                    </span>
-                  )}
-                </button>
-              </div>
+              /* Not logged in → Login button only (dark toggle hidden) */
+              <button onClick={onOpenAuth} style={iconBtn()}
+                onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+                <UserIcon />
+                {!isMobile && (
+                  <span style={{ ...labelStyle, color: 'var(--accent)', fontWeight: 600 }}>
+                    เข้าสู่ระบบ
+                  </span>
+                )}
+              </button>
             ) : (
               /* Logged in → Account button + dropdown */
               <>

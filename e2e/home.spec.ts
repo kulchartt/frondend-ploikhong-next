@@ -33,25 +33,9 @@ test.describe('Home Page', () => {
 
   // ─── Dark mode toggle (not logged-in) ──────────────────────────────────────
 
-  test('dark toggle: icon button visible when not logged in (no account dropdown)', async ({ page }) => {
-    // When not logged in the dark toggle appears as a standalone icon in the navbar
-    const toggle = page.locator('[data-testid="dark-toggle"]');
-    await expect(toggle).toBeVisible();
-  });
-
-  test('dark toggle: clicking sets data-theme="dark" on <html>', async ({ page }) => {
-    const toggle = page.locator('[data-testid="dark-toggle"]');
-    await toggle.click();
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  });
-
-  test('dark toggle: clicking again removes dark mode', async ({ page }) => {
-    const toggle = page.locator('[data-testid="dark-toggle"]');
-    await toggle.click(); // → dark
-    await toggle.click(); // → light
-    // data-theme removed or empty
-    const theme = await page.locator('html').getAttribute('data-theme');
-    expect(theme === '' || theme === null).toBe(true);
+  test('dark toggle: NOT visible when not logged in', async ({ page }) => {
+    // Dark toggle is hidden for guests — only accessible after login via account dropdown
+    await expect(page.locator('[data-testid="dark-toggle"]')).not.toBeVisible();
   });
 
   // ─── Promo Banner ──────────────────────────────────────────────────────────
