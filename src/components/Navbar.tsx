@@ -71,10 +71,14 @@ export function Navbar({
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14,
         padding: isMobile ? '8px 14px' : '10px 20px', maxWidth: 1440, margin: '0 auto' }}>
 
-        <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          <span style={{ fontSize: 22 }}>🛍️</span>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: 'var(--ink)', letterSpacing: '-.02em' }}>
-            PloiKhong
+        <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
+          <span style={{ fontSize: 20, lineHeight: 1, marginRight: 4, filter: 'saturate(1.2)' }}>🛍️</span>
+          <span style={{
+            fontFamily: 'var(--font-display)', fontWeight: 900,
+            fontSize: 17, color: 'var(--ink)', letterSpacing: '-.04em',
+            lineHeight: 1,
+          }}>
+            Ploi<span style={{ color: 'var(--accent)' }}>Khong</span>
           </span>
         </Link>
 

@@ -368,8 +368,8 @@ export default function HomePage() {
 
             {/* Brand */}
             <div style={{ minWidth: 200, flex: '1 1 200px' }}>
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: 'var(--ink)', marginBottom: 8 }}>
-                🛍️ PloiKhong
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 18, color: 'var(--ink)', marginBottom: 8, letterSpacing: '-.04em' }}>
+                <span style={{ marginRight: 4 }}>🛍️</span>Ploi<span style={{ color: 'var(--accent)' }}>Khong</span>
               </div>
               <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.7, maxWidth: 220 }}>
                 ตลาดซื้อขายของมือสองออนไลน์<br />ของดี ราคาโดน ทุกวัน
