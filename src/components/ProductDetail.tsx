@@ -198,206 +198,310 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,.72)',
         zIndex: 200, display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center',
-        padding: isMobile ? 0 : 24, overflowY: 'auto',
+        padding: isMobile ? 0 : '24px 16px',
         animation: 'fadeIn .15s ease',
       }}>
       <style>{`
         @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
         @keyframes slideUp { from { opacity:0; transform:translateY(20px) scale(.98) } to { opacity:1; transform:none } }
         @keyframes bop { 0%,60%,100% { transform:translateY(0);opacity:.4 } 30% { transform:translateY(-4px);opacity:1 } }
+        .pd-right-scroll::-webkit-scrollbar { width: 4px; }
+        .pd-right-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,.12); border-radius: 2px; }
       `}</style>
 
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: 'var(--bg)', borderRadius: isMobile ? '16px 16px 0 0' : 16, width: '100%',
-          maxWidth: isMobile ? '100%' : 1240, maxHeight: isMobile ? '96vh' : '92vh',
-          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.15fr 1fr',
-          overflowY: 'auto', position: 'relative',
-          boxShadow: '0 40px 80px rgba(0,0,0,.35)',
+          borderRadius: isMobile ? '16px 16px 0 0' : 12,
+          width: '100%',
+          maxWidth: isMobile ? '100%' : 1100,
+          height: isMobile ? 'auto' : '92vh',
+          maxHeight: isMobile ? '96vh' : '92vh',
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1.35fr 1fr',
+          gridTemplateRows: isMobile ? 'auto 1fr' : '1fr',
+          overflow: 'hidden',
+          position: 'relative',
+          boxShadow: '0 40px 100px rgba(0,0,0,.6)',
           animation: 'slideUp .25s cubic-bezier(.2,.8,.2,1)',
         }}>
 
-        {/* Close */}
+        {/* Close button */}
         <button onClick={onClose}
           data-testid="pd-close"
           style={{
-            position: 'absolute', top: 12, right: 12, zIndex: 10,
-            width: 36, height: 36, borderRadius: '50%',
-            background: 'rgba(255,255,255,.92)', border: '1px solid var(--line)',
+            position: 'absolute', top: 14, left: 14, zIndex: 20,
+            width: 38, height: 38, borderRadius: '50%',
+            background: 'rgba(255,255,255,.15)', border: 'none',
             display: 'grid', placeItems: 'center', cursor: 'pointer',
-            backdropFilter: 'blur(6px)',
+            backdropFilter: 'blur(8px)',
           }}>
-          <svg width={18} height={18} viewBox="0 0 24 24" stroke="var(--ink)" fill="none" strokeWidth={2}>
+          <svg width={20} height={20} viewBox="0 0 24 24" stroke="#fff" fill="none" strokeWidth={2.5} strokeLinecap="round">
             <path d="M6 6l12 12M18 6L6 18"/>
           </svg>
         </button>
 
-        {/* ── LEFT: Gallery ── */}
-        <section style={{ background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--line)' }}>
-          {/* Hero image */}
-          <div style={{ height: isMobile ? 240 : 420, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: `linear-gradient(135deg, ${getTint(imgIdx)[0]}, ${getTint(imgIdx)[1]})`,
-            }}>
-              {imgs[imgIdx] && (
-                <img src={imgs[imgIdx]!} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              )}
-            </div>
+        {/* ── LEFT: Gallery (dark, full height) ── */}
+        <section style={{
+          background: '#1c1e21',
+          display: 'flex', flexDirection: 'column',
+          height: isMobile ? '58vw' : '100%',
+          minHeight: isMobile ? 240 : 0,
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* Hero image — fills all available space */}
+          <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', minHeight: 0 }}>
+            {!imgs[imgIdx] && (
+              <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${getTint(imgIdx)[0]}44, ${getTint(imgIdx)[1]}44)` }} />
+            )}
+            {imgs[imgIdx] ? (
+              <img
+                src={imgs[imgIdx]!}
+                alt={product.title}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+              />
+            ) : (
+              <svg width={80} height={80} viewBox="0 0 24 24" fill="none" stroke={getTint(imgIdx)[0]} strokeWidth={1} style={{ opacity: .4 }}>
+                <rect x={3} y={3} width={18} height={18} rx={2}/><circle cx={8.5} cy={8.5} r={1.5}/><path d="M21 15l-5-5L5 21"/>
+              </svg>
+            )}
 
-            {/* Prev */}
+            {/* Prev arrow */}
             {imgIdx > 0 && (
               <button onClick={() => setImgIdx(i => i - 1)}
                 style={{
-                  position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)',
-                  width: 40, height: 40, borderRadius: '50%', fontSize: 22,
-                  background: 'rgba(255,255,255,.88)', border: '1px solid var(--line)',
+                  position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+                  width: 40, height: 40, borderRadius: '50%',
+                  background: 'rgba(0,0,0,.5)', border: 'none',
                   display: 'grid', placeItems: 'center', cursor: 'pointer', zIndex: 2,
                   backdropFilter: 'blur(4px)',
-                }}>‹</button>
+                }}>
+                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+              </button>
             )}
-            {/* Next */}
+            {/* Next arrow */}
             {imgIdx < imgs.length - 1 && (
               <button onClick={() => setImgIdx(i => i + 1)}
                 style={{
-                  position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)',
-                  width: 40, height: 40, borderRadius: '50%', fontSize: 22,
-                  background: 'rgba(255,255,255,.88)', border: '1px solid var(--line)',
+                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                  width: 40, height: 40, borderRadius: '50%',
+                  background: 'rgba(0,0,0,.5)', border: 'none',
                   display: 'grid', placeItems: 'center', cursor: 'pointer', zIndex: 2,
                   backdropFilter: 'blur(4px)',
-                }}>›</button>
-            )}
-
-            {/* Counter */}
-            <span style={{
-              position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
-              fontFamily: 'var(--font-mono)', fontSize: 11, color: '#fff',
-              background: 'rgba(0,0,0,.45)', padding: '3px 10px',
-              borderRadius: 999, backdropFilter: 'blur(4px)',
-            }}>{imgIdx + 1} / {imgs.length}</span>
-          </div>
-
-          {/* Thumbnails */}
-          <div data-testid="thumb-strip" style={{
-            display: 'flex', gap: 8, padding: 12,
-            background: 'var(--surface)', borderTop: '1px solid var(--line)',
-          }}>
-            {imgs.map((img, i) => (
-              <button key={i} data-testid={`thumb-${i}`} onClick={() => setImgIdx(i)}
-                style={{
-                  width: isMobile ? 54 : 70, height: isMobile ? 54 : 70, borderRadius: 'var(--radius-sm)',
-                  border: `2px solid ${i === imgIdx ? 'var(--ink)' : 'transparent'}`,
-                  overflow: 'hidden', cursor: 'pointer', flexShrink: 0, padding: 0,
-                  background: `linear-gradient(135deg, ${getTint(i)[0]}, ${getTint(i)[1]})`,
                 }}>
-                {img && <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
               </button>
-            ))}
+            )}
           </div>
+
+          {/* Thumbnail strip — dark themed */}
+          {imgs.length > 1 && (
+            <div data-testid="thumb-strip" style={{
+              display: 'flex', gap: 6, padding: '10px 12px',
+              background: 'rgba(0,0,0,.55)', flexShrink: 0,
+              overflowX: 'auto', backdropFilter: 'blur(4px)',
+            }}>
+              {imgs.map((img, i) => (
+                <button key={i} data-testid={`thumb-${i}`} onClick={() => setImgIdx(i)}
+                  style={{
+                    width: 52, height: 52, borderRadius: 6, padding: 0,
+                    border: `2px solid ${i === imgIdx ? '#fff' : 'rgba(255,255,255,.2)'}`,
+                    overflow: 'hidden', cursor: 'pointer', flexShrink: 0,
+                    background: `linear-gradient(135deg, ${getTint(i)[0]}, ${getTint(i)[1]})`,
+                    opacity: i === imgIdx ? 1 : 0.65,
+                    transition: 'opacity .15s, border-color .15s',
+                  }}>
+                  {img && <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Image counter overlay (when only 1 image) */}
+          {imgs.length <= 1 && (
+            <div style={{
+              position: 'absolute', bottom: 12, right: 14,
+              fontSize: 11, color: 'rgba(255,255,255,.6)',
+              fontFamily: 'var(--font-mono)',
+            }}>1 / 1</div>
+          )}
+          {imgs.length > 1 && (
+            <div style={{
+              position: 'absolute', top: 14, right: 14,
+              fontSize: 11, color: 'rgba(255,255,255,.8)',
+              background: 'rgba(0,0,0,.45)', padding: '3px 9px',
+              borderRadius: 999, fontFamily: 'var(--font-mono)',
+              backdropFilter: 'blur(4px)',
+            }}>{imgIdx + 1} / {imgs.length}</div>
+          )}
         </section>
 
-        {/* ── RIGHT: Details + Chat ── */}
-        <section style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', background: 'var(--surface)' }}>
+        {/* ── RIGHT: Details ── */}
+        <section style={{
+          background: '#fff',
+          display: 'flex', flexDirection: 'column',
+          height: isMobile ? 'auto' : '100%',
+          overflow: 'hidden',
+        }}>
+          {/* Scrollable content */}
+          <div className="pd-right-scroll" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
 
-          {/* Header */}
-          <div style={{ padding: isMobile ? '16px 18px 14px' : '22px 26px 18px', borderBottom: '1px solid var(--line)' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', letterSpacing: '.08em', marginBottom: 10 }}>
-              {(product.category ?? 'สินค้า').toUpperCase()} · {product.location ?? ''} · {timeAgo(product.created_at)}
-            </div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: isMobile ? 18 : 22, fontWeight: 700, letterSpacing: '-.015em', lineHeight: 1.3, marginBottom: 10, color: 'var(--ink)' }}>
-              {product.title}
-            </h1>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: isMobile ? 26 : 32, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--ink)' }}>
-              ฿{Number(price).toLocaleString()}
-              {product.original_price && product.original_price > price && (
-                <s style={{ color: 'var(--ink-3)', fontWeight: 400, fontSize: 18, marginLeft: 10 }}>
-                  ฿{Number(product.original_price).toLocaleString()}
-                </s>
-              )}
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-              {product.condition && <Tag>{product.condition}</Tag>}
-              {product.is_boosted && <Tag boost>BOOST</Tag>}
-              {product.flash_price && <Tag accent>SALE</Tag>}
-            </div>
-          </div>
-
-          {/* Seller strip */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: isMobile ? '12px 18px' : '16px 26px', borderBottom: '1px solid var(--line)', background: 'var(--surface-2)' }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 14, color: 'var(--ink)', flexShrink: 0 }}>
-              {sellerInitial}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-                {product.seller_name ?? 'ผู้ขาย'}
-                <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, background: 'var(--pos)', color: '#fff', fontWeight: 500 }}>ยืนยันตัวตน</span>
+            {/* Price + title block */}
+            <div style={{ padding: isMobile ? '18px 18px 14px' : '24px 24px 18px' }}>
+              {/* Price — very prominent */}
+              <div style={{
+                fontFamily: 'var(--font-display)', fontSize: isMobile ? 28 : 34,
+                fontWeight: 800, letterSpacing: '-.02em', color: '#1c1e21', lineHeight: 1.1,
+              }}>
+                ฿{Number(price).toLocaleString()}
+                {product.original_price && product.original_price > price && (
+                  <s style={{ color: '#aaa', fontWeight: 400, fontSize: isMobile ? 16 : 18, marginLeft: 10 }}>
+                    ฿{Number(product.original_price).toLocaleString()}
+                  </s>
+                )}
               </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
-                4.9 ★ · 342 รีวิว · ตอบภายใน 10 นาที
+
+              {/* Title */}
+              <h1 style={{
+                fontFamily: 'var(--font-display)', fontSize: isMobile ? 17 : 20,
+                fontWeight: 600, letterSpacing: '-.01em', lineHeight: 1.35,
+                marginTop: 10, color: '#1c1e21',
+              }}>
+                {product.title}
+              </h1>
+
+              {/* Tags row */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+                {product.condition && <Tag>{product.condition}</Tag>}
+                {product.is_boosted && <Tag boost>BOOST</Tag>}
+                {product.flash_price && <Tag accent>SALE</Tag>}
+              </div>
+
+              {/* Location + time */}
+              <div style={{
+                marginTop: 10, fontSize: 13, color: '#65676b',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                {product.location && (
+                  <>
+                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#65676b" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx={12} cy={10} r={3}/>
+                    </svg>
+                    {product.location}
+                    {product.created_at && <span style={{ color: '#bbb' }}>·</span>}
+                  </>
+                )}
+                {product.created_at && <span style={{ color: '#65676b' }}>{timeAgo(product.created_at)}</span>}
               </div>
             </div>
-            <button
-              onClick={() => product?.seller_id && onViewShop?.(product.seller_id)}
-              style={{ padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', fontSize: 13, cursor: 'pointer', color: 'var(--ink)' }}>
-              ดูร้าน
-            </button>
-          </div>
 
-          {/* Description + specs */}
-          <div style={{ padding: isMobile ? '14px 18px' : '18px 26px', borderBottom: '1px solid var(--line)' }}>
-            <SectionTitle>รายละเอียด</SectionTitle>
-            <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--ink-2)' }}>
-              {product.description ?? 'เครื่องศูนย์ไทย ใช้งานปกติทุกฟังก์ชัน อุปกรณ์ครบกล่อง มีรอยขนแมวเล็กน้อย ไม่กระทบการใช้งาน'}
-            </p>
+            <div style={{ height: 1, background: '#e4e6ea', margin: '0 18px' }} />
 
-            <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 18px' }}>
-              {[
-                ['สภาพ', product.condition ?? '-'],
-                ['หมวดหมู่', product.category ?? '-'],
-                ['พื้นที่', product.location ?? '-'],
-                ['วิธีรับของ', 'นัดรับ / ส่งไปรษณีย์'],
-                ['ลงประกาศ', timeAgo(product.created_at)],
-                ['ยอดเข้าชม', '1,284 ครั้ง · 47 ถูกใจ'],
-              ].map(([label, val]) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '6px 0', borderBottom: '1px dashed var(--line)' }}>
-                  <span style={{ color: 'var(--ink-3)' }}>{label}</span>
-                  <span style={{ color: 'var(--ink)', fontWeight: 500, fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{val}</span>
+            {/* Seller strip */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: isMobile ? '14px 18px' : '16px 24px',
+            }}>
+              <div style={{
+                width: 46, height: 46, borderRadius: '50%',
+                background: '#e4e6ea',
+                display: 'grid', placeItems: 'center',
+                fontWeight: 700, fontSize: 16, color: '#1c1e21', flexShrink: 0,
+              }}>
+                {sellerInitial}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#1c1e21', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {product.seller_name ?? 'ผู้ขาย'}
                 </div>
-              ))}
+                <div style={{ fontSize: 12, color: '#65676b', marginTop: 2 }}>
+                  Marketplace Seller
+                </div>
+              </div>
+              <button
+                onClick={() => product?.seller_id && onViewShop?.(product.seller_id)}
+                style={{
+                  padding: '7px 14px', border: '1px solid #ccd0d5',
+                  borderRadius: 6, background: '#fff',
+                  fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#1c1e21',
+                  fontFamily: 'inherit',
+                }}>
+                ดูร้าน
+              </button>
+            </div>
+
+            <div style={{ height: 1, background: '#e4e6ea', margin: '0 18px' }} />
+
+            {/* Description */}
+            <div style={{ padding: isMobile ? '14px 18px' : '16px 24px' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#65676b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.06em' }}>รายละเอียด</div>
+              <p style={{ fontSize: 14, lineHeight: 1.65, color: '#3c3c3c', margin: 0 }}>
+                {product.description ?? 'ไม่มีรายละเอียดเพิ่มเติม'}
+              </p>
+            </div>
+
+            <div style={{ height: 1, background: '#e4e6ea', margin: '0 18px' }} />
+
+            {/* Specs grid */}
+            <div style={{ padding: isMobile ? '14px 18px' : '16px 24px' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#65676b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.06em' }}>ข้อมูลสินค้า</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {[
+                  ['สภาพ', product.condition ?? '-'],
+                  ['หมวดหมู่', product.category ?? '-'],
+                  ['พื้นที่', product.location ?? '-'],
+                  ['วิธีรับของ', 'นัดรับ / ส่งไปรษณีย์'],
+                  ['ลงประกาศ', timeAgo(product.created_at)],
+                ].filter(([, v]) => v && v !== '-').map(([label, val]) => (
+                  <div key={label} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    fontSize: 13, padding: '9px 0', borderBottom: '1px solid #f0f2f5',
+                  }}>
+                    <span style={{ color: '#65676b' }}>{label}</span>
+                    <span style={{ color: '#1c1e21', fontWeight: 500 }}>{val}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Safety notice */}
-            <div style={{ marginTop: 14, padding: '10px 12px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, color: 'var(--ink-2)', border: '1px solid var(--line)' }}>
-              <svg width={16} height={16} viewBox="0 0 24 24" stroke="var(--pos)" fill="none" strokeWidth={1.8} style={{ flexShrink: 0 }}>
+            <div style={{ margin: '0 18px 18px', padding: '10px 14px', background: '#f0f2f5', borderRadius: 8, display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 12, color: '#65676b' }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" stroke="#1877f2" fill="none" strokeWidth={1.8} style={{ flexShrink: 0, marginTop: 1 }}>
                 <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/>
               </svg>
-              ซื้อ-ขายกันเอง นัดที่สาธารณะ ตรวจสอบของก่อนจ่ายเงินเสมอ
+              <span>ซื้อ-ขายกันเอง นัดที่สาธารณะ ตรวจสอบของก่อนจ่ายเงินเสมอ</span>
             </div>
           </div>
 
-          {/* Chat CTA button */}
-          <div style={{ padding: isMobile ? '14px 18px' : '16px 26px', borderBottom: '1px solid var(--line)' }}>
+          {/* ── Sticky Chat CTA ── */}
+          <div style={{
+            padding: isMobile ? '12px 18px 16px' : '14px 24px',
+            borderTop: '1px solid #e4e6ea',
+            background: '#fff', flexShrink: 0,
+          }}>
             {sessionUserId && product?.seller_id && sessionUserId === product.seller_id ? (
-              /* Seller viewing their own product */
               <div style={{
-                width: '100%', padding: '14px 0', background: 'var(--surface-2)',
-                border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)',
-                fontSize: 14, color: 'var(--ink-3)', textAlign: 'center', fontFamily: 'inherit',
+                width: '100%', padding: '13px 0',
+                background: '#f0f2f5', borderRadius: 8,
+                fontSize: 14, color: '#65676b', textAlign: 'center', fontFamily: 'inherit',
               }}>
                 นี่คือสินค้าของคุณ
               </div>
             ) : !session?.user ? (
-              /* Guest — prompt login */
               <button
                 data-testid="pd-chat-btn"
                 onClick={() => onOpenAuth?.()}
                 style={{
-                  width: '100%', padding: '14px 0',
-                  background: 'var(--accent)', color: '#fff',
-                  border: 'none', borderRadius: 'var(--radius-sm)',
+                  width: '100%', padding: '13px 0',
+                  background: '#1877f2', color: '#fff',
+                  border: 'none', borderRadius: 8,
                   fontSize: 15, fontWeight: 700, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   fontFamily: 'inherit',
@@ -405,17 +509,16 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
                 <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                 </svg>
-                เข้าสู่ระบบเพื่อแชทกับผู้ขาย
+                เข้าสู่ระบบเพื่อส่งข้อความ
               </button>
             ) : (
-              /* Logged-in buyer */
               <button
                 data-testid="pd-chat-btn"
                 onClick={() => setChatOpen(true)}
                 style={{
-                  width: '100%', padding: '14px 0',
-                  background: 'var(--surface-2)', color: 'var(--ink)',
-                  border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)',
+                  width: '100%', padding: '13px 0',
+                  background: '#1877f2', color: '#fff',
+                  border: 'none', borderRadius: 8,
                   fontSize: 15, fontWeight: 700, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   fontFamily: 'inherit',
@@ -423,11 +526,10 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
                 <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                 </svg>
-                แชทกับผู้ขาย
+                ส่งข้อความ
               </button>
             )}
           </div>
-
         </section>
       </div>
 
