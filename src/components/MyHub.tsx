@@ -771,13 +771,22 @@ function SellInsights({ token }: { token?: string }) {
   const [selected, setSelected] = useState<any | null>(null);
   const [recs, setRecs] = useState<any[]>([]);
   const [recsLoading, setRecsLoading] = useState(false);
+  const [hasAnalyticsPro, setHasAnalyticsPro] = useState(false);
 
   const load = useCallback(async () => {
     if (!token) { setLoading(false); return; }
     setLoading(true);
     try {
-      const data = await api.getSellerAnalytics(token);
-      setProducts(Array.isArray(data) ? data : []);
+      const [analyticsData, featuresData] = await Promise.allSettled([
+        api.getSellerAnalytics(token),
+        api.getActiveFeatures(token),
+      ]);
+      if (analyticsData.status === 'fulfilled') {
+        setProducts(Array.isArray(analyticsData.value) ? analyticsData.value : []);
+      }
+      if (featuresData.status === 'fulfilled' && Array.isArray(featuresData.value)) {
+        setHasAnalyticsPro(featuresData.value.some((f: any) => f.feature_key === 'analytics_pro'));
+      }
     } catch { setProducts([]); } finally { setLoading(false); }
   }, [token]);
 
@@ -853,7 +862,7 @@ function SellInsights({ token }: { token?: string }) {
               const maxF = Math.max(...funnel.map(f => f.v), 1);
               return (
                 <div key={p.id}>
-                  <button onClick={() => loadRecs(p)}
+                  <button onClick={() => hasAnalyticsPro ? loadRecs(p) : setSelected(selected?.id === p.id ? null : p)}
                     style={{ width: '100%', background: isOpen ? 'var(--surface-2)' : 'var(--surface)', border: `1px solid ${isOpen ? '#f97316' : 'var(--line)'}`, borderRadius: isOpen ? '10px 10px 0 0' : 10, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', display: 'flex', gap: 12, alignItems: 'center', fontFamily: 'inherit' }}>
                     <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, overflow: 'hidden', background: imgUrl ? undefined : `linear-gradient(135deg,${tints[0]},${tints[1]})` }}>
                       {imgUrl && <img src={imgUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
@@ -879,7 +888,14 @@ function SellInsights({ token }: { token?: string }) {
                   </button>
 
                   {/* Recommendations panel */}
-                  {isOpen && (
+                  {isOpen && !hasAnalyticsPro && (
+                    <div style={{ padding: '16px 20px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '0 0 10px 10px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 16, marginBottom: 6 }}>📊 ปลดล็อก AI Recommendations</div>
+                      <div style={{ fontSize: 13, color: '#78350f', marginBottom: 12 }}>เปิดใช้งาน Analytics Pro เพื่อดูคำแนะนำ AI สำหรับสินค้าชิ้นนี้</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#d97706' }}>🪙 50 เหรียญ / 30 วัน — ไปที่แท็บ "Premium & เหรียญ"</div>
+                    </div>
+                  )}
+                  {isOpen && hasAnalyticsPro && (
                     <div style={{ border: '1px solid #f97316', borderTop: 'none', borderRadius: '0 0 10px 10px', background: '#fff7ed', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {recsLoading ? (
                         <div style={{ textAlign: 'center', padding: 12, color: 'var(--ink-3)', fontSize: 13 }}>กำลังวิเคราะห์...</div>

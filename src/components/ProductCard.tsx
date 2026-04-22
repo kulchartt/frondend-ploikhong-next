@@ -16,6 +16,7 @@ interface ProductCardProps {
     is_boosted?: boolean;
     flash_price?: number;
     status?: string;
+    is_featured?: boolean;
   };
   inWishlist?: boolean;
   onWishlist?: (id: number) => void;
@@ -86,6 +87,11 @@ export function ProductCard({ product, inWishlist = false, onWishlist, onClick }
 
         {/* Badges top-left */}
         <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {product.is_featured && (
+            <span style={{ position: 'absolute', top: 6, left: 6, background: '#f59e0b', color: '#fff', fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 999, letterSpacing: '.05em', zIndex: 2 }}>
+              ⭐ FEATURED
+            </span>
+          )}
           {product.is_boosted && (
             <span style={{ background: 'linear-gradient(90deg,#111,#333)', color: '#fff',
               fontSize: 10, fontWeight: 700, padding: '3px 8px',
