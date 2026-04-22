@@ -21,26 +21,31 @@ const MONEY_RAIL = [
   {
     badge: '001',
     title: 'ลงขายฟรีไม่จำกัด',
-    desc: 'โพสต์สินค้าได้ไม่มีเพดาน ไม่เก็บค่าธรรมเนียม ลงประกาศ จ่ายเฉพาะเมื่อขายสำเร็จ 3%',
+    desc: 'โพสต์สินค้าได้ไม่มีเพดาน ไม่เก็บค่าธรรมเนียมลงประกาศ',
     featured: false,
+    icon: '🛍️',
   },
   {
     badge: '002',
-    title: 'Boost สินค้า ฿29',
-    desc: 'ดันโพสต์ขึ้นฟีดบนสุด 48 ชม. เพิ่มยอดคนเห็น 8-12 เท่า',
+    title: '⭐ สินค้าเด่น',
+    desc: 'ปักหมุดขึ้นหน้าแนะนำ เพิ่มยอดเห็นสูงสุด 10 เท่า เริ่มเพียง 80 เหรียญ / 7 วัน',
     featured: true,
+    icon: '⭐',
   },
   {
     badge: '003',
-    title: 'รับเงินปลอดภัย',
-    desc: 'PloiPay ถือเงินไว้จนกว่าผู้ซื้อจะได้รับของ โอนเข้าบัญชีภายใน 1 วันทำการ',
+    title: '🔔 แจ้งเตือนผู้ติดตาม',
+    desc: 'ส่ง push อัตโนมัติถึงทุกคนที่ติดตามร้าน เมื่อคุณลดราคา — ปิดดีลเร็วขึ้น',
     featured: false,
+    icon: '🔔',
   },
   {
     badge: '004',
-    title: 'ค่าส่งคืนได้',
-    desc: 'เคลมค่าจัดส่งคืนได้สูงสุด ฿60 ถ้าใช้ PloiShip ในการส่ง',
+    title: 'ฟีเจอร์อื่นๆ',
+    desc: 'Analytics Pro · ลงประกาศอัตโนมัติ · Priority Support และอีกมากมาย',
     featured: false,
+    icon: '✦',
+    cta: true,
   },
 ];
 
@@ -209,14 +214,22 @@ export default function HomePage() {
           }}>
             {MONEY_RAIL.map(m => (
               <div key={m.badge}
+                onClick={m.cta ? () => {
+                  if (session?.user) setHubOpen({ mode: 'sell', tab: 'premium' });
+                  else setAuthOpen(true);
+                } : undefined}
                 style={{
                   background: m.featured ? 'var(--ink)' : 'var(--surface-2)',
                   color: m.featured ? 'var(--bg)' : 'var(--ink)',
                   borderRadius: 'var(--radius)',
                   padding: '14px 16px',
-                  border: `1px solid ${m.featured ? 'var(--ink)' : 'var(--line)'}`,
+                  border: m.cta
+                    ? '1.5px dashed var(--line-2)'
+                    : `1px solid ${m.featured ? 'var(--ink)' : 'var(--line)'}`,
                   display: 'flex', flexDirection: 'column', gap: 4,
                   position: 'relative', overflow: 'hidden',
+                  cursor: m.cta ? 'pointer' : 'default',
+                  transition: m.cta ? 'border-color .15s, background .15s' : undefined,
                 }}>
                 <span style={{
                   position: 'absolute', top: 10, right: 10,
@@ -228,11 +241,20 @@ export default function HomePage() {
                 <div style={{
                   fontFamily: 'var(--font-display)', fontWeight: 700,
                   fontSize: 15, letterSpacing: '-.01em',
-                }}>{m.title}</div>
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  {m.title}
+                  {m.cta && <span style={{ fontSize: 13, color: 'var(--accent)' }}>→</span>}
+                </div>
                 <div style={{
                   fontSize: 12, lineHeight: 1.5,
                   color: m.featured ? 'rgba(250,250,247,.72)' : 'var(--ink-2)',
                 }}>{m.desc}</div>
+                {m.cta && (
+                  <div style={{ marginTop: 6, fontSize: 11, fontWeight: 600, color: 'var(--accent)' }}>
+                    ดูทั้งหมด →
+                  </div>
+                )}
               </div>
             ))}
           </div>
