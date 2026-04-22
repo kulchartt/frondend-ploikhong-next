@@ -297,6 +297,18 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [warnDismissed, setWarnDismissed] = useState(false);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  async function handleShare(p: any) {
+    const url = `${window.location.origin}/products/${p.id}`;
+    const title = p.title ?? 'สินค้า';
+    if (navigator.share) {
+      try { await navigator.share({ title, url }); return; } catch {}
+    }
+    await navigator.clipboard.writeText(url);
+    setCopiedId(p.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  }
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -563,9 +575,13 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
                         )}
 
                         {/* Share button */}
-                        <button style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--ink-2)' }}>
-                          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                          แชร์
+                        <button onClick={() => handleShare(p)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: `1px solid ${copiedId === p.id ? 'var(--pos)' : 'var(--line)'}`, borderRadius: 'var(--radius-sm)', background: copiedId === p.id ? 'rgba(10,122,69,.08)' : 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: copiedId === p.id ? 'var(--pos)' : 'var(--ink-2)', transition: 'all .2s' }}>
+                          {copiedId === p.id
+                            ? <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="20 6 9 17 4 12"/></svg>
+                            : <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                          }
+                          {copiedId === p.id ? 'คัดลอกแล้ว!' : 'แชร์'}
                         </button>
 
                         {/* More / Edit / Delete */}
