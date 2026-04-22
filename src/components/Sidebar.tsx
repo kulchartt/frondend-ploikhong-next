@@ -1,20 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getProductCategories } from '@/lib/api';
 
-const CATS = [
-  { name: 'ทั้งหมด', count: 24580 },
-  { name: 'มือถือ & แท็บเล็ต', count: 3420 },
-  { name: 'คอมพิวเตอร์', count: 1890 },
-  { name: 'เครื่องใช้ไฟฟ้า', count: 2150 },
-  { name: 'เฟอร์นิเจอร์', count: 1120 },
-  { name: 'แฟชั่น', count: 5200 },
-  { name: 'กล้อง & อุปกรณ์', count: 780 },
-  { name: 'กีฬา & จักรยาน', count: 940 },
-  { name: 'ของสะสม & เกม', count: 2380 },
-  { name: 'หนังสือ', count: 1450 },
-  { name: 'สัตว์เลี้ยง', count: 620 },
-  { name: 'อื่นๆ', count: 4630 },
+// Canonical category order shown in sidebar
+const CAT_ORDER = [
+  'มือถือ & แท็บเล็ต',
+  'คอมพิวเตอร์',
+  'เครื่องใช้ไฟฟ้า',
+  'เฟอร์นิเจอร์',
+  'แฟชั่น',
+  'กล้อง & อุปกรณ์',
+  'กีฬา & จักรยาน',
+  'ของสะสม & เกม',
+  'หนังสือ',
+  'สัตว์เลี้ยง',
+  'อื่นๆ',
 ];
 
 const CONDITIONS = ['ใหม่ในกล่อง', 'สภาพ 90%+', 'มือสองทั่วไป', 'ซ่อมได้'];
@@ -50,6 +51,30 @@ export function Sidebar({ onFilter }: SidebarProps) {
   const [delivery, setDelivery] = useState<string[]>([]);
   const [hoveredCat, setHoveredCat] = useState<string | null>(null);
 
+  // Real category counts from DB
+  const [catCounts, setCatCounts] = useState<Record<string, number>>({});
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    getProductCategories()
+      .then(({ total, categories }) => {
+        setTotalCount(total);
+        const map: Record<string, number> = {};
+        categories.forEach(c => { map[c.name] = c.count; });
+        setCatCounts(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Build displayed category list: ordered known cats + any unknown from DB
+  const knownSet = new Set(CAT_ORDER);
+  const dbExtra = Object.keys(catCounts).filter(k => !knownSet.has(k) && catCounts[k] > 0);
+  const allCats = [
+    { name: 'ทั้งหมด', count: totalCount },
+    ...CAT_ORDER.map(name => ({ name, count: catCounts[name] ?? 0 })),
+    ...dbExtra.map(name => ({ name, count: catCounts[name] })),
+  ];
+
   function toggleArr(arr: string[], val: string) {
     return arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val];
   }
@@ -69,7 +94,7 @@ export function Sidebar({ onFilter }: SidebarProps) {
       {/* Categories */}
       <div style={{ ...sectionLabel, marginTop: 0 }}>หมวดหมู่</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {CATS.map(cat => (
+        {allCats.map(cat => (
           <button key={cat.name}
             onClick={() => { setActiveCat(cat.name); emit({ activeCat: cat.name }); }}
             onMouseEnter={() => setHoveredCat(cat.name)}
@@ -79,12 +104,20 @@ export function Sidebar({ onFilter }: SidebarProps) {
               width: '100%', padding: '6px 8px', border: 'none', cursor: 'pointer',
               borderRadius: 'var(--radius-sm)', textAlign: 'left', fontSize: 13,
               background: activeCat === cat.name || hoveredCat === cat.name ? 'var(--surface-2)' : 'transparent',
-              fontWeight: activeCat === cat.name ? 500 : 400,
+              fontWeight: activeCat === cat.name ? 600 : 400,
               color: activeCat === cat.name ? 'var(--ink)' : 'var(--ink-2)',
             }}>
             <span>{cat.name}</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)' }}>
-              {cat.count.toLocaleString()}
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: 11,
+              color: activeCat === cat.name ? 'var(--accent)' : 'var(--ink-3)',
+              fontWeight: activeCat === cat.name ? 700 : 400,
+            }}>
+              {cat.count === null
+                ? '…'
+                : cat.count === 0
+                  ? <span style={{ opacity: 0.35 }}>0</span>
+                  : cat.count.toLocaleString()}
             </span>
           </button>
         ))}

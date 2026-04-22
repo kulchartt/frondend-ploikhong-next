@@ -31,6 +31,9 @@ function normalizeProduct(p: any): any {
 
 // ─── Products ───────────────────────────────────────────────────────────────
 
+export const getProductCategories = () =>
+  req<{ total: number; categories: { name: string; count: number }[] }>('/api/products/categories');
+
 export const getProducts = async (params?: Record<string, string | number>): Promise<any[]> => {
   const qs = params ? '?' + new URLSearchParams(params as any).toString() : '';
   const data = await req<any[]>(`/api/products${qs}`);

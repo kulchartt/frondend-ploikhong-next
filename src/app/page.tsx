@@ -84,7 +84,7 @@ export default function HomePage() {
       const params: Record<string, string> = {};
       if (debouncedSearch) params.search = debouncedSearch;
       if (sort) params.sort = sort;
-      if (filters.activeCat && filters.activeCat !== 'ทั้งหมด') params.category = filters.activeCat;
+      if (filters.activeCat && filters.activeCat !== 'ทั้งหมด') params.cat = filters.activeCat;
       if (filters.minPrice) params.min_price = filters.minPrice;
       if (filters.maxPrice) params.max_price = filters.maxPrice;
       const data = await api.getProducts(params);
