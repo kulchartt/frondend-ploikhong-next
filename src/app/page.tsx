@@ -312,6 +312,7 @@ export default function HomePage() {
                 <ProductCard
                   key={p.id}
                   product={p}
+                  layout={gridView ? 'grid' : 'list'}
                   inWishlist={wishlistIds.has(p.id)}
                   onClick={id => setSelectedProduct(products.find(x => x.id === id))}
                   onWishlist={handleWishlist}

@@ -21,6 +21,7 @@ interface ProductCardProps {
   inWishlist?: boolean;
   onWishlist?: (id: number) => void;
   onClick?: (id: number) => void;
+  layout?: 'grid' | 'list';
 }
 
 const IMG_TINTS = [
@@ -46,10 +47,8 @@ function timeAgo(dateStr?: string) {
   return `${Math.floor(diff / 1440)} วันที่แล้ว`;
 }
 
-export function ProductCard({ product, inWishlist = false, onWishlist, onClick }: ProductCardProps) {
+export function ProductCard({ product, inWishlist = false, onWishlist, onClick, layout = 'grid' }: ProductCardProps) {
   const [liked, setLiked] = useState(inWishlist);
-
-  // Sync when parent updates inWishlist (e.g. after wishlist API loads)
   useEffect(() => { setLiked(inWishlist); }, [inWishlist]);
   const [hovered, setHovered] = useState(false);
   const tints = IMG_TINTS[product.id % IMG_TINTS.length];
@@ -61,6 +60,73 @@ export function ProductCard({ product, inWishlist = false, onWishlist, onClick }
     onWishlist?.(product.id);
   }
 
+  // ── List layout ───────────────────────────────────────────────────────────
+  if (layout === 'list') {
+    return (
+      <div
+        onClick={() => onClick?.(product.id)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 14,
+          background: 'var(--surface)',
+          border: `1px solid ${hovered ? 'var(--ink)' : 'var(--line)'}`,
+          borderRadius: 'var(--radius)',
+          overflow: 'hidden', cursor: 'pointer',
+          transition: 'border-color .18s',
+          padding: 10,
+        }}
+      >
+        {/* Thumbnail — fixed 80×80 */}
+        <div style={{
+          width: 80, height: 80, flexShrink: 0, borderRadius: 8, overflow: 'hidden', position: 'relative',
+          background: `linear-gradient(135deg,${tints[0]},${tints[1]})`,
+        }}>
+          {product.images?.[0] && (
+            <img src={product.images[0]} alt={product.title}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          )}
+          {product.is_featured && (
+            <span style={{ position: 'absolute', bottom: 4, left: 4, background: '#f59e0b', color: '#fff', fontSize: 8, fontWeight: 800, padding: '1px 5px', borderRadius: 999 }}>⭐</span>
+          )}
+        </div>
+
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>
+            {product.title}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700, color: 'var(--ink)' }}>
+              ฿{Number(price).toLocaleString()}
+            </span>
+            {product.original_price && product.original_price > price && (
+              <s style={{ color: 'var(--ink-3)', fontSize: 12 }}>฿{Number(product.original_price).toLocaleString()}</s>
+            )}
+            {product.flash_price && (
+              <span style={{ background: 'var(--accent)', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 999 }}>SALE</span>
+            )}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ink-3)', display: 'flex', gap: 10 }}>
+            {product.condition && <span>{product.condition}</span>}
+            {product.location && <span>📍 {product.location.split('·')[0]?.trim()}</span>}
+            <span style={{ marginLeft: 'auto' }}>{timeAgo(product.created_at)}</span>
+          </div>
+        </div>
+
+        {/* Wishlist button */}
+        <button onClick={handleWishlist}
+          style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surface-2)', display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0 }}>
+          <svg width={15} height={15} viewBox="0 0 24 24" strokeWidth={1.8}
+            stroke={liked ? '#b83216' : 'var(--ink-3)'} fill={liked ? '#b83216' : 'none'}>
+            <path d="M12 21s-7-4.5-9.5-10C1 7.5 3 4 7 4c2 0 3.5 1.5 5 3 1.5-1.5 3-3 5-3 4 0 6 3.5 4.5 7C19 16.5 12 21 12 21z"/>
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
+  // ── Grid layout (default) ─────────────────────────────────────────────────
   return (
     <div
       onClick={() => onClick?.(product.id)}
@@ -88,7 +154,7 @@ export function ProductCard({ product, inWishlist = false, onWishlist, onClick }
         {/* Badges top-left */}
         <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {product.is_featured && (
-            <span style={{ position: 'absolute', top: 6, left: 6, background: '#f59e0b', color: '#fff', fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 999, letterSpacing: '.05em', zIndex: 2 }}>
+            <span style={{ background: '#f59e0b', color: '#fff', fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 999, letterSpacing: '.05em' }}>
               ⭐ FEATURED
             </span>
           )}
@@ -118,7 +184,6 @@ export function ProductCard({ product, inWishlist = false, onWishlist, onClick }
 
       {/* Body */}
       <div style={{ padding: '12px 14px 14px' }}>
-        {/* Title first */}
         <div style={{
           fontSize: 14, fontWeight: 500, lineHeight: 1.4, marginBottom: 4,
           color: 'var(--ink)',
@@ -128,7 +193,6 @@ export function ProductCard({ product, inWishlist = false, onWishlist, onClick }
           {product.title}
         </div>
 
-        {/* Price — font-display, 18px */}
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700,
           letterSpacing: '-.01em', color: 'var(--ink)' }}>
           ฿{Number(price).toLocaleString()}
@@ -139,7 +203,6 @@ export function ProductCard({ product, inWishlist = false, onWishlist, onClick }
           )}
         </div>
 
-        {/* Footer */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           marginTop: 8, fontSize: 12, color: 'var(--ink-3)' }}>
           <span>{product.location?.split('·')[0]?.trim() ?? ''}</span>
