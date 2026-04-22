@@ -516,7 +516,34 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
             <div style={{ fontSize: 13, marginBottom: 20 }}>เริ่มโพสต์ขายสิ่งที่ไม่ใช้แล้วเลยดีกว่า!</div>
             {!q && <button onClick={onNewListing} style={{ padding: '10px 24px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>+ ลงขายฟรี</button>}
           </div>
+        ) : gridView ? (
+          /* ── Grid view ── */
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
+            {filtered.map(p => {
+              const tints = IMG_TINTS[p.id % IMG_TINTS.length];
+              const imgUrl = p.images?.[0] || p.image_url || null;
+              const st = STATUS_MAP[p.status ?? 'active'] ?? STATUS_MAP.active;
+              return (
+                <div key={p.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', overflow: 'hidden', cursor: 'pointer' }}
+                  onClick={() => { setEditId(p.id); setEditForm({ title: p.title ?? '', price: String(p.price ?? ''), description: p.description ?? '' }); }}>
+                  {/* Image */}
+                  <div style={{ width: '100%', aspectRatio: '1', background: imgUrl ? undefined : `linear-gradient(135deg,${tints[0]},${tints[1]})`, position: 'relative', overflow: 'hidden' }}>
+                    {imgUrl && <img src={imgUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                    <span style={{ position: 'absolute', bottom: 6, left: 6, fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: st.bg, color: st.color }}>{st.label}</span>
+                    {p.is_featured && <span style={{ position: 'absolute', top: 6, right: 6, fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 999, background: '#f59e0b', color: '#fff' }}>⭐</span>}
+                  </div>
+                  {/* Info */}
+                  <div style={{ padding: '10px 10px 8px' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>{p.title}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>฿{Number(p.price).toLocaleString()}</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>👁️ {(p.view_count || 0).toLocaleString()}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
+          /* ── List view ── */
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {filtered.map(p => {
               const tints = IMG_TINTS[p.id % IMG_TINTS.length];
