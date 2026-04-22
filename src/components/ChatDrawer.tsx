@@ -218,7 +218,7 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
     latestId.current = 0;
     api.getChatMessages(selectedRoom.id, token)
       .then(raw => {
-        const normalised = normalise(raw, selectedRoom.buyer_id ?? myUserId);
+        const normalised = normalise(raw, myUserId);
         setMsgs(normalised);
         if (raw.length) latestId.current = raw[raw.length - 1].id;
       })
@@ -235,7 +235,7 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
         const lastId = raw.length ? raw[raw.length - 1].id : 0;
         if (lastId !== latestId.current) {
           latestId.current = lastId;
-          setMsgs(normalise(raw, selectedRoom.buyer_id ?? myUserId));
+          setMsgs(normalise(raw, myUserId));
         }
       } catch {}
     }, 3000);
@@ -281,7 +281,12 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
   const showChat = isMobile ? !!selectedRoom : true;
   const showRight = !isMobile && isWide && !!selectedRoom;
 
-  const sellerName = selectedRoom ? (selectedRoom.seller_name ?? selectedRoom.buyer_name ?? 'ผู้ใช้') : '';
+  // Show the other person's name in the chat header (not the current user)
+  const sellerName = selectedRoom
+    ? (myUserId === selectedRoom.seller_id
+        ? (selectedRoom.buyer_name ?? 'ผู้ซื้อ')
+        : (selectedRoom.seller_name ?? 'ผู้ขาย'))
+    : '';
   const tints = selectedRoom ? IMG_TINTS[selectedRoom.id % IMG_TINTS.length] : IMG_TINTS[0];
 
   return (
@@ -405,7 +410,10 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
               {token && !loadingRooms && filteredRooms.map(room => {
                 const rtints = IMG_TINTS[room.id % IMG_TINTS.length];
                 const isSelected = selectedRoom?.id === room.id;
-                const other = room.seller_name ?? room.buyer_name ?? 'ผู้ใช้';
+                // Show the other person's name (not the current user's)
+                const other = myUserId === room.seller_id
+                  ? (room.buyer_name ?? 'ผู้ซื้อ')
+                  : (room.seller_name ?? 'ผู้ขาย');
                 const initials = getInitials(other);
                 const unreadCount = room.unread_count ?? 0;
                 return (
