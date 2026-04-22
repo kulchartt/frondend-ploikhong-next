@@ -8,6 +8,7 @@ import * as api from '@/lib/api';
 interface ChatDrawerProps {
   onClose: () => void;
   initialRoomId?: number;
+  onViewProduct?: (product: any) => void;
 }
 
 const IMG_TINTS = [
@@ -138,7 +139,7 @@ function IconBlock() {
   );
 }
 
-export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
+export function ChatDrawer({ onClose, initialRoomId, onViewProduct }: ChatDrawerProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
   // session.userId may be wrong for social logins — verify from /api/auth/me
@@ -171,6 +172,19 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const latestId = useRef(0);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [sellerProducts, setSellerProducts] = useState<any[]>([]);
+
+  // Fetch seller's other products when room changes
+  useEffect(() => {
+    if (!selectedRoom?.seller_id) { setSellerProducts([]); return; }
+    api.getProductsBySeller(selectedRoom.seller_id)
+      .then(items => {
+        // Exclude current product, up to 4
+        const filtered = items.filter((p: any) => p.id !== selectedRoom.product_id).slice(0, 4);
+        setSellerProducts(filtered);
+      })
+      .catch(() => setSellerProducts([]));
+  }, [selectedRoom?.seller_id, selectedRoom?.product_id]);
 
   // Lock scroll + ESC
   useEffect(() => {
@@ -864,31 +878,40 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
               ))}
             </div>
 
-            <div style={{ height: 1, minHeight: 1, flexShrink: 0, background: 'var(--line)', margin: '0 16px' }} />
-            {/* สินค้าอื่นจากผู้ขาย */}
-            <div style={{ padding: '14px 16px 20px' }}>
-              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>สินค้าอื่นจากผู้ขาย</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[
-                  { t: 'iPhone 15 Pro 256GB สีดำ', p: 38900, idx: 0 },
-                  { t: 'MacBook Air M3 512GB', p: 52000, idx: 1 },
-                  { t: 'AirPods Pro Gen 2', p: 7800, idx: 2 },
-                ].map((item, j) => {
-                  const mt = tints; // reuse tints
-                  return (
-                    <div key={j} style={{ display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'; (e.currentTarget as HTMLElement).style.borderRadius = '8px'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}>
-                      <div style={{ width: 72, height: 72, borderRadius: 'var(--radius-sm)', flexShrink: 0, background: `linear-gradient(135deg,${IMG_TINTS[(j+3)%8][0]},${IMG_TINTS[(j+3)%8][1]})` }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{item.t}</div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>฿{item.p.toLocaleString()}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {sellerProducts.length > 0 && (
+              <>
+                <div style={{ height: 1, minHeight: 1, flexShrink: 0, background: 'var(--line)', margin: '0 16px' }} />
+                {/* สินค้าอื่นจากผู้ขาย */}
+                <div style={{ padding: '14px 16px 20px' }}>
+                  <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>สินค้าอื่นจากผู้ขาย</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {sellerProducts.map((sp, j) => {
+                      const thumb = sp.images?.[0] || sp.image_url || null;
+                      const price = sp.flash_price || sp.price;
+                      const t = IMG_TINTS[(sp.id ?? j) % IMG_TINTS.length];
+                      return (
+                        <button
+                          key={sp.id ?? j}
+                          onClick={() => { onViewProduct?.(sp); }}
+                          style={{ display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer', background: 'none', border: 'none', textAlign: 'left', width: '100%', padding: '6px 4px', borderRadius: 8, fontFamily: 'inherit' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}>
+                          <div style={{
+                            width: 64, height: 64, borderRadius: 'var(--radius-sm)', flexShrink: 0,
+                            background: thumb ? `url(${thumb}) center/cover` : `linear-gradient(135deg,${t[0]},${t[1]})`,
+                            border: '1px solid var(--line)',
+                          }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{sp.title}</div>
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>฿{Number(price).toLocaleString()}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

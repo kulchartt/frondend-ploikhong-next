@@ -333,6 +333,7 @@ export default function HomePage() {
         <ChatDrawer
           onClose={() => { setChatOpen(false); setChatInitialRoomId(undefined); }}
           initialRoomId={chatInitialRoomId}
+          onViewProduct={p => { setChatOpen(false); setSelectedProduct(p); }}
         />
       )}
       {wishlistOpen && (
@@ -373,6 +374,7 @@ export default function HomePage() {
             setChatOpen(true);
           }}
           onOpenAuth={() => { setAuthMode('login'); setAuthOpen(true); }}
+          onViewProduct={p => setSelectedProduct(p)}
         />
       )}
       {shopSellerId && (

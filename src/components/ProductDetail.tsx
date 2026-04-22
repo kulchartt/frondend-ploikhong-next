@@ -28,6 +28,7 @@ interface ProductDetailProps {
   onViewShop?: (sellerId: number) => void;
   onOpenChatDrawer?: (roomId?: number) => void;
   onOpenAuth?: () => void;
+  onViewProduct?: (product: any) => void;
 }
 
 const IMG_TINTS = [
@@ -54,7 +55,7 @@ function nowTime() {
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
-export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, onOpenAuth }: ProductDetailProps) {
+export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, onOpenAuth, onViewProduct }: ProductDetailProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
   // sessionUserId may be wrong for social logins — verified below via /api/auth/me
@@ -450,8 +451,9 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
                   const thumb = sp.images?.[0] || sp.image_url || null;
                   const price = sp.flash_price || sp.price;
                   return (
-                    <div key={sp.id ?? i} style={{ flex: 1, cursor: 'pointer', minWidth: 0 }}
-                      onClick={() => { /* handled by parent via onClose + setSelectedProduct */ }}>
+                    <button key={sp.id ?? i}
+                      onClick={() => onViewProduct?.(sp)}
+                      style={{ flex: 1, cursor: 'pointer', minWidth: 0, background: 'none', border: 'none', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}>
                       <div style={{
                         aspectRatio: '1/1', borderRadius: 'var(--radius-sm)', marginBottom: 4, overflow: 'hidden',
                         background: thumb ? `url(${thumb}) center/cover` : `linear-gradient(135deg,${t[0]},${t[1]})`,
@@ -462,7 +464,7 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
                       <div style={{ fontSize: 11, color: 'var(--ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {sp.title}
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
