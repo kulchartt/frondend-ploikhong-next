@@ -76,6 +76,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       (session as any).token = token.token;
       (session.user as any).is_admin = token.is_admin;
+      // token.sub = user's numeric ID (set by NextAuth from user.id in authorize())
+      (session as any).userId = token.sub ? Number(token.sub) : undefined;
       return session;
     },
   },

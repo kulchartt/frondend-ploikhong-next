@@ -22,6 +22,10 @@ function normalizeProduct(p: any): any {
   if (p.images === undefined || p.images === null) {
     p.images = p.image_url ? [p.image_url] : [];
   }
+  // Backend may return seller's id as user_id; components expect seller_id
+  if (p.seller_id === undefined && p.user_id !== undefined) {
+    p.seller_id = p.user_id;
+  }
   return p;
 }
 

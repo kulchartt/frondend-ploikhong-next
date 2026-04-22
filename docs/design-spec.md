@@ -235,7 +235,33 @@ scroll horizontal บน mobile
 
 ---
 
-## 6. ProductCard
+## 6. ProductDetail — Chat Flow
+
+### "แชทกับผู้ขาย" button — 3 states
+
+| สถานะ | ปุ่มที่แสดง | พฤติกรรม |
+|---|---|---|
+| **Guest** (ไม่ได้ login) | "เข้าสู่ระบบเพื่อแชทกับผู้ขาย" (accent red) | เปิด AuthModal |
+| **Buyer** (login แล้ว, ไม่ใช่เจ้าของ) | "แชทกับผู้ขาย" (neutral) | เปิด chat popup |
+| **Seller** (เจ้าของสินค้า) | "นี่คือสินค้าของคุณ" (disabled) | ไม่มี action |
+
+### Chat popup flow
+- เปิด popup → `createChatRoom(seller_id, product_id)` → load messages จาก API
+- Poll ทุก 3 วินาที
+- ปุ่ม expand → ปิด ProductDetail, เปิด ChatDrawer เต็มจอ
+
+### Session fields ที่ใช้
+```
+session.token    ← JWT สำหรับ API calls
+session.userId   ← numeric user ID (จาก token.sub)
+```
+
+### API normalization
+`product.seller_id` fallback: ถ้า backend ส่ง `user_id` แทน → normalize ใน `api.ts`
+
+---
+
+## 7. ProductCard
 
 ```
 ┌─────────────────────┐

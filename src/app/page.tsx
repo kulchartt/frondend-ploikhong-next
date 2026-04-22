@@ -361,6 +361,7 @@ export default function HomePage() {
             setChatInitialRoomId(roomId);
             setChatOpen(true);
           }}
+          onOpenAuth={() => { setAuthMode('login'); setAuthOpen(true); }}
         />
       )}
       {shopSellerId && (

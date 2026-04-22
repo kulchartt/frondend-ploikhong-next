@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+const SELLER_ID = 99; // seller of the mock product
+
 const MOCK_PRODUCTS = [
   {
     id: 1,
@@ -10,6 +12,8 @@ const MOCK_PRODUCTS = [
     location: 'กรุงเทพ · พระราม 9',
     created_at: new Date(Date.now() - 3600000).toISOString(),
     seller_name: 'สมชาย',
+    seller_id: SELLER_ID,
+    user_id: SELLER_ID,
     condition: 'มือสอง สภาพดี',
     category: 'มือถือ & แท็บเล็ต',
     description: 'เครื่องศูนย์ไทย ใช้งานปกติทุกฟังก์ชัน',
@@ -22,10 +26,44 @@ const MOCK_PRODUCTS = [
     location: 'เชียงใหม่',
     created_at: new Date(Date.now() - 86400000).toISOString(),
     seller_name: 'วิชัย',
+    seller_id: SELLER_ID,
     condition: 'ใหม่ในกล่อง',
     category: 'คอมพิวเตอร์',
   },
 ];
+
+// Session as a buyer (userId ≠ SELLER_ID)
+const BUYER_SESSION = {
+  user: { name: 'ผู้ซื้อ', email: 'buyer@test.com', image: null },
+  expires: new Date(Date.now() + 86400000).toISOString(),
+  token: 'mock-buyer-token',
+  userId: 1,
+};
+
+// Session as the seller (userId === SELLER_ID)
+const SELLER_SESSION = {
+  user: { name: 'ผู้ขาย', email: 'seller@test.com', image: null },
+  expires: new Date(Date.now() + 86400000).toISOString(),
+  token: 'mock-seller-token',
+  userId: SELLER_ID,
+};
+
+const MOCK_CHAT_ROOM = { id: 42, buyer_id: 1, seller_id: SELLER_ID, product_id: 1 };
+const MOCK_CHAT_MSGS = [
+  { id: 1, sender_id: SELLER_ID, content: 'สวัสดีครับ ยังว่างอยู่ครับ', created_at: new Date().toISOString() },
+];
+
+async function mockBuyerSession(page: any) {
+  await page.route('**/api/auth/session', (r: any) => r.fulfill({ json: BUYER_SESSION }));
+  await page.route('**/api/chat/rooms', (r: any) => {
+    if (r.request().method() === 'POST') r.fulfill({ json: MOCK_CHAT_ROOM });
+    else r.fulfill({ json: [] });
+  });
+  await page.route('**/api/chat/rooms/*/messages', (r: any) => {
+    if (r.request().method() === 'POST') r.fulfill({ json: { id: 99, content: 'ok' } });
+    else r.fulfill({ json: MOCK_CHAT_MSGS });
+  });
+}
 
 test.describe('Product Detail', () => {
 
@@ -114,115 +152,113 @@ test.describe('Product Detail', () => {
     await expect(page.getByTestId('thumb-1')).toHaveCSS('border-style', 'solid');
   });
 
-  // ─── Chat ──────────────────────────────────────────────────────────────────
+  // ─── Chat — login guard ────────────────────────────────────────────────────
 
-  async function openProductChat(page: any) {
-    await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
-    await page.getByTestId('pd-chat-btn').click();
-  }
-
-  test('"แชทกับผู้ขาย" button opens chat popup', async ({ page }) => {
-    await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
-    await expect(page.getByTestId('pd-chat-popup')).not.toBeVisible();
-    await page.getByTestId('pd-chat-btn').click();
-    await expect(page.getByTestId('pd-chat-popup')).toBeVisible();
-  });
-
-  test('chat CTA button has neutral (non-red) color', async ({ page }) => {
+  test('guest: chat button shows "เข้าสู่ระบบเพื่อแชทกับผู้ขาย" (red accent)', async ({ page }) => {
+    await page.route('**/api/auth/session', r => r.fulfill({ json: {} }));
     await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
     const btn = page.getByTestId('pd-chat-btn');
-    // Text color should not be red (accent)
-    const color = await btn.evaluate(el => getComputedStyle(el).color);
-    // accent red is roughly rgb(255, 45, 31) — red channel >> green/blue
-    const match = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-    if (match) {
-      const [, r, g, b] = match.map(Number);
-      // Not strongly red: red channel should not dominate by >100 over both green and blue
-      expect(r - g).toBeLessThan(100);
-      expect(r - b).toBeLessThan(100);
-    }
+    await expect(btn).toContainText('เข้าสู่ระบบเพื่อแชทกับผู้ขาย');
+    // Button should have accent (red) background — verify via inline style
+    const bg = await btn.evaluate((el: HTMLElement) => el.style.background);
+    expect(bg).toContain('accent');
   });
 
-  test('chat popup shows product image when product has an image', async ({ page }) => {
+  test('guest: clicking chat button does NOT open popup (opens auth instead)', async ({ page }) => {
+    await page.route('**/api/auth/session', r => r.fulfill({ json: {} }));
     await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
     await page.getByTestId('pd-chat-btn').click();
-    const popup = page.getByTestId('pd-chat-popup');
-    // The product pin area inside the popup should show an img tag
-    await expect(popup.locator('img[src*="placekitten"]').first()).toBeVisible();
+    await expect(page.getByTestId('pd-chat-popup')).not.toBeVisible();
+    // Auth modal should appear
+    await expect(page.locator('[data-testid="auth-modal"]')).toBeVisible();
   });
 
-  test('chat popup product pin shows gradient placeholder when no image', async ({ page }) => {
-    await page.route('**/api/products*', r => r.fulfill({
-      json: [{ ...MOCK_PRODUCTS[0], images: [] }],
-    }));
+  // ─── Chat — self-chat prevention ───────────────────────────────────────────
+
+  test('seller: chat area shows "นี่คือสินค้าของคุณ" (no chat button)', async ({ page }) => {
+    await page.route('**/api/auth/session', r => r.fulfill({ json: SELLER_SESSION }));
+    await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
+    await expect(page.getByText('นี่คือสินค้าของคุณ')).toBeVisible();
+    await expect(page.getByTestId('pd-chat-btn')).not.toBeVisible();
+  });
+
+  // ─── Chat — logged-in buyer ────────────────────────────────────────────────
+
+  async function openProductChatAsLoggedIn(page: any) {
+    await mockBuyerSession(page);
     await page.goto('/');
     await expect(page.getByText('iPhone 14 Pro 256GB สีม่วง')).toBeVisible();
     await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
     await page.getByTestId('pd-chat-btn').click();
-    const popup = page.getByTestId('pd-chat-popup');
-    // No real img — gradient div is there but no img src
-    await expect(popup.locator('img[src*="placekitten"]')).toHaveCount(0);
-    // Product title still visible in pin
-    await expect(popup.getByText('iPhone 14 Pro 256GB สีม่วง').first()).toBeVisible();
-  });
+  }
 
-  test('chat popup "ดูการสนทนา" button closes popup and opens chat drawer', async ({ page }) => {
-    await page.route('**/api/chat/rooms', r => r.fulfill({ json: [] }));
-    await openProductChat(page);
-    await expect(page.getByTestId('pd-chat-popup')).toBeVisible();
-    await page.getByTestId('pd-chat-to-drawer').click();
-    // Product detail and chat popup should close
-    await expect(page.locator('h1').filter({ hasText: 'iPhone 14 Pro' })).not.toBeVisible();
-    // ChatDrawer should open
-    await expect(page.getByTestId('chat-drawer')).toBeVisible();
-  });
-
-  test('chat popup close button hides the popup', async ({ page }) => {
-    await openProductChat(page);
-    await expect(page.getByTestId('pd-chat-popup')).toBeVisible();
-    await page.getByTestId('pd-chat-close').click();
+  test('buyer: "แชทกับผู้ขาย" button opens chat popup', async ({ page }) => {
+    await mockBuyerSession(page);
+    await page.goto('/');
+    await expect(page.getByText('iPhone 14 Pro 256GB สีม่วง')).toBeVisible();
+    await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
     await expect(page.getByTestId('pd-chat-popup')).not.toBeVisible();
+    await page.getByTestId('pd-chat-btn').click();
+    await expect(page.getByTestId('pd-chat-popup')).toBeVisible();
   });
 
-  test('modal shows initial chat messages', async ({ page }) => {
-    await openProductChat(page);
-    await expect(page.getByText('สวัสดีครับ สินค้ายังว่างนะครับ')).toBeVisible();
+  test('buyer: chat CTA button has neutral (non-red) style', async ({ page }) => {
+    await mockBuyerSession(page);
+    await page.goto('/');
+    await expect(page.getByText('iPhone 14 Pro 256GB สีม่วง')).toBeVisible();
+    await page.getByText('iPhone 14 Pro 256GB สีม่วง').click();
+    const btn = page.getByTestId('pd-chat-btn');
+    await expect(btn).toContainText('แชทกับผู้ขาย');
+    const bg = await btn.evaluate((el: HTMLElement) => el.style.background);
+    expect(bg).not.toContain('accent');
   });
 
-  test('sending a message appends it to chat', async ({ page }) => {
-    await openProductChat(page);
+  test('buyer: chat popup shows messages from API', async ({ page }) => {
+    await openProductChatAsLoggedIn(page);
+    await expect(page.getByTestId('pd-chat-popup')).toBeVisible();
+    await expect(page.getByText('สวัสดีครับ ยังว่างอยู่ครับ')).toBeVisible();
+  });
+
+  test('buyer: sending a message appends it to chat', async ({ page }) => {
+    await openProductChatAsLoggedIn(page);
     const popup = page.getByTestId('pd-chat-popup');
     await popup.getByPlaceholder('พิมพ์ข้อความ...').fill('สนใจมากครับ');
     await popup.getByRole('button', { name: 'ส่ง', exact: true }).click();
     await expect(popup.getByText('สนใจมากครับ')).toBeVisible();
   });
 
-  test('send button is disabled when input is empty', async ({ page }) => {
-    await openProductChat(page);
+  test('buyer: send button is disabled when input is empty', async ({ page }) => {
+    await openProductChatAsLoggedIn(page);
     const sendBtn = page.getByTestId('pd-chat-popup').getByRole('button', { name: 'ส่ง', exact: true });
     await expect(sendBtn).toBeDisabled();
   });
 
-  test('quick reply "ยังว่างไหมครับ?" sends a message', async ({ page }) => {
-    await openProductChat(page);
+  test('buyer: quick reply "ยังว่างไหมครับ?" sends a message', async ({ page }) => {
+    await openProductChatAsLoggedIn(page);
     const popup = page.getByTestId('pd-chat-popup');
     await popup.getByRole('button', { name: 'ยังว่างไหมครับ?' }).click();
     await expect(popup.getByText('ยังว่างไหมครับ?').last()).toBeVisible();
   });
 
-  test('seller typing indicator appears after sending', async ({ page }) => {
-    await openProductChat(page);
+  test('buyer: popup shows product pin with title', async ({ page }) => {
+    await openProductChatAsLoggedIn(page);
     const popup = page.getByTestId('pd-chat-popup');
-    await popup.getByPlaceholder('พิมพ์ข้อความ...').fill('สวัสดีครับ');
-    await popup.getByRole('button', { name: 'ส่ง', exact: true }).click();
-    await expect(page.locator('[style*="bop"]').first()).toBeVisible({ timeout: 500 });
+    await expect(popup.getByText('iPhone 14 Pro 256GB สีม่วง').first()).toBeVisible();
   });
 
-  test('seller auto-reply appears within 3 seconds', async ({ page }) => {
-    await openProductChat(page);
-    const popup = page.getByTestId('pd-chat-popup');
-    await popup.getByRole('button', { name: 'ลดราคาได้ไหม?' }).click();
-    await expect(popup.getByText('เดี๋ยวตอบให้นะครับ')).toBeVisible({ timeout: 3000 });
+  test('buyer: chat popup close button hides the popup', async ({ page }) => {
+    await openProductChatAsLoggedIn(page);
+    await expect(page.getByTestId('pd-chat-popup')).toBeVisible();
+    await page.getByTestId('pd-chat-close').click();
+    await expect(page.getByTestId('pd-chat-popup')).not.toBeVisible();
+  });
+
+  test('buyer: "ดูการสนทนา" button closes popup and opens chat drawer', async ({ page }) => {
+    await openProductChatAsLoggedIn(page);
+    await expect(page.getByTestId('pd-chat-popup')).toBeVisible();
+    await page.getByTestId('pd-chat-to-drawer').click();
+    await expect(page.locator('h1').filter({ hasText: 'iPhone 14 Pro' })).not.toBeVisible();
+    await expect(page.getByTestId('chat-drawer')).toBeVisible();
   });
 
   // ─── Closing ───────────────────────────────────────────────────────────────

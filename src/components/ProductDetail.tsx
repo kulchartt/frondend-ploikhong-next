@@ -27,6 +27,7 @@ interface ProductDetailProps {
   onClose: () => void;
   onViewShop?: (sellerId: number) => void;
   onOpenChatDrawer?: (roomId?: number) => void;
+  onOpenAuth?: () => void;
 }
 
 const IMG_TINTS = [
@@ -53,9 +54,10 @@ function nowTime() {
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
-export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer }: ProductDetailProps) {
+export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, onOpenAuth }: ProductDetailProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
+  const myUserId: number | undefined = (session as any)?.userId;
   const isMobile = useBreakpoint(768);
   const [imgIdx, setImgIdx] = useState(0);
   const [chatOpen, setChatOpen] = useState(false);
@@ -369,22 +371,52 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer }
 
           {/* Chat CTA button */}
           <div style={{ padding: isMobile ? '14px 18px' : '16px 26px', borderBottom: '1px solid var(--line)' }}>
-            <button
-              data-testid="pd-chat-btn"
-              onClick={() => setChatOpen(true)}
-              style={{
-                width: '100%', padding: '14px 0',
-                background: 'var(--surface-2)', color: 'var(--ink)',
+            {myUserId && product?.seller_id && myUserId === product.seller_id ? (
+              /* Seller viewing their own product */
+              <div style={{
+                width: '100%', padding: '14px 0', background: 'var(--surface-2)',
                 border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)',
-                fontSize: 15, fontWeight: 700, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                fontFamily: 'inherit',
+                fontSize: 14, color: 'var(--ink-3)', textAlign: 'center', fontFamily: 'inherit',
               }}>
-              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-              แชทกับผู้ขาย
-            </button>
+                นี่คือสินค้าของคุณ
+              </div>
+            ) : !session?.user ? (
+              /* Guest — prompt login */
+              <button
+                data-testid="pd-chat-btn"
+                onClick={() => onOpenAuth?.()}
+                style={{
+                  width: '100%', padding: '14px 0',
+                  background: 'var(--accent)', color: '#fff',
+                  border: 'none', borderRadius: 'var(--radius-sm)',
+                  fontSize: 15, fontWeight: 700, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  fontFamily: 'inherit',
+                }}>
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                เข้าสู่ระบบเพื่อแชทกับผู้ขาย
+              </button>
+            ) : (
+              /* Logged-in buyer */
+              <button
+                data-testid="pd-chat-btn"
+                onClick={() => setChatOpen(true)}
+                style={{
+                  width: '100%', padding: '14px 0',
+                  background: 'var(--surface-2)', color: 'var(--ink)',
+                  border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)',
+                  fontSize: 15, fontWeight: 700, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  fontFamily: 'inherit',
+                }}>
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                แชทกับผู้ขาย
+              </button>
+            )}
           </div>
 
           {/* Related from seller */}
