@@ -125,6 +125,15 @@ export const makeOffer = (productId: number, amount: number, token: string) =>
 export const getMyOffers = (token: string) =>
   req<any[]>('/api/offers/my', {}, token);
 
+export const getIncomingOffers = (token: string) =>
+  req<any[]>('/api/offers/incoming', {}, token);
+
+export const getOutgoingOffers = (token: string) =>
+  req<any[]>('/api/offers/outgoing', {}, token);
+
+export const respondToOffer = (id: number, status: 'accepted' | 'declined', token: string) =>
+  req<any>(`/api/offers/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
+
 // ─── Notifications ───────────────────────────────────────────────────────────
 
 export const getNotifications = (token: string) =>

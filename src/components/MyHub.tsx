@@ -35,18 +35,17 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
 };
 
 const SELL_NAV = [
-  { k: 'listings',  label: 'รายการสินค้าของคุณ' },
-  { k: 'insights',  label: 'ข้อมูลเชิงลึก' },
-  { k: 'news',      label: 'ข่าวประกาศ' },
-  { k: 'profile',   label: 'โปรไฟล์ Marketplace' },
+  { k: 'listings',  label: 'สินค้าของฉัน' },
+  { k: 'offers',    label: 'คำขอราคา' },
+  { k: 'insights',  label: 'สถิติ' },
+  { k: 'profile',   label: 'ตั้งค่าร้านค้า' },
 ];
 
 const BUY_NAV = [
-  { k: 'activity',      label: 'กิจกรรมล่าสุด' },
-  { k: 'saved',         label: 'บันทึกแล้ว' },
+  { k: 'saved',         label: 'สินค้าที่บันทึก' },
+  { k: 'offers',        label: 'ข้อเสนอของฉัน' },
   { k: 'notifications', label: 'การแจ้งเตือน' },
-  { k: 'following',     label: 'กำลังติดตาม' },
-  { k: 'profile',       label: 'โปรไฟล์ Marketplace' },
+  { k: 'following',     label: 'ร้านที่ติดตาม' },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -60,8 +59,10 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
     initialMode === 'sell' && initialTab ? initialTab : 'listings'
   );
   const [buyTab, setBuyTab] = useState(
-    initialMode === 'buy' && initialTab ? initialTab : 'activity'
+    initialMode === 'buy' && initialTab ? initialTab : 'saved'
   );
+  const [pendingSellOffers, setPendingSellOffers] = useState(0);
+  const [pendingBuyOffers, setPendingBuyOffers] = useState(0);
 
   // Scroll lock + ESC
   useEffect(() => {
@@ -70,6 +71,17 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
     window.addEventListener('keydown', h);
     return () => { document.body.style.overflow = ''; window.removeEventListener('keydown', h); };
   }, [onClose]);
+
+  // Load pending offer counts for badges
+  useEffect(() => {
+    if (!token) return;
+    api.getIncomingOffers(token).then(d => {
+      if (Array.isArray(d)) setPendingSellOffers(d.filter((o: any) => o.status === 'pending').length);
+    }).catch(() => {});
+    api.getOutgoingOffers(token).then(d => {
+      if (Array.isArray(d)) setPendingBuyOffers(d.filter((o: any) => o.status === 'pending').length);
+    }).catch(() => {});
+  }, [token]);
 
   const nav = mode === 'sell' ? SELL_NAV : BUY_NAV;
   const activeTab = mode === 'sell' ? sellTab : buyTab;
@@ -83,24 +95,25 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
         @keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
       `}</style>
 
-      {/* ── Mobile top bar: back + mode tabs ── */}
+      {/* ── Mobile top bar ── */}
       {isMobile && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
           <button onClick={onClose}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', fontSize: 13, padding: '6px 0', flexShrink: 0 }}>
-            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M15 18l-6-6 6-6"/></svg>
+            style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surface-2)', border: 'none', display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0 }}>
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2}><path d="M15 18l-6-6 6-6"/></svg>
           </button>
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', flex: 1 }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 15, color: 'var(--ink)' }}>ศูนย์ซื้อขาย</span>
+          <div style={{ display: 'flex', background: 'var(--surface-2)', borderRadius: 8, padding: 3, gap: 2, marginLeft: 'auto' }}>
             {(['sell', 'buy'] as const).map(m => (
               <button key={m} onClick={() => setMode(m)}
                 style={{
-                  flex: 1, padding: '8px 0', border: 'none', background: 'none', cursor: 'pointer',
-                  fontSize: 15, fontWeight: mode === m ? 700 : 400,
-                  color: mode === m ? 'var(--ink)' : 'var(--ink-2)',
-                  borderBottom: mode === m ? '2px solid var(--ink)' : '2px solid transparent',
-                  marginBottom: -1, fontFamily: 'inherit',
+                  padding: '5px 12px', border: 'none', cursor: 'pointer', fontSize: 12,
+                  fontWeight: 700, borderRadius: 6,
+                  background: mode === m ? (m === 'sell' ? '#f97316' : '#2563eb') : 'transparent',
+                  color: mode === m ? '#fff' : 'var(--ink-3)',
+                  fontFamily: 'inherit', transition: 'all .15s',
                 }}>
-                {m === 'sell' ? 'ขาย' : 'ซื้อ'}
+                {m === 'sell' ? 'ฝั่งขาย' : 'ฝั่งซื้อ'}
               </button>
             ))}
           </div>
@@ -122,32 +135,39 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
           overflow: 'hidden',
         }}>
 
-          {/* Desktop sidebar header: back + mode tabs */}
+          {/* Desktop sidebar header */}
           {!isMobile && (
-            <div style={{ padding: '20px 16px 0', flexShrink: 0 }}>
-              {/* Back button */}
-              <button onClick={onClose}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', fontSize: 13, padding: '4px 0', marginBottom: 18, fontFamily: 'inherit' }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-2)')}>
-                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M15 18l-6-6 6-6"/></svg>
-                Marketplace
-              </button>
+            <div style={{ flexShrink: 0 }}>
+              {/* App header */}
+              <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button onClick={onClose}
+                  style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surface-2)', border: 'none', display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0 }}
+                  title="กลับ">
+                  <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2}><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 15, color: 'var(--ink)', letterSpacing: '-.01em' }}>ศูนย์ซื้อขาย</span>
+              </div>
 
-              {/* Mode tabs: ขาย | ซื้อ */}
-              <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', marginBottom: 8 }}>
-                {(['sell', 'buy'] as const).map(m => (
-                  <button key={m} onClick={() => setMode(m)}
-                    style={{
-                      flex: 1, padding: '10px 0', border: 'none', background: 'none', cursor: 'pointer',
-                      fontSize: 15, fontWeight: mode === m ? 700 : 400,
-                      color: mode === m ? 'var(--ink)' : 'var(--ink-2)',
-                      borderBottom: mode === m ? '2px solid var(--ink)' : '2px solid transparent',
-                      marginBottom: -1, fontFamily: 'inherit', transition: '.12s',
-                    }}>
-                    {m === 'sell' ? 'ขาย' : 'ซื้อ'}
-                  </button>
-                ))}
+              {/* Mode switch — pill style */}
+              <div style={{ padding: '12px 12px 4px' }}>
+                <div style={{ display: 'flex', background: 'var(--surface-2)', borderRadius: 10, padding: 3, gap: 2 }}>
+                  {(['sell', 'buy'] as const).map(m => (
+                    <button key={m} onClick={() => setMode(m)}
+                      style={{
+                        flex: 1, padding: '8px 0', border: 'none', cursor: 'pointer',
+                        fontSize: 13, fontWeight: 700, borderRadius: 8,
+                        background: mode === m ? (m === 'sell' ? '#f97316' : '#2563eb') : 'transparent',
+                        color: mode === m ? '#fff' : 'var(--ink-3)',
+                        fontFamily: 'inherit', transition: 'all .15s',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                      }}>
+                      {m === 'sell'
+                        ? <><svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> ฝั่งขาย</>
+                        : <><svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> ฝั่งซื้อ</>
+                      }
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -164,18 +184,22 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
           }}>
             {nav.map(item => {
               const active = activeTab === item.k;
+              const accentColor = mode === 'sell' ? '#f97316' : '#2563eb';
+              const badge = item.k === 'offers'
+                ? (mode === 'sell' ? pendingSellOffers : pendingBuyOffers)
+                : 0;
               return (
                 <button key={item.k} onClick={() => setTab(item.k)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: isMobile ? 0 : 10,
                     padding: isMobile ? '10px 14px' : '10px 12px',
-                    background: active ? 'rgba(255,45,31,.08)' : 'transparent',
+                    background: active ? (mode === 'sell' ? 'rgba(249,115,22,.1)' : 'rgba(37,99,235,.1)') : 'transparent',
                     border: 'none',
-                    borderBottom: isMobile ? (active ? '2px solid var(--accent)' : '2px solid transparent') : 'none',
+                    borderBottom: isMobile ? `2px solid ${active ? accentColor : 'transparent'}` : 'none',
                     borderRadius: isMobile ? 0 : 'var(--radius)',
                     cursor: 'pointer', fontSize: 13,
                     fontWeight: active ? 600 : 400,
-                    color: active ? 'var(--accent)' : 'var(--ink-2)',
+                    color: active ? accentColor : 'var(--ink-2)',
                     whiteSpace: 'nowrap',
                     transition: '.12s',
                     textAlign: 'left',
@@ -185,7 +209,15 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
                   onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--surface-2)'; }}
                   onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}>
                   {!isMobile && <NavIcon k={item.k} mode={mode} active={active} />}
-                  {item.label}
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  {badge > 0 && (
+                    <span style={{
+                      minWidth: 18, height: 18, borderRadius: 9, fontSize: 10, fontWeight: 700,
+                      background: active ? accentColor : '#ef4444',
+                      color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      padding: '0 5px', flexShrink: 0,
+                    }}>{badge}</span>
+                  )}
                 </button>
               );
             })}
@@ -216,14 +248,13 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
             </div>
           )}
           {mode === 'sell' && sellTab === 'listings'  && <SellListings token={token} onNewListing={onNewListing} />}
+          {mode === 'sell' && sellTab === 'offers'    && <SellOffers token={token} onBadgeChange={setPendingSellOffers} />}
           {mode === 'sell' && sellTab === 'insights'  && <SellInsights token={token} />}
-          {mode === 'sell' && sellTab === 'news'      && <SellNews />}
           {mode === 'sell' && sellTab === 'profile'   && <HubProfile session={session} mode="sell" />}
-          {mode === 'buy'  && buyTab === 'activity'      && <BuyActivity />}
           {mode === 'buy'  && buyTab === 'saved'         && <BuySaved token={token} onOpenChat={onOpenChat ? () => { onClose(); onOpenChat(); } : undefined} onViewProduct={onViewProduct ? (p) => { onClose(); onViewProduct(p); } : undefined} />}
+          {mode === 'buy'  && buyTab === 'offers'        && <BuyOffers token={token} />}
           {mode === 'buy'  && buyTab === 'notifications' && <BuyNotifications token={token} />}
           {mode === 'buy'  && buyTab === 'following'     && <BuyFollowing token={token} />}
-          {mode === 'buy'  && buyTab === 'profile'       && <HubProfile session={session} mode="buy" />}
         </main>
       </div>
     </div>
@@ -233,16 +264,16 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
 // ─── Nav icon helper ──────────────────────────────────────────────────────────
 
 function NavIcon({ k, mode, active }: { k: string; mode: string; active?: boolean }) {
-  const ic: React.CSSProperties = { flexShrink: 0, display: 'block', color: active ? 'var(--accent)' : 'currentColor' };
+  const color = active ? (mode === 'sell' ? '#f97316' : '#2563eb') : 'var(--ink-3)';
+  const ic: React.CSSProperties = { flexShrink: 0, display: 'block', color };
   if (k === 'listings')  return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg>;
+  if (k === 'offers')    return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>;
   if (k === 'insights')  return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>;
-  if (k === 'news')      return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M4 6h16M4 10h12M4 14h8M4 18h6"/></svg>;
-  if (k === 'activity')  return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>;
   if (k === 'saved')     return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M6 4h12v16l-6-4-6 4z"/></svg>;
   if (k === 'notifications') return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M6 9a6 6 0 0 1 12 0v4l2 3H4l2-3z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>;
   if (k === 'following') return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M17 5v6M14 8h6"/></svg>;
-  // profile
-  return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>;
+  // profile / settings
+  return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>;
 }
 
 // ─── Page wrapper ─────────────────────────────────────────────────────────────
@@ -822,128 +853,290 @@ function SellInsights({ token }: { token?: string }) {
   );
 }
 
-// ─── SELL: News ───────────────────────────────────────────────────────────────
+// ─── SELL: Offers (incoming from buyers) ─────────────────────────────────────
 
-function SellNews() {
-  const items = [
-    { tag: 'ใหม่',     tagColor: '#2563eb', h: 'Boost ราคาพิเศษ ฿19 ในเดือนนี้',            d: 'เพิ่มยอดคนเห็น 8-12 เท่า สำหรับประกาศที่ลงในช่วง 1-31 ของเดือน',         when: '2 วันที่แล้ว' },
-    { tag: 'นโยบาย',   tagColor: '#7c3aed', h: 'เงื่อนไขการซื้อขายสินค้าสะสม',              d: 'สำหรับหมวดของสะสม ต้องระบุสภาพและรูปจริงอย่างชัดเจน เพื่อป้องกันการคืน', when: '1 สัปดาห์ที่แล้ว' },
-    { tag: 'เคล็ดลับ', tagColor: '#059669', h: '5 เคล็ดลับถ่ายรูปสินค้าให้ขายดีกว่า',       d: 'แสงธรรมชาติ · มุมมอง 3 ด้าน · ฉากหลังเรียบ · ระยะชิด · รายละเอียดตำหนิ', when: '2 สัปดาห์ที่แล้ว' },
-    { tag: 'สำคัญ',    tagColor: '#dc2626', h: 'บำรุงรักษาระบบ — PloiShip ช่วงเช้ามืด',    d: 'ระบบ PloiShip อาจหยุดชั่วคราว 02:00-04:00 น. วันอาทิตย์ที่ 26 เม.ย.',    when: '3 สัปดาห์ที่แล้ว' },
-  ];
+function SellOffers({ token, onBadgeChange }: { token?: string; onBadgeChange?: (n: number) => void }) {
+  const [offers, setOffers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [filter, setFilter] = useState<'pending' | 'accepted' | 'declined' | 'all'>('pending');
+  const [responding, setResponding] = useState<number | null>(null);
+
+  const load = useCallback(async () => {
+    if (!token) { setLoading(false); return; }
+    setLoading(true); setError('');
+    try {
+      const data = await api.getIncomingOffers(token);
+      const list = Array.isArray(data) ? data : [];
+      setOffers(list);
+      onBadgeChange?.(list.filter((o: any) => o.status === 'pending').length);
+    } catch (e: any) { setError(e?.message || 'โหลดไม่สำเร็จ'); }
+    finally { setLoading(false); }
+  }, [token, onBadgeChange]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function respond(id: number, status: 'accepted' | 'declined') {
+    if (!token) return;
+    setResponding(id);
+    try {
+      await api.respondToOffer(id, status, token);
+      setOffers(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+      onBadgeChange?.(offers.filter(o => o.id !== id && o.status === 'pending').length);
+    } catch (e: any) { setError(e?.message || 'ดำเนินการไม่สำเร็จ'); }
+    finally { setResponding(null); }
+  }
+
+  if (!token) return <PageWrap><Err msg="กรุณาเข้าสู่ระบบ" /></PageWrap>;
+
+  const counts = {
+    pending: offers.filter(o => o.status === 'pending').length,
+    accepted: offers.filter(o => o.status === 'accepted').length,
+    declined: offers.filter(o => o.status === 'declined').length,
+    all: offers.length,
+  };
+  const filtered = filter === 'all' ? offers : offers.filter(o => o.status === filter);
+
   return (
     <PageWrap>
-      <PageH1>ข่าวประกาศ</PageH1>
-      <PageSub>ข่าวและอัปเดตสำหรับผู้ขาย</PageSub>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {items.map((it, i) => (
-          <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '18px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: it.tagColor + '18', color: it.tagColor, letterSpacing: '.04em', textTransform: 'uppercase' as const }}>{it.tag}</span>
-              <span style={{ fontSize: 12, color: 'var(--ink-3)', marginLeft: 'auto' }}>{it.when}</span>
-            </div>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', margin: '0 0 6px' }}>{it.h}</h3>
-            <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '0 0 12px', lineHeight: 1.6 }}>{it.d}</p>
-            <button style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}>อ่านเพิ่มเติม →</button>
-          </div>
+      <PageH1>คำขอราคา</PageH1>
+      <PageSub>ผู้ซื้อเสนอราคา · รับหรือปฏิเสธได้ที่นี่</PageSub>
+
+      {/* Filter tabs */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        {([
+          { k: 'pending',  label: 'รอตอบ',        color: '#f97316' },
+          { k: 'accepted', label: 'ยอมรับแล้ว',   color: '#16a34a' },
+          { k: 'declined', label: 'ปฏิเสธแล้ว',   color: '#64748b' },
+          { k: 'all',      label: 'ทั้งหมด',       color: 'var(--ink-2)' },
+        ] as const).map(({ k, label, color }) => (
+          <button key={k} onClick={() => setFilter(k)}
+            style={{
+              padding: '6px 14px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
+              border: `1px solid ${filter === k ? color : 'var(--line)'}`,
+              background: filter === k ? color : 'var(--surface)',
+              color: filter === k ? '#fff' : 'var(--ink-2)',
+              fontSize: 13, fontWeight: filter === k ? 600 : 400,
+            }}>
+            {label}
+            <span style={{ marginLeft: 5, fontFamily: 'var(--font-mono)', fontSize: 11, opacity: .8 }}>{counts[k]}</span>
+          </button>
         ))}
       </div>
+
+      {error && <Err msg={error} onRetry={load} />}
+      {loading ? <Skeleton h={100} n={3} /> : filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-3)' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🏷️</div>
+          <div style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>
+            {filter === 'pending' ? 'ยังไม่มีคำขอราคาที่รอตอบ' : 'ไม่มีรายการในหมวดนี้'}
+          </div>
+          <div style={{ fontSize: 13 }}>เมื่อผู้ซื้อเสนอราคา จะปรากฏที่นี่</div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {filtered.map((o: any) => {
+            const tints = IMG_TINTS[o.id % IMG_TINTS.length];
+            const imgUrl = o.product_image || o.image_url || null;
+            const pct = o.listing_price > 0
+              ? Math.round(((o.amount - o.listing_price) / o.listing_price) * 100)
+              : 0;
+            const isPending = o.status === 'pending';
+            return (
+              <div key={o.id} style={{ background: 'var(--surface)', border: `1px solid ${isPending ? '#fed7aa' : 'var(--line)'}`, borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                {isPending && <div style={{ height: 3, background: 'linear-gradient(90deg,#f97316,#fb923c)' }} />}
+                <div style={{ display: 'flex', gap: 14, padding: '14px 16px', alignItems: 'flex-start' }}>
+                  {/* Product image */}
+                  <div style={{
+                    width: 60, height: 60, borderRadius: 8, flexShrink: 0, overflow: 'hidden',
+                    background: imgUrl ? undefined : `linear-gradient(135deg,${tints[0]},${tints[1]})`,
+                  }}>
+                    {imgUrl && <img src={imgUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Product title */}
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {o.product_title ?? o.title ?? 'สินค้า'}
+                    </div>
+                    {/* Buyer */}
+                    <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8 }}>
+                      จาก: <span style={{ fontWeight: 600, color: 'var(--ink-2)' }}>{o.buyer_name ?? 'ผู้ซื้อ'}</span>
+                      {o.created_at && <span style={{ marginLeft: 8 }}>{new Date(o.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>}
+                    </div>
+                    {/* Price comparison */}
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+                      <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: pct < 0 ? '#16a34a' : 'var(--ink)' }}>
+                        ฿{Number(o.amount).toLocaleString()}
+                      </span>
+                      {o.listing_price > 0 && (
+                        <>
+                          <span style={{ fontSize: 13, color: 'var(--ink-3)', textDecoration: 'line-through' }}>
+                            ฿{Number(o.listing_price).toLocaleString()}
+                          </span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: pct < 0 ? '#dc2626' : '#16a34a', background: pct < 0 ? '#fef2f2' : '#f0fdf4', padding: '2px 7px', borderRadius: 999 }}>
+                            {pct < 0 ? `${pct}%` : `+${pct}%`}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {/* Status or action buttons */}
+                    {isPending ? (
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          onClick={() => respond(o.id, 'accepted')}
+                          disabled={responding === o.id}
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 16px', border: 'none', borderRadius: 'var(--radius-sm)', background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: responding === o.id ? .6 : 1 }}>
+                          {responding === o.id ? <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> : <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polyline points="20 6 9 17 4 12"/></svg>}
+                          ยอมรับ
+                        </button>
+                        <button
+                          onClick={() => respond(o.id, 'declined')}
+                          disabled={responding === o.id}
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 16px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--ink-2)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: responding === o.id ? .6 : 1 }}>
+                          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          ปฏิเสธ
+                        </button>
+                      </div>
+                    ) : (
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600,
+                        padding: '4px 12px', borderRadius: 999,
+                        background: o.status === 'accepted' ? '#f0fdf4' : '#f8fafc',
+                        color: o.status === 'accepted' ? '#16a34a' : '#64748b',
+                      }}>
+                        {o.status === 'accepted' ? '✓ ยอมรับแล้ว' : '✕ ปฏิเสธแล้ว'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </PageWrap>
   );
 }
 
-// ─── BUY: Activity ────────────────────────────────────────────────────────────
+// ─── BUY: Offers (outgoing, sent by buyer) ───────────────────────────────────
 
-function ActivityIcon({ kind }: { kind: string }) {
-  if (kind === 'viewed') return (
-    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth={2}>
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-      <circle cx="12" cy="12" r="3"/>
-    </svg>
-  );
-  if (kind === 'messaged') return (
-    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth={2}>
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-    </svg>
-  );
-  if (kind === 'saved') return (
-    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth={2}>
-      <path d="M6 4h12v16l-6-4-6 4z"/>
-    </svg>
-  );
-  // offered
-  return (
-    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={2}>
-      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-      <line x1="7" y1="7" x2="7.01" y2="7"/>
-    </svg>
-  );
-}
+function BuyOffers({ token }: { token?: string }) {
+  const [offers, setOffers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [filter, setFilter] = useState<'pending' | 'accepted' | 'declined' | 'all'>('all');
 
-function BuyActivity() {
-  const items: { kind: string; title: string; seller: string; location: string; price: number; when: string }[] = [
-    { kind: 'viewed',   title: 'iPhone 15 Pro Max 256GB สีดำ',       seller: 'TechBKK',     location: 'กรุงเทพ · พระราม 9',    price: 38900, when: '5 นาทีที่แล้ว' },
-    { kind: 'messaged', title: 'MacBook Air M3 512GB Space Gray',      seller: 'iShopThana',  location: 'นนทบุรี · บางใหญ่',     price: 52000, when: '1 ชม.ที่แล้ว' },
-    { kind: 'saved',    title: 'AirPods Pro 2nd Gen ของแท้มือหนึ่ง', seller: 'GadgetHub',   location: 'กรุงเทพ · ลาดพร้าว',    price: 7800,  when: '3 ชม.ที่แล้ว' },
-    { kind: 'offered',  title: 'จักรยาน Trek FX 3 Disc Size M',       seller: 'BikeStation', location: 'เชียงใหม่ · นิมมาน',    price: 18500, when: 'วานนี้' },
-    { kind: 'viewed',   title: 'Sony WH-1000XM5 สภาพเยี่ยม',          seller: 'SoundGear',   location: 'กรุงเทพ · อโศก',        price: 8500,  when: '2 วันที่แล้ว' },
-    { kind: 'saved',    title: 'Nintendo Switch OLED สีขาว',           seller: 'GameZone',    location: 'กรุงเทพ · สยาม',        price: 11500, when: '3 วันที่แล้ว' },
-  ];
+  const load = useCallback(async () => {
+    if (!token) { setLoading(false); return; }
+    setLoading(true); setError('');
+    try {
+      const data = await api.getOutgoingOffers(token);
+      setOffers(Array.isArray(data) ? data : []);
+    } catch (e: any) { setError(e?.message || 'โหลดไม่สำเร็จ'); }
+    finally { setLoading(false); }
+  }, [token]);
 
-  const kindColor: Record<string, string> = {
-    viewed: 'var(--ink-3)',
-    messaged: '#2563eb',
-    saved: '#7c3aed',
-    offered: 'var(--accent)',
+  useEffect(() => { load(); }, [load]);
+
+  if (!token) return <PageWrap><Err msg="กรุณาเข้าสู่ระบบ" /></PageWrap>;
+
+  const counts = {
+    pending: offers.filter(o => o.status === 'pending').length,
+    accepted: offers.filter(o => o.status === 'accepted').length,
+    declined: offers.filter(o => o.status === 'declined').length,
+    all: offers.length,
   };
-  const kindLabel: Record<string, string> = {
-    viewed: 'เพิ่งดู',
-    messaged: 'ส่งข้อความ',
-    saved: 'บันทึก',
-    offered: 'ยื่นข้อเสนอ',
+  const filtered = filter === 'all' ? offers : offers.filter(o => o.status === filter);
+
+  const STATUS_CFG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
+    pending:  { label: 'รอคำตอบ',     color: '#d97706', bg: '#fffbeb', icon: '⏳' },
+    accepted: { label: 'ยอมรับแล้ว!', color: '#16a34a', bg: '#f0fdf4', icon: '✅' },
+    declined: { label: 'ปฏิเสธแล้ว',  color: '#64748b', bg: '#f8fafc', icon: '✕' },
   };
 
   return (
     <PageWrap>
-      <PageH1>กิจกรรมล่าสุด</PageH1>
-      <PageSub>ของที่คุณดู · ข้อความ · ข้อเสนอ · บันทึก</PageSub>
+      <PageH1>ข้อเสนอของฉัน</PageH1>
+      <PageSub>ราคาที่คุณเสนอผู้ขายไว้ · ติดตามสถานะได้ที่นี่</PageSub>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {items.map((a, i) => {
-          const tints = IMG_TINTS[i % IMG_TINTS.length];
-          const color = kindColor[a.kind] ?? 'var(--ink-3)';
-          const label = kindLabel[a.kind] ?? a.kind;
-          return (
-            <div key={i}
-              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', border: '1px solid var(--line)', borderRadius: 'var(--radius)', background: 'var(--surface)', cursor: 'pointer', transition: 'background .12s' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}>
-
-              {/* Product thumbnail */}
-              <div style={{
-                width: 56, height: 56, borderRadius: 'var(--radius-sm)', flexShrink: 0,
-                background: `linear-gradient(135deg,${tints[0]},${tints[1]})`,
-              }} />
-
-              {/* Info column */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color, marginBottom: 2 }}>
-                  <ActivityIcon kind={a.kind} />
-                  {label}
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>{a.title}</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {a.seller} · {a.location}
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>฿{a.price.toLocaleString()}</div>
-              </div>
-
-              {/* Timestamp */}
-              <div style={{ fontSize: 12, color: 'var(--ink-3)', flexShrink: 0, whiteSpace: 'nowrap' }}>{a.when}</div>
+      {/* Summary cards */}
+      {offers.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 20 }}>
+          {[
+            { k: 'pending',  label: 'รอคำตอบ',     color: '#d97706' },
+            { k: 'accepted', label: 'ได้รับการยืนยัน', color: '#16a34a' },
+            { k: 'declined', label: 'ไม่ผ่าน',      color: '#64748b' },
+          ].map(({ k, label, color }) => (
+            <div key={k} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '12px 14px', textAlign: 'center', cursor: 'pointer' }}
+              onClick={() => setFilter(k as any)}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color }}>{counts[k as keyof typeof counts]}</div>
+              <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{label}</div>
             </div>
-          );
-        })}
+          ))}
+        </div>
+      )}
+
+      {/* Filter tabs */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        {([['all','ทั้งหมด'],['pending','รอคำตอบ'],['accepted','ยอมรับแล้ว'],['declined','ไม่ผ่าน']] as const).map(([k, label]) => (
+          <button key={k} onClick={() => setFilter(k)}
+            style={{ padding: '5px 13px', borderRadius: 999, border: `1px solid ${filter === k ? '#2563eb' : 'var(--line)'}`, background: filter === k ? '#2563eb' : 'var(--surface)', color: filter === k ? '#fff' : 'var(--ink-2)', fontSize: 12, fontWeight: filter === k ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit' }}>
+            {label} <span style={{ opacity: .7 }}>{counts[k]}</span>
+          </button>
+        ))}
       </div>
+
+      {error && <Err msg={error} onRetry={load} />}
+      {loading ? <Skeleton h={90} n={3} /> : filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-3)' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🤝</div>
+          <div style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>ยังไม่มีข้อเสนอ</div>
+          <div style={{ fontSize: 13 }}>กดปุ่ม "เสนอราคา" ที่หน้าสินค้าเพื่อต่อรองราคากับผู้ขาย</div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {filtered.map((o: any) => {
+            const tints = IMG_TINTS[o.id % IMG_TINTS.length];
+            const imgUrl = o.product_image || o.image_url || null;
+            const cfg = STATUS_CFG[o.status] ?? STATUS_CFG.pending;
+            const pct = o.listing_price > 0
+              ? Math.round(((o.amount - o.listing_price) / o.listing_price) * 100)
+              : 0;
+            return (
+              <div key={o.id} style={{ display: 'flex', gap: 14, padding: '14px 16px', border: '1px solid var(--line)', borderRadius: 'var(--radius)', background: 'var(--surface)', alignItems: 'flex-start' }}>
+                <div style={{ width: 56, height: 56, borderRadius: 8, flexShrink: 0, overflow: 'hidden', background: imgUrl ? undefined : `linear-gradient(135deg,${tints[0]},${tints[1]})` }}>
+                  {imgUrl && <img src={imgUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {o.product_title ?? o.title ?? 'สินค้า'}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8 }}>
+                    ผู้ขาย: <span style={{ fontWeight: 600 }}>{o.seller_name ?? '—'}</span>
+                    {o.created_at && <span style={{ marginLeft: 8 }}>{new Date(o.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}</span>}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--ink)' }}>ฉันเสนอ ฿{Number(o.amount).toLocaleString()}</span>
+                    {o.listing_price > 0 && (
+                      <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+                        (ราคาตั้ง ฿{Number(o.listing_price).toLocaleString()} · {pct < 0 ? `${pct}%` : `+${pct}%`})
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 999, background: cfg.bg, color: cfg.color }}>
+                    {cfg.icon} {cfg.label}
+                  </span>
+                  {o.status === 'accepted' && (
+                    <div style={{ marginTop: 8, fontSize: 12, color: '#16a34a', background: '#f0fdf4', padding: '8px 12px', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+                      🎉 ผู้ขายยอมรับราคาของคุณแล้ว! ติดต่อผู้ขายผ่านแชทเพื่อนัดรับสินค้า
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </PageWrap>
   );
 }
@@ -1207,97 +1400,66 @@ function BuyFollowing({ token }: { token?: string }) {
   );
 }
 
-// ─── Shared: Hub Profile ──────────────────────────────────────────────────────
+// ─── Shared: Hub Profile / Shop Settings ─────────────────────────────────────
 
 function HubProfile({ session, mode }: { session: any; mode: string }) {
   const user = session?.user;
   const letter = user?.name?.[0]?.toUpperCase() ?? '?';
+
   return (
     <PageWrap>
-      <PageH1>โปรไฟล์ Marketplace</PageH1>
-      <PageSub>ข้อมูลที่ผู้ซื้อ-ผู้ขายรายอื่นจะเห็น</PageSub>
+      <PageH1>ตั้งค่าร้านค้า</PageH1>
+      <PageSub>ข้อมูลโปรไฟล์และการตั้งค่าของคุณ</PageSub>
 
       {/* Profile card */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '20px 22px', marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
-          {user?.image ? (
-            <img src={user.image} alt="" width={60} height={60} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-          ) : (
-            <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 22, flexShrink: 0 }}>{letter}</div>
-          )}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '20px 22px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          {user?.image
+            ? <img src={user.image} alt="" width={60} height={60} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            : <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 22, flexShrink: 0 }}>{letter}</div>
+          }
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 4 }}>{user?.name ?? 'ผู้ใช้'}</div>
-            <div style={{ fontSize: 13, color: '#e6a817', marginBottom: 2 }}>★ 4.9 <span style={{ color: 'var(--ink-3)' }}>(48 รีวิว)</span> · <span style={{ color: 'var(--ink-3)' }}>สมาชิกตั้งแต่ 2563</span></div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 3 }}>{user?.name ?? 'ผู้ใช้'}</div>
+            <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>{user?.email ?? '—'}</div>
           </div>
-          <button style={{ padding: '8px 16px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)', fontWeight: 600, alignSelf: 'flex-start' }}>
-            แก้ไขโปรไฟล์
-          </button>
-        </div>
-        {/* Stats grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 1, background: 'var(--line)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
-          {[
-            { v: 3, l: 'กำลังขาย' },
-            { v: 1, l: 'ขายแล้ว' },
-            { v: 5, l: 'กำลังติดตาม' },
-            { v: 124, l: 'ผู้ติดตาม' },
-          ].map(({ v, l }) => (
-            <div key={l} style={{ background: 'var(--surface)', padding: '12px 8px', textAlign: 'center' }}>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-.01em' }}>{v}</div>
-              <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{l}</div>
-            </div>
-          ))}
         </div>
       </div>
 
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '18px 22px', marginBottom: 20 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 14, marginTop: 0 }}>ข้อมูลติดต่อ</h3>
+      {/* Account info */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '18px 22px', marginBottom: 16 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 14, marginTop: 0 }}>ข้อมูลบัญชี</h3>
         {[
+          { k: 'ชื่อ', v: user?.name ?? '—' },
           { k: 'อีเมล', v: user?.email ?? '—' },
-          { k: 'พื้นที่', v: 'กรุงเทพฯ · พระราม 9' },
+          { k: 'ประเภทบัญชี', v: user?.image?.includes('google') ? 'Google' : user?.image?.includes('facebook') ? 'Facebook' : 'Email' },
         ].map(({ k, v }) => (
-          <div key={k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
+          <div key={k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
             <span style={{ color: 'var(--ink-3)' }}>{k}</span>
-            <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{v}</span>
+            <span style={{ fontWeight: 500, color: 'var(--ink)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v}</span>
           </div>
         ))}
       </div>
 
-      {/* Reviews section */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '18px 22px', marginBottom: 20 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 14, marginTop: 0 }}>รีวิวล่าสุด</h3>
-        {[
-          { ava: 'W', n: 'Warot S.',  s: 5, d: 'ของตรงปก ส่งเร็วมาก แพ็คดี แนะนำเลยครับ', when: '3 วันที่แล้ว' },
-          { ava: 'N', n: 'Napat T.',  s: 5, d: 'ผู้ขายใจดี ตอบเร็ว สินค้าเหมือนรูปเป๊ะ', when: '1 สัปดาห์' },
-          { ava: 'P', n: 'Ploy K.',   s: 4, d: 'สินค้าโอเค แต่กล่องบุบนิดหน่อย ผู้ขายขอโทษและชดเชย', when: '2 สัปดาห์' },
-        ].map((r, i) => (
-          <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: i < 2 ? '1px solid var(--line)' : 'none' }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 14, color: 'var(--ink-2)', flexShrink: 0 }}>{r.ava}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{r.n}</span>
-                <span style={{ fontSize: 12, color: '#e6a817', letterSpacing: 1 }}>{'★'.repeat(r.s)}{'☆'.repeat(5 - r.s)}</span>
-              </div>
-              <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5, marginBottom: 4 }}>{r.d}</div>
-              <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{r.when}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '18px 22px' }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 14, marginTop: 0 }}>การตั้งค่าความเป็นส่วนตัว</h3>
-        {[
-          { label: 'แสดงเบอร์โทรแก่ผู้ซื้อ', on: false },
-          { label: 'รับข่าวสารทางอีเมล', on: true },
-          { label: 'แสดงสถานะออนไลน์', on: true },
-        ].map(({ label, on }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
-            <span style={{ color: 'var(--ink-2)' }}>{label}</span>
-            <div style={{ width: 36, height: 20, borderRadius: 10, background: on ? 'var(--accent)' : 'var(--line)', position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
-              <div style={{ position: 'absolute', width: 16, height: 16, borderRadius: '50%', background: '#fff', top: 2, left: on ? 18 : 2, transition: '.2s', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }} />
-            </div>
-          </div>
-        ))}
+      {/* Tips section based on mode */}
+      <div style={{ background: mode === 'sell' ? '#fff7ed' : '#eff6ff', border: `1px solid ${mode === 'sell' ? '#fed7aa' : '#bfdbfe'}`, borderRadius: 'var(--radius)', padding: '16px 20px' }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: mode === 'sell' ? '#c2410c' : '#1d4ed8', marginBottom: 12, marginTop: 0 }}>
+          {mode === 'sell' ? '💡 เคล็ดลับสำหรับผู้ขาย' : '💡 เคล็ดลับสำหรับผู้ซื้อ'}
+        </h3>
+        <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {mode === 'sell' ? [
+            'ถ่ายรูปสินค้าในแสงธรรมชาติ — เพิ่มโอกาสขายได้ถึง 40%',
+            'ตอบแชทไวขึ้น → ติดตาม "คำขอราคา" ในแท็บนี้เสมอ',
+            'ตั้งราคาเผื่อต่อรองไว้ 10-15% ให้ผู้ซื้อรู้สึกได้ดีล',
+            'อัปเดตสถานะสินค้าเมื่อขายแล้วเพื่อรักษาความน่าเชื่อถือ',
+          ] : [
+            'กด "เสนอราคา" เพื่อต่อรองกับผู้ขายโดยตรง',
+            'ติดตามร้านที่ชอบเพื่อรับแจ้งเตือนสินค้าใหม่',
+            'นัดรับสินค้าในพื้นที่สาธารณะเสมอ เพื่อความปลอดภัย',
+            'ตรวจสอบสินค้าก่อนจ่ายเงินทุกครั้ง',
+          ].map((tip, i) => (
+            <li key={i} style={{ fontSize: 13, color: mode === 'sell' ? '#9a3412' : '#1e40af', lineHeight: 1.6 }}>{tip}</li>
+          ))}
+        </ul>
       </div>
     </PageWrap>
   );
