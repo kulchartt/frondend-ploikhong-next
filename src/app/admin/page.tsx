@@ -440,7 +440,19 @@ function PremiumTab({ token }: { token: string }) {
   if (err) return <div style={{ color: '#dc2626', padding: 20 }}>ไม่สามารถโหลดข้อมูลได้: {err}</div>;
   if (!stats) return <div style={{ padding: 20, color: '#94a3b8' }}>กำลังโหลด...</div>;
 
-  const maxMonthly = Math.max(...(stats.monthly_revenue || []).map((m: any) => m.total || 0), 1);
+  const maxMonthly = Math.max(...(stats.monthly_revenue || []).map((m: any) => m.revenue || 0), 1);
+  const totalRevenue = stats.revenue?.total || 0;
+  const totalCoinsIssued = stats.coins?.issued || 0;
+  const totalCoinsOutstanding = stats.coins?.outstanding || 0;
+  const pendingCount = stats.pending?.count || 0;
+
+  const FEATURE_LABELS: Record<string, string> = {
+    auto_relist: '🔄 ลงประกาศอัตโนมัติ',
+    featured: '⭐ ปักหมุดสินค้า',
+    price_alert: '🔔 แจ้งเตือนราคา',
+    analytics_pro: '📊 Analytics Pro',
+    priority_support: '💬 Priority Support',
+  };
 
   return (
     <div>
@@ -448,11 +460,40 @@ function PremiumTab({ token }: { token: string }) {
 
       {/* KPI row */}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
-        <KpiCard label="รายได้รวม (฿)" value={'฿' + (stats.total_revenue || 0).toLocaleString()} color="#0f172a" />
-        <KpiCard label="รอยืนยัน" value={stats.pending_requests || 0} color="#d97706" />
-        <KpiCard label="เหรียญแจก" value={(stats.total_coins_issued || 0).toLocaleString()} color="#7c3aed" />
-        <KpiCard label="เหรียญคงค้าง" value={(stats.total_coins_outstanding || 0).toLocaleString()} color="#2563eb" />
+        <KpiCard label="รายได้รวม (฿)" value={'฿' + totalRevenue.toLocaleString()} color="#0f172a" />
+        <KpiCard label="รอยืนยัน" value={pendingCount} color="#d97706" />
+        <KpiCard label="เหรียญแจก" value={totalCoinsIssued.toLocaleString()} color="#7c3aed" />
+        <KpiCard label="เหรียญคงค้าง" value={totalCoinsOutstanding.toLocaleString()} color="#2563eb" />
       </div>
+
+      {/* Revenue Sources Breakdown */}
+      {stats.revenue_sources && stats.revenue_sources.length > 0 && (
+        <div style={card}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>แหล่งรายได้</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {stats.revenue_sources.map((src: any) => {
+              const pct = totalRevenue > 0 ? Math.round((src.total / totalRevenue) * 100) : 0;
+              return (
+                <div key={src.source}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 13 }}>
+                    <span style={{ color: '#475569' }}>{src.label}</span>
+                    <span style={{ fontWeight: 700, color: '#0f172a' }}>
+                      ฿{(src.total || 0).toLocaleString()}
+                      <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6 }}>({pct}%)</span>
+                    </span>
+                  </div>
+                  <div style={{ height: 6, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: '#f59e0b', borderRadius: 99 }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 12 }}>
+            * ค่าธรรมเนียมการขาย 3% จะถูกเปิดใช้งานในอนาคต
+          </p>
+        </div>
+      )}
 
       {/* Monthly Revenue Chart */}
       {stats.monthly_revenue && stats.monthly_revenue.length > 0 && (
@@ -461,10 +502,10 @@ function PremiumTab({ token }: { token: string }) {
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 120 }}>
             {stats.monthly_revenue.map((m: any) => (
               <div key={m.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <div style={{ fontSize: 10, color: '#475569', fontWeight: 600 }}>฿{(m.total || 0).toLocaleString()}</div>
+                <div style={{ fontSize: 10, color: '#475569', fontWeight: 600 }}>฿{(m.revenue || 0).toLocaleString()}</div>
                 <div style={{
                   width: '100%', background: '#f59e0b', borderRadius: '4px 4px 0 0',
-                  height: Math.max(4, Math.round(((m.total || 0) / maxMonthly) * 80)),
+                  height: Math.max(4, Math.round(((m.revenue || 0) / maxMonthly) * 80)),
                 }} />
                 <div style={{ fontSize: 10, color: '#94a3b8', whiteSpace: 'nowrap' }}>{m.month}</div>
               </div>
@@ -473,26 +514,46 @@ function PremiumTab({ token }: { token: string }) {
         </div>
       )}
 
-      {/* Feature usage */}
+      {/* Feature usage + estimated baht revenue */}
       {stats.feature_usage && stats.feature_usage.length > 0 && (
         <div style={card}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>การใช้งาน Feature</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {stats.feature_usage.map((f: any) => {
-              const maxUsage = Math.max(...stats.feature_usage.map((x: any) => x.count || 0), 1);
-              return (
-                <div key={f.feature_key}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 13 }}>
-                    <span style={{ color: '#475569' }}>{f.feature_key}</span>
-                    <span style={{ fontWeight: 600 }}>{f.count} ครั้ง</span>
-                  </div>
-                  <div style={{ height: 6, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${Math.round((f.count / maxUsage) * 100)}%`, background: '#7c3aed', borderRadius: 99 }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>การใช้งาน Feature & ยอดรายได้ประมาณ</h3>
+          <table style={tbl}>
+            <thead>
+              <tr>
+                <th style={th}>Feature</th>
+                <th style={{ ...th, textAlign: 'center' }}>ครั้งที่ใช้</th>
+                <th style={{ ...th, textAlign: 'right' }}>เหรียญที่ใช้ไป</th>
+                <th style={{ ...th, textAlign: 'right' }}>รายได้ประมาณ (฿)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.feature_usage.map((f: any) => (
+                <tr key={f.feature_key}>
+                  <td style={td}>{FEATURE_LABELS[f.feature_key] || f.feature_key}</td>
+                  <td style={{ ...td, textAlign: 'center' }}>{(f.total || 0).toLocaleString()}</td>
+                  <td style={{ ...td, textAlign: 'right', color: '#7c3aed', fontWeight: 600 }}>{(f.coins_spent || 0).toLocaleString()}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>
+                    <strong style={{ color: '#15803d' }}>฿{(f.estimated_baht || 0).toLocaleString()}</strong>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={{ background: '#f8fafc' }}>
+                <td style={{ ...td, fontWeight: 700 }} colSpan={2}>รวม</td>
+                <td style={{ ...td, textAlign: 'right', fontWeight: 700, color: '#7c3aed' }}>
+                  {stats.feature_usage.reduce((s: number, f: any) => s + (f.coins_spent || 0), 0).toLocaleString()}
+                </td>
+                <td style={{ ...td, textAlign: 'right', fontWeight: 700, color: '#15803d' }}>
+                  ฿{stats.feature_usage.reduce((s: number, f: any) => s + (f.estimated_baht || 0), 0).toLocaleString()}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+          <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
+            * รายได้ประมาณ คำนวณจาก เหรียญที่ใช้ × มูลค่าเฉลี่ยต่อเหรียญ
+          </p>
         </div>
       )}
 
@@ -504,16 +565,16 @@ function PremiumTab({ token }: { token: string }) {
             <thead>
               <tr>
                 <th style={th}>แพ็กเกจ</th>
-                <th style={th}>จำนวนคำขอ</th>
-                <th style={th}>รายได้รวม</th>
+                <th style={{ ...th, textAlign: 'center' }}>จำนวนคำขอ</th>
+                <th style={{ ...th, textAlign: 'right' }}>รายได้รวม</th>
               </tr>
             </thead>
             <tbody>
               {stats.revenue_by_package.map((pkg: any) => (
                 <tr key={pkg.package_key}>
                   <td style={td}><strong>{pkg.package_key}</strong></td>
-                  <td style={td}>{pkg.count}</td>
-                  <td style={td}><strong style={{ color: '#0f172a' }}>฿{(pkg.total || 0).toLocaleString()}</strong></td>
+                  <td style={{ ...td, textAlign: 'center' }}>{pkg.count}</td>
+                  <td style={{ ...td, textAlign: 'right' }}><strong style={{ color: '#0f172a' }}>฿{(pkg.revenue || 0).toLocaleString()}</strong></td>
                 </tr>
               ))}
             </tbody>
