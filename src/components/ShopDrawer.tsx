@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import * as api from '@/lib/api';
 
@@ -9,6 +10,7 @@ interface ShopDrawerProps {
   onClose: () => void;
   onProductClick: (product: any) => void;
   onMessage?: () => void;
+  onOpenAuth?: () => void;
 }
 
 const SORT_OPTIONS = [
@@ -17,7 +19,9 @@ const SORT_OPTIONS = [
   { value: 'price-desc', label: 'ราคา แพง→ถูก' },
 ];
 
-export function ShopDrawer({ sellerId, onClose, onProductClick, onMessage }: ShopDrawerProps) {
+export function ShopDrawer({ sellerId, onClose, onProductClick, onMessage, onOpenAuth }: ShopDrawerProps) {
+  const { data: session } = useSession();
+  const token: string | undefined = (session as any)?.token;
   const isMobile = useBreakpoint(768);
   const [shop, setShop] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
@@ -25,6 +29,8 @@ export function ShopDrawer({ sellerId, onClose, onProductClick, onMessage }: Sho
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('newest');
   const [following, setFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [followerCount, setFollowerCount] = useState<number | null>(null);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -47,6 +53,32 @@ export function ShopDrawer({ sellerId, onClose, onProductClick, onMessage }: Sho
       setProducts(prods);
     }).catch(() => {}).finally(() => setLoading(false));
   }, [sellerId]);
+
+  // Load follow status + follower count
+  useEffect(() => {
+    api.getFollowerCount(sellerId)
+      .then(d => setFollowerCount(d.count))
+      .catch(() => {});
+    if (token) {
+      api.getFollowStatus(sellerId, token)
+        .then(d => setFollowing(d.following))
+        .catch(() => {});
+    }
+  }, [sellerId, token]);
+
+  async function handleFollow() {
+    if (!token) { onOpenAuth?.(); return; }
+    setFollowLoading(true);
+    try {
+      const res = await api.toggleFollow(sellerId, token);
+      setFollowing(res.following);
+      setFollowerCount(c => c === null ? null : res.following ? c + 1 : Math.max(0, c - 1));
+    } catch {
+      // keep current state on error
+    } finally {
+      setFollowLoading(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -127,22 +159,29 @@ export function ShopDrawer({ sellerId, onClose, onProductClick, onMessage }: Sho
           <div style={{ fontFamily: 'var(--font-display)', fontSize: isMobile ? 20 : 24, fontWeight: 700, letterSpacing: '-.015em', marginBottom: 4 }}>
             {loading ? '…' : sellerName}
           </div>
-          {shop?.rating > 0 && (
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', marginBottom: 12 }}>
-              ⭐ {Number(shop.rating).toFixed(1)} · {shop.review_count || 0} รีวิว · {products.length} สินค้า
-            </div>
-          )}
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', marginBottom: 12, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {shop?.rating > 0 && <span>⭐ {Number(shop.rating).toFixed(1)} · {shop.review_count || 0} รีวิว</span>}
+            <span>{products.length} สินค้า</span>
+            {followerCount !== null && <span>❤️ {followerCount.toLocaleString()} คนติดตาม</span>}
+          </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {/* Follow button */}
             <button
-              onClick={() => setFollowing(f => !f)}
+              onClick={handleFollow}
+              disabled={followLoading}
               style={{
                 padding: '8px 20px', borderRadius: 'var(--radius-sm)',
-                border: following ? '1px solid var(--line)' : 'none',
+                border: following ? '1.5px solid var(--line)' : 'none',
                 background: following ? 'var(--surface)' : 'var(--ink)',
                 color: following ? 'var(--ink)' : 'var(--bg)',
-                fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: 13, fontWeight: 600, cursor: followLoading ? 'wait' : 'pointer',
+                fontFamily: 'inherit', opacity: followLoading ? 0.6 : 1,
+                display: 'flex', alignItems: 'center', gap: 6, transition: 'all .15s',
               }}>
-              {following ? 'กำลังติดตาม ✓' : 'ติดตาม'}
+              {following
+                ? <><span>✓</span> กำลังติดตาม</>
+                : <><span>+</span> ติดตาม</>
+              }
             </button>
             {onMessage && (
               <button

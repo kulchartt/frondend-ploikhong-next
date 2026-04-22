@@ -385,6 +385,7 @@ export default function HomePage() {
             setChatOpen(true);
             setUnreadChat(0);
           }}
+          onOpenAuth={() => { setAuthMode('login'); setAuthOpen(true); }}
         />
       )}
     </>

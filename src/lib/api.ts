@@ -139,10 +139,16 @@ export const getFollowing = (token: string) =>
   req<any[]>('/api/follows', {}, token);
 
 export const toggleFollow = (sellerId: number, token: string) =>
-  req<any>('/api/follows/toggle', {
+  req<{ following: boolean; message: string }>('/api/follows/toggle', {
     method: 'POST',
     body: JSON.stringify({ seller_id: sellerId }),
   }, token);
+
+export const getFollowStatus = (sellerId: number, token: string) =>
+  req<{ following: boolean }>(`/api/follows/status/${sellerId}`, {}, token);
+
+export const getFollowerCount = (sellerId: number) =>
+  req<{ count: number }>(`/api/follows/count/${sellerId}`);
 
 // ─── Shop ────────────────────────────────────────────────────────────────────
 
