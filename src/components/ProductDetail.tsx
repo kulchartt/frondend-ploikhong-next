@@ -28,7 +28,6 @@ interface ProductDetailProps {
   onViewShop?: (sellerId: number) => void;
   onOpenChatDrawer?: (roomId?: number) => void;
   onOpenAuth?: () => void;
-  onViewProduct?: (product: any) => void;
 }
 
 const IMG_TINTS = [
@@ -55,7 +54,7 @@ function nowTime() {
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
-export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, onOpenAuth, onViewProduct }: ProductDetailProps) {
+export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, onOpenAuth }: ProductDetailProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
   // sessionUserId may be wrong for social logins — verified below via /api/auth/me
@@ -69,7 +68,6 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
   const [roomId, setRoomId] = useState<number | null>(null);
   const [myUserId, setMyUserId] = useState<number | null>(null);
   const [chatReady, setChatReady] = useState(false);
-  const [sellerProducts, setSellerProducts] = useState<any[]>([]);
   const chatRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const latestMsgId = useRef<number>(0);
@@ -109,17 +107,6 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
         : nowTime(),
     }))
   , []);
-
-  // Fetch seller's other products
-  useEffect(() => {
-    if (!product?.seller_id) return;
-    api.getProductsBySeller(product.seller_id)
-      .then(items => {
-        // Exclude the current product, take up to 4
-        setSellerProducts(items.filter((p: any) => p.id !== product.id).slice(0, 4));
-      })
-      .catch(() => {});
-  }, [product?.seller_id, product?.id]);
 
   // Create/find chat room + load initial messages
   useEffect(() => {
@@ -441,35 +428,6 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
             )}
           </div>
 
-          {/* Related from seller */}
-          {sellerProducts.length > 0 && (
-            <div style={{ padding: '16px 26px 26px' }}>
-              <SectionTitle>จากผู้ขายคนนี้</SectionTitle>
-              <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-                {sellerProducts.map((sp, i) => {
-                  const t = IMG_TINTS[(sp.id ?? i) % IMG_TINTS.length];
-                  const thumb = sp.images?.[0] || sp.image_url || null;
-                  const price = sp.flash_price || sp.price;
-                  return (
-                    <button key={sp.id ?? i}
-                      onClick={() => onViewProduct?.(sp)}
-                      style={{ flex: 1, cursor: 'pointer', minWidth: 0, background: 'none', border: 'none', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}>
-                      <div style={{
-                        aspectRatio: '1/1', borderRadius: 'var(--radius-sm)', marginBottom: 4, overflow: 'hidden',
-                        background: thumb ? `url(${thumb}) center/cover` : `linear-gradient(135deg,${t[0]},${t[1]})`,
-                      }} />
-                      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ink)' }}>
-                        ฿{Number(price).toLocaleString()}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {sp.title}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </section>
       </div>
 
