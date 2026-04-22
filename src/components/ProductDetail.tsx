@@ -57,7 +57,7 @@ function nowTime() {
 export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, onOpenAuth }: ProductDetailProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
-  const myUserId: number | undefined = (session as any)?.userId;
+  const sessionUserId: number | undefined = (session as any)?.userId;
   const isMobile = useBreakpoint(768);
   const [imgIdx, setImgIdx] = useState(0);
   const [chatOpen, setChatOpen] = useState(false);
@@ -371,7 +371,7 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
 
           {/* Chat CTA button */}
           <div style={{ padding: isMobile ? '14px 18px' : '16px 26px', borderBottom: '1px solid var(--line)' }}>
-            {myUserId && product?.seller_id && myUserId === product.seller_id ? (
+            {sessionUserId && product?.seller_id && sessionUserId === product.seller_id ? (
               /* Seller viewing their own product */
               <div style={{
                 width: '100%', padding: '14px 0', background: 'var(--surface-2)',
