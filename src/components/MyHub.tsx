@@ -1511,9 +1511,54 @@ function BuyFollowing({ token }: { token?: string }) {
 
 // ─── Shared: Hub Profile / Shop Settings ─────────────────────────────────────
 
+const BG_PALETTE = [
+  { color: null,      label: 'ค่าเริ่มต้น', display: '#f8fafc', border: true },
+  { color: '#ffffff', label: 'ขาว',         display: '#ffffff', border: true },
+  { color: '#f1f5f9', label: 'เทาอ่อน',    display: '#f1f5f9' },
+  { color: '#eff6ff', label: 'ฟ้าอ่อน',    display: '#eff6ff' },
+  { color: '#f0fdf4', label: 'เขียวอ่อน',  display: '#f0fdf4' },
+  { color: '#fefce8', label: 'เหลืองอ่อน', display: '#fefce8' },
+  { color: '#fff7ed', label: 'ส้มอ่อน',    display: '#fff7ed' },
+  { color: '#fdf2f8', label: 'ชมพูอ่อน',   display: '#fdf2f8' },
+  { color: '#faf5ff', label: 'ม่วงอ่อน',   display: '#faf5ff' },
+  { color: '#fafaf9', label: 'ครีม',        display: '#fafaf9' },
+  { color: '#0f172a', label: 'Dark',        display: '#0f172a' },
+  { color: '#1e1b4b', label: 'Navy',        display: '#1e1b4b' },
+];
+
 function HubProfile({ session, mode }: { session: any; mode: string }) {
   const user = session?.user;
+  const token = (user as any)?.token;
   const letter = user?.name?.[0]?.toUpperCase() ?? '?';
+
+  const [activeBg, setActiveBg] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [bgMsg, setBgMsg] = useState('');
+
+  // Load saved bg from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('ploikhong_bg_color');
+    if (saved) setActiveBg(saved);
+  }, []);
+
+  async function handleBgSelect(color: string | null) {
+    const apply = color ?? '';
+    document.body.style.background = apply;
+    if (color) localStorage.setItem('ploikhong_bg_color', color);
+    else localStorage.removeItem('ploikhong_bg_color');
+    setActiveBg(color);
+    if (!token) return;
+    setSaving(true);
+    setBgMsg('');
+    try {
+      await api.savePreferences({ bg_color: color ?? undefined }, token);
+      setBgMsg('บันทึกแล้ว ✓');
+      setTimeout(() => setBgMsg(''), 2000);
+    } catch {
+      setBgMsg('บันทึกไม่สำเร็จ');
+    }
+    setSaving(false);
+  }
 
   return (
     <PageWrap>
@@ -1547,6 +1592,51 @@ function HubProfile({ session, mode }: { session: any; mode: string }) {
             <span style={{ fontWeight: 500, color: 'var(--ink)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v}</span>
           </div>
         ))}
+      </div>
+
+      {/* Background color preference */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '18px 22px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>🎨 สีพื้นหลัง</h3>
+          <span style={{ fontSize: 12, color: saving ? '#f59e0b' : bgMsg.includes('✓') ? '#16a34a' : '#94a3b8', transition: 'color .2s' }}>
+            {saving ? 'กำลังบันทึก...' : bgMsg || 'จำการตั้งค่าทุกครั้งที่ login'}
+          </span>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          {BG_PALETTE.map((item) => {
+            const isActive = activeBg === item.color;
+            return (
+              <button
+                key={item.label}
+                title={item.label}
+                onClick={() => handleBgSelect(item.color)}
+                style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: item.display,
+                  border: isActive
+                    ? '3px solid #f59e0b'
+                    : item.border ? '1.5px solid #e2e8f0' : '1.5px solid transparent',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  boxShadow: isActive ? '0 0 0 2px #fef3c7' : 'none',
+                  transition: 'all .15s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {isActive && (
+                  <span style={{ fontSize: 16, filter: item.color === '#0f172a' || item.color === '#1e1b4b' ? 'invert(1)' : 'none' }}>✓</span>
+                )}
+                {item.color === null && !isActive && (
+                  <span style={{ fontSize: 10, color: '#94a3b8', lineHeight: 1.2, textAlign: 'center' }}>default</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: 10, fontSize: 12, color: '#94a3b8' }}>
+          คลิกสีเพื่อเปลี่ยนพื้นหลัง — บันทึกอัตโนมัติและใช้งานทุก device ที่ login
+        </div>
       </div>
 
       {/* Tips section based on mode */}

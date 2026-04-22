@@ -70,6 +70,9 @@ export const registerEmail = (name: string, email: string, password: string) =>
 
 export const getMe = (token: string) => req<any>('/api/auth/me', {}, token);
 
+export const savePreferences = (prefs: { bg_color?: string }, token: string) =>
+  req<any>('/api/auth/preferences', { method: 'PATCH', body: JSON.stringify(prefs) }, token);
+
 // ─── Chat ────────────────────────────────────────────────────────────────────
 
 export const getChatRooms = (token: string) =>
