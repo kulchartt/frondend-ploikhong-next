@@ -52,6 +52,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.token = (user as any).token;
         token.is_admin = (user as any).is_admin;
+        // Credentials login: user.id is the database ID
+        if (user.id) (token as any).dbUserId = user.id;
       }
       // Social login — register/login via backend
       if (account && (account.provider === 'google' || account.provider === 'facebook')) {
@@ -69,6 +71,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const data = await res.json();
           if (data.token) token.token = data.token;
           if (data.user?.is_admin) token.is_admin = data.user.is_admin;
+          // Social login: store database user ID (token.sub = provider's external ID)
+          if (data.user?.id) (token as any).dbUserId = String(data.user.id);
         } catch {}
       }
       return token;
@@ -76,8 +80,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       (session as any).token = token.token;
       (session.user as any).is_admin = token.is_admin;
-      // token.sub = user's numeric ID (set by NextAuth from user.id in authorize())
-      (session as any).userId = token.sub ? Number(token.sub) : undefined;
+      // Prefer stored DB user ID over token.sub (which may be provider's external ID for social logins)
+      const dbId = (token as any).dbUserId ?? token.sub;
+      (session as any).userId = dbId ? Number(dbId) : undefined;
       return session;
     },
   },

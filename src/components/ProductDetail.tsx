@@ -57,7 +57,8 @@ function nowTime() {
 export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, onOpenAuth }: ProductDetailProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
-  const sessionUserId: number | undefined = (session as any)?.userId;
+  // sessionUserId may be wrong for social logins — verified below via /api/auth/me
+  const [sessionUserId, setSessionUserId] = useState<number | undefined>((session as any)?.userId);
   const isMobile = useBreakpoint(768);
   const [imgIdx, setImgIdx] = useState(0);
   const [chatOpen, setChatOpen] = useState(false);
@@ -71,6 +72,14 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
   const chatRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const latestMsgId = useRef<number>(0);
+
+  // Verify real DB user ID (social login may have wrong token.sub)
+  useEffect(() => {
+    if (!token) return;
+    api.getMe(token)
+      .then(me => { if (me?.id) setSessionUserId(Number(me.id)); })
+      .catch(() => {});
+  }, [token]);
 
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;

@@ -141,9 +141,20 @@ function IconBlock() {
 export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
-  const myUserId: number | undefined = (session as any)?.userId;
+  // session.userId may be wrong for social logins — verify from /api/auth/me
+  const sessionUserId: number | undefined = (session as any)?.userId;
+  const [myUserId, setMyUserId] = useState<number | undefined>(sessionUserId);
   const isMobile = useBreakpoint(768);
   const isWide = !useBreakpoint(1024); // show right sidebar at ≥1024px
+
+  // Verify real DB user ID via /api/auth/me (handles social login edge case)
+  useEffect(() => {
+    if (!token) { setMyUserId(undefined); return; }
+    api.getMe(token)
+      .then(me => { if (me?.id) setMyUserId(Number(me.id)); })
+      .catch(() => { if (sessionUserId) setMyUserId(sessionUserId); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const [rooms, setRooms] = useState<any[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
