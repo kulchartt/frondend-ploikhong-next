@@ -120,6 +120,9 @@ export default function HomePage() {
       return next;
     });
     if (token) {
+      // Track wishlist add (not remove) for analytics
+      const wasAdded = !wishlistIds.has(id);
+      if (wasAdded) api.trackEvent(id, 'wishlist', token);
       try { await api.toggleWishlist(id, token); } catch {
         // revert on error
         setWishlistIds(prev => {

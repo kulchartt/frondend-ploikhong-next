@@ -167,6 +167,20 @@ export const getShop = (userId: number) =>
 export const getProductsBySeller = (sellerId: number) =>
   req<any[]>(`/api/products?seller_id=${sellerId}`).then(d => Array.isArray(d) ? d.map(normalizeProduct) : []);
 
+// ─── Analytics ───────────────────────────────────────────────────────────────
+
+export const trackEvent = (productId: number, eventType: 'view' | 'wishlist' | 'chat_open' | 'offer' | 'share', token?: string) =>
+  req<any>('/api/analytics/event', {
+    method: 'POST',
+    body: JSON.stringify({ product_id: productId, event_type: eventType }),
+  }, token).catch(() => {}); // fire-and-forget, never throw
+
+export const getSellerAnalytics = (token: string) =>
+  req<any[]>('/api/analytics/seller', {}, token);
+
+export const getProductRecommendations = (productId: number, token: string) =>
+  req<{ product_id: number; stats: any; recommendations: any[] }>(`/api/analytics/recommendations/${productId}`, {}, token);
+
 // ─── Upload ──────────────────────────────────────────────────────────────────
 
 export const uploadImage = async (file: File, token: string): Promise<string> => {

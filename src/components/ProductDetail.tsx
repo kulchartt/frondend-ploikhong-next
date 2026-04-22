@@ -84,6 +84,14 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [msgs, typing]);
 
+  // Track product view event (fire-and-forget)
+  useEffect(() => {
+    if (product?.id) {
+      api.trackEvent(product.id, 'view', token);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id]);
+
   // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -514,7 +522,7 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
             ) : (
               <button
                 data-testid="pd-chat-btn"
-                onClick={() => setChatOpen(true)}
+                onClick={() => { setChatOpen(true); if (product?.id) api.trackEvent(product.id, 'chat_open', token); }}
                 style={{
                   width: '100%', padding: '13px 0',
                   background: '#1877f2', color: '#fff',

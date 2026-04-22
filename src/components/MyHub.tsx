@@ -760,93 +760,155 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
   );
 }
 
-// ─── SELL: Insights ───────────────────────────────────────────────────────────
+// ─── SELL: Insights (real analytics) ─────────────────────────────────────────
 
 function SellInsights({ token }: { token?: string }) {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<any | null>(null);
+  const [recs, setRecs] = useState<any[]>([]);
+  const [recsLoading, setRecsLoading] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!token) { setLoading(false); return; }
-    api.getMyProducts(token).then(d => { setProducts(Array.isArray(d) ? d : []); setLoading(false); }).catch(() => setLoading(false));
+    setLoading(true);
+    try {
+      const data = await api.getSellerAnalytics(token);
+      setProducts(Array.isArray(data) ? data : []);
+    } catch { setProducts([]); } finally { setLoading(false); }
   }, [token]);
 
-  const totalViews = products.reduce((a, p) => a + (p.views ?? Math.floor(Math.random() * 200 + 20)), 0);
-  const active = products.filter(p => !p.status || p.status === 'active').length;
+  useEffect(() => { load(); }, [load]);
+
+  async function loadRecs(p: any) {
+    if (!token) return;
+    if (selected?.id === p.id) { setSelected(null); setRecs([]); return; }
+    setSelected(p); setRecs([]); setRecsLoading(true);
+    try {
+      const data = await api.getProductRecommendations(p.id, token);
+      setRecs(data.recommendations ?? []);
+    } catch { setRecs([]); } finally { setRecsLoading(false); }
+  }
+
+  if (!token) return <PageWrap><Err msg="กรุณาเข้าสู่ระบบ" /></PageWrap>;
+
+  const totalViews     = products.reduce((a, p) => a + (p.views || 0), 0);
+  const totalWishlists = products.reduce((a, p) => a + (p.wishlists || 0), 0);
+  const totalChats     = products.reduce((a, p) => a + (p.chat_opens || 0), 0);
+  const totalOffers    = products.reduce((a, p) => a + (p.offers || 0), 0);
+  const active = products.filter(p => !p.status || p.status === 'active' || p.status === 'available').length;
   const sold   = products.filter(p => p.status === 'sold' || p.status === 'sold-out').length;
 
-  const stats = [
-    { label: 'ยอดเข้าชม 30 วัน',     value: loading ? '…' : totalViews.toLocaleString(), delta: '+18%', up: true },
-    { label: 'กำลังขายอยู่',           value: loading ? '…' : String(active),             delta: '',    up: null },
-    { label: 'ขายสำเร็จเดือนนี้',      value: loading ? '…' : String(sold),               delta: '',    up: null },
-    { label: 'อัตราการตอบแชท',         value: '96%',                                      delta: '+2%', up: true },
-  ];
-
-  const chartData = [18,22,19,28,24,31,36,29,33,41,37,44,48,42,51,46,52,58,54,61,55,63,68,64,72,67,74,81,76,84];
-  const max = Math.max(...chartData);
-  const W = 700, H = 140, P = 18;
-  const step = (W - P * 2) / (chartData.length - 1);
-  const pts = chartData.map((v, i) => [P + i * step, H - P - (v / max) * (H - P * 2)] as [number, number]);
-  const pathD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-  const fillD = pathD + ` L${pts[pts.length-1][0]},${H-P} L${pts[0][0]},${H-P} Z`;
+  const SEVERITY_COLOR: Record<string, string> = {
+    high: '#dc2626', medium: '#d97706', good: '#16a34a',
+  };
 
   return (
     <PageWrap>
-      <PageH1>ข้อมูลเชิงลึก</PageH1>
-      <PageSub>ตัวเลขย้อนหลัง 30 วัน · อัปเดตล่าสุด 2 ชม. ที่แล้ว</PageSub>
+      <PageH1>สถิติ</PageH1>
+      <PageSub>ข้อมูลจริงจากผู้ชมและผู้สนใจ · กดสินค้าเพื่อดูคำแนะนำ</PageSub>
 
-      {/* Stats grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 28 }}>
-        {stats.map(s => (
-          <div key={s.label} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '16px 18px' }}>
-            <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 6 }}>{s.label}</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--ink)', marginBottom: 4 }}>{s.value}</div>
-            {s.up !== null && s.delta && (
-              <div style={{ fontSize: 12, color: s.up ? 'var(--pos)' : 'var(--neg)' }}>{s.delta} vs. เดือนก่อน</div>
-            )}
+      {/* Summary KPI cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))', gap: 10, marginBottom: 24 }}>
+        {[
+          { label: 'เข้าชมทั้งหมด',  value: loading ? '…' : totalViews.toLocaleString(),     color: '#2563eb', icon: '👁️' },
+          { label: 'บันทึกสินค้า',    value: loading ? '…' : totalWishlists.toLocaleString(), color: '#7c3aed', icon: '❤️' },
+          { label: 'เปิดแชท',         value: loading ? '…' : totalChats.toLocaleString(),     color: '#0891b2', icon: '💬' },
+          { label: 'ได้รับข้อเสนอ',   value: loading ? '…' : totalOffers.toLocaleString(),   color: '#f97316', icon: '🏷️' },
+          { label: 'กำลังขาย',        value: loading ? '…' : String(active),                 color: '#16a34a', icon: '📦' },
+          { label: 'ขายสำเร็จ',       value: loading ? '…' : String(sold),                   color: '#64748b', icon: '✅' },
+        ].map(s => (
+          <div key={s.label} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
+            <div style={{ fontSize: 18, marginBottom: 4 }}>{s.icon}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800, color: s.color, letterSpacing: '-.02em' }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3 }}>{s.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Mini chart */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '18px 20px', marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', margin: 0 }}>ยอดเข้าชมรายวัน</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-3)' }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />
-            ยอดเข้าชม
-          </div>
-        </div>
-        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
-          <path d={fillD} fill="color-mix(in srgb,var(--accent) 14%,transparent)" />
-          <path d={pathD} fill="none" stroke="var(--accent)" strokeWidth={2} />
-          {pts.filter((_, i) => i % 5 === 0).map((p, i) => (
-            <circle key={i} cx={p[0]} cy={p[1]} r={3} fill="var(--accent)" />
-          ))}
-        </svg>
-      </div>
-
-      {/* Top products */}
-      {products.length > 0 && (
+      {/* Per-product table with funnel */}
+      {loading ? <Skeleton h={68} n={4} /> : products.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink-3)' }}>ยังไม่มีสินค้า</div>
+      ) : (
         <div>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>สินค้าที่มีผู้สนใจสูงสุด</h3>
-          {[...products].slice(0, 4).map((p, i) => {
-            const tints = IMG_TINTS[p.id % IMG_TINTS.length];
-            const imgUrl = p.images?.[0] || p.image_url;
-            return (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', width: 18, textAlign: 'center', flexShrink: 0 }}>{i + 1}</span>
-                <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-sm)', flexShrink: 0, background: imgUrl ? `url(${imgUrl}) center/cover` : `linear-gradient(135deg,${tints[0]},${tints[1]})`, backgroundSize: 'cover' }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ink)' }}>{p.title}</div>
-                  <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>฿{Number(p.price).toLocaleString()}</div>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>รายสินค้า — กดเพื่อดูคำแนะนำ</h3>
+          <p style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 14, marginTop: 0 }}>
+            สีของแถบแสดงอัตราการแปลงผล: 👁️ เข้าชม → ❤️ บันทึก → 💬 แชท → 🏷️ เสนอราคา
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[...products].sort((a, b) => (b.views || 0) - (a.views || 0)).map(p => {
+              const tints = IMG_TINTS[p.id % IMG_TINTS.length];
+              const imgUrl = p.image_url || null;
+              const isOpen = selected?.id === p.id;
+              const views = p.views || 0;
+              const funnel = [
+                { label: '👁️', v: p.views || 0,      color: '#2563eb' },
+                { label: '❤️', v: p.wishlists || 0,   color: '#7c3aed' },
+                { label: '💬', v: p.chat_opens || 0,  color: '#0891b2' },
+                { label: '🏷️', v: p.offers || 0,     color: '#f97316' },
+              ];
+              const maxF = Math.max(...funnel.map(f => f.v), 1);
+              return (
+                <div key={p.id}>
+                  <button onClick={() => loadRecs(p)}
+                    style={{ width: '100%', background: isOpen ? 'var(--surface-2)' : 'var(--surface)', border: `1px solid ${isOpen ? '#f97316' : 'var(--line)'}`, borderRadius: isOpen ? '10px 10px 0 0' : 10, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', display: 'flex', gap: 12, alignItems: 'center', fontFamily: 'inherit' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, overflow: 'hidden', background: imgUrl ? undefined : `linear-gradient(135deg,${tints[0]},${tints[1]})` }}>
+                      {imgUrl && <img src={imgUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 6 }}>
+                        {p.title}
+                      </div>
+                      {/* Funnel bars */}
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        {funnel.map(f => (
+                          <div key={f.label} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                            <div style={{ width: Math.max(4, Math.round((f.v / maxF) * 60)), height: 8, borderRadius: 4, background: f.color, transition: 'width .3s', opacity: f.v === 0 ? 0.2 : 1 }} />
+                            <span style={{ fontSize: 11, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{f.label}{f.v}</span>
+                          </div>
+                        ))}
+                        <span style={{ fontSize: 11, color: 'var(--ink-3)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>{p.days_listed} วัน</span>
+                      </div>
+                    </div>
+                    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth={2} style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'none', transition: '.2s' }}>
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                  </button>
+
+                  {/* Recommendations panel */}
+                  {isOpen && (
+                    <div style={{ border: '1px solid #f97316', borderTop: 'none', borderRadius: '0 0 10px 10px', background: '#fff7ed', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {recsLoading ? (
+                        <div style={{ textAlign: 'center', padding: 12, color: 'var(--ink-3)', fontSize: 13 }}>กำลังวิเคราะห์...</div>
+                      ) : recs.length === 0 ? (
+                        <div style={{ fontSize: 13, color: 'var(--ink-3)', textAlign: 'center', padding: 8 }}>
+                          {views === 0 ? '⏳ ยังไม่มีข้อมูลเพียงพอ — รอสักครู่ให้มีคนเข้าชมก่อน' : 'ไม่พบคำแนะนำ'}
+                        </div>
+                      ) : recs.map((r, i) => (
+                        <div key={i} style={{ background: '#fff', border: `1px solid ${SEVERITY_COLOR[r.severity] ?? '#e2e8f0'}`, borderLeft: `4px solid ${SEVERITY_COLOR[r.severity] ?? '#e2e8f0'}`, borderRadius: 8, padding: '12px 14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                            <span style={{ fontSize: 18 }}>{r.icon}</span>
+                            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>{r.title}</span>
+                            {r.severity !== 'good' && (
+                              <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: SEVERITY_COLOR[r.severity] + '18', color: SEVERITY_COLOR[r.severity] }}>
+                                {r.severity === 'high' ? 'เร่งด่วน' : 'ควรปรับปรุง'}
+                              </span>
+                            )}
+                          </div>
+                          <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '0 0 8px' }}>{r.detail}</p>
+                          <ul style={{ margin: 0, padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {r.actions.map((a: string, j: number) => (
+                              <li key={j} style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.6 }}>{a}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--ink-3)', flexShrink: 0 }}>
-                  <span>{(p.views ?? '—')} เข้าชม</span>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
     </PageWrap>
