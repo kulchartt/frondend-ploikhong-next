@@ -8,6 +8,7 @@ interface ShopDrawerProps {
   sellerId: number;
   onClose: () => void;
   onProductClick: (product: any) => void;
+  onMessage?: () => void;
 }
 
 const SORT_OPTIONS = [
@@ -16,7 +17,7 @@ const SORT_OPTIONS = [
   { value: 'price-desc', label: 'ราคา แพง→ถูก' },
 ];
 
-export function ShopDrawer({ sellerId, onClose, onProductClick }: ShopDrawerProps) {
+export function ShopDrawer({ sellerId, onClose, onProductClick, onMessage }: ShopDrawerProps) {
   const isMobile = useBreakpoint(768);
   const [shop, setShop] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
@@ -108,13 +109,16 @@ export function ShopDrawer({ sellerId, onClose, onProductClick }: ShopDrawerProp
           <div style={{
             width: 96, height: 96, borderRadius: '50%',
             border: '4px solid var(--bg)',
-            background: shop?.avatar ? `url(${shop.avatar}) center/cover` : 'var(--surface-2)',
+            background: 'var(--surface-2)',
             display: 'grid', placeItems: 'center',
             fontWeight: 700, fontSize: 32, color: 'var(--ink)',
             boxShadow: '0 4px 16px rgba(0,0,0,.15)',
-            flexShrink: 0,
+            flexShrink: 0, overflow: 'hidden', position: 'relative',
           }}>
-            {!shop?.avatar && initial}
+            {shop?.avatar
+              ? <img src={shop.avatar} alt={sellerName} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              : initial
+            }
           </div>
         </div>
 
@@ -136,14 +140,31 @@ export function ShopDrawer({ sellerId, onClose, onProductClick }: ShopDrawerProp
                 border: following ? '1px solid var(--line)' : 'none',
                 background: following ? 'var(--surface)' : 'var(--ink)',
                 color: following ? 'var(--ink)' : 'var(--bg)',
-                fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
               }}>
               {following ? 'กำลังติดตาม ✓' : 'ติดตาม'}
             </button>
+            {onMessage && (
+              <button
+                onClick={() => { onClose(); onMessage(); }}
+                style={{
+                  padding: '8px 20px', borderRadius: 'var(--radius-sm)',
+                  border: 'none', background: '#1877f2',
+                  color: '#fff', fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                ส่งข้อความ
+              </button>
+            )}
             <button style={{
               padding: '8px 16px', borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--line)', background: 'var(--surface)',
               fontSize: 13, fontWeight: 500, cursor: 'pointer', color: 'var(--ink-2)',
+              fontFamily: 'inherit',
             }}>
               รายงาน
             </button>

@@ -380,6 +380,11 @@ export default function HomePage() {
           sellerId={shopSellerId}
           onClose={() => setShopSellerId(null)}
           onProductClick={p => { setShopSellerId(null); setSelectedProduct(p); }}
+          onMessage={() => {
+            if (!session?.user) { setAuthMode('login'); setAuthOpen(true); return; }
+            setChatOpen(true);
+            setUnreadChat(0);
+          }}
         />
       )}
     </>
