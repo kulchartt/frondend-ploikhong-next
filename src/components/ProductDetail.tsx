@@ -67,6 +67,7 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
   const [roomId, setRoomId] = useState<number | null>(null);
   const [myUserId, setMyUserId] = useState<number | null>(null);
   const [chatReady, setChatReady] = useState(false);
+  const [sellerProducts, setSellerProducts] = useState<any[]>([]);
   const chatRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const latestMsgId = useRef<number>(0);
@@ -91,13 +92,24 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
   // Normalise API messages → internal Msg format
   const normaliseMsgs = useCallback((raw: any[], meId: number): Msg[] =>
     raw.map(m => ({
-      who: m.sender_id === meId ? 'me' : 'seller',
+      who: Number(m.sender_id) === Number(meId) ? 'me' : 'seller',
       text: m.content ?? m.message ?? '',
       time: m.created_at
         ? new Date(m.created_at).toLocaleTimeString('th', { hour: '2-digit', minute: '2-digit' })
         : nowTime(),
     }))
   , []);
+
+  // Fetch seller's other products
+  useEffect(() => {
+    if (!product?.seller_id) return;
+    api.getProductsBySeller(product.seller_id)
+      .then(items => {
+        // Exclude the current product, take up to 4
+        setSellerProducts(items.filter((p: any) => p.id !== product.id).slice(0, 4));
+      })
+      .catch(() => {});
+  }, [product?.seller_id, product?.id]);
 
   // Create/find chat room + load initial messages
   useEffect(() => {
@@ -420,20 +432,33 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
           </div>
 
           {/* Related from seller */}
-          <div style={{ padding: '16px 26px 26px' }}>
-            <SectionTitle>จากผู้ขายคนนี้</SectionTitle>
-            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-              {[1, 2, 3, 4].map(i => {
-                const t = IMG_TINTS[(product.id + i * 3) % IMG_TINTS.length];
-                return (
-                  <div key={i} style={{ flex: 1, cursor: 'pointer' }}>
-                    <div style={{ aspectRatio: '1/1', borderRadius: 'var(--radius-sm)', background: `linear-gradient(135deg,${t[0]},${t[1]})`, marginBottom: 4 }} />
-                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13 }}>฿{(Math.floor(Math.random() * 40 + 5) * 1000).toLocaleString()}</div>
-                  </div>
-                );
-              })}
+          {sellerProducts.length > 0 && (
+            <div style={{ padding: '16px 26px 26px' }}>
+              <SectionTitle>จากผู้ขายคนนี้</SectionTitle>
+              <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                {sellerProducts.map((sp, i) => {
+                  const t = IMG_TINTS[(sp.id ?? i) % IMG_TINTS.length];
+                  const thumb = sp.images?.[0] || sp.image_url || null;
+                  const price = sp.flash_price || sp.price;
+                  return (
+                    <div key={sp.id ?? i} style={{ flex: 1, cursor: 'pointer', minWidth: 0 }}
+                      onClick={() => { /* handled by parent via onClose + setSelectedProduct */ }}>
+                      <div style={{
+                        aspectRatio: '1/1', borderRadius: 'var(--radius-sm)', marginBottom: 4, overflow: 'hidden',
+                        background: thumb ? `url(${thumb}) center/cover` : `linear-gradient(135deg,${t[0]},${t[1]})`,
+                      }} />
+                      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ink)' }}>
+                        ฿{Number(price).toLocaleString()}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {sp.title}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </section>
       </div>
 

@@ -206,7 +206,7 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
   const normalise = useCallback((raw: any[], meId?: number) =>
     (Array.isArray(raw) ? raw : []).map(m => ({
       id: m.id,
-      who: m.sender_id === meId ? 'me' : 'seller',
+      who: Number(m.sender_id) === Number(meId) ? 'me' : 'seller',
       text: m.content ?? m.message ?? '',
       time: m.created_at
         ? new Date(m.created_at).toLocaleTimeString('th', { hour: '2-digit', minute: '2-digit' })
@@ -314,7 +314,7 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
 
   // Show the other person's name in the chat header (not the current user)
   const sellerName = selectedRoom
-    ? (myUserId === selectedRoom.seller_id
+    ? (Number(myUserId) === Number(selectedRoom.seller_id)
         ? (selectedRoom.buyer_name ?? 'ผู้ซื้อ')
         : (selectedRoom.seller_name ?? 'ผู้ขาย'))
     : '';
@@ -442,7 +442,7 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
                 const rtints = IMG_TINTS[room.id % IMG_TINTS.length];
                 const isSelected = selectedRoom?.id === room.id;
                 // Show the other person's name (not the current user's)
-                const other = myUserId === room.seller_id
+                const other = Number(myUserId) === Number(room.seller_id)
                   ? (room.buyer_name ?? 'ผู้ซื้อ')
                   : (room.seller_name ?? 'ผู้ขาย');
                 const initials = getInitials(other);
