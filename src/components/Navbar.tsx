@@ -262,6 +262,14 @@ export function Navbar({
             )}
           </div>
 
+          {/* Admin button */}
+          {(session?.user as any)?.is_admin && (
+            <a href="/admin"
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 10px', background: '#0f172a', color: '#f59e0b', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', border: 'none', cursor: 'pointer' }}>
+              🛡️ {!isMobile && 'Admin'}
+            </a>
+          )}
+
           {/* + ลงขาย */}
           <button onClick={onOpenListing}
             style={{ padding: isMobile ? '8px 12px' : '9px 16px',
