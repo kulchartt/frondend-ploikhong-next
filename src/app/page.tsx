@@ -355,6 +355,128 @@ export default function HomePage() {
         </main>
       </div>
 
+      {/* ── Footer ─────────────────────────────────────────────────────────── */}
+      <footer style={{
+        borderTop: '1px solid var(--line)',
+        background: 'var(--surface)',
+        padding: '32px 24px 24px',
+        marginTop: 40,
+      }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          {/* Top row: brand + links */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginBottom: 28 }}>
+
+            {/* Brand */}
+            <div style={{ minWidth: 200, flex: '1 1 200px' }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: 'var(--ink)', marginBottom: 8 }}>
+                🛍️ PloiKhong
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.7, maxWidth: 220 }}>
+                ตลาดซื้อขายของมือสองออนไลน์<br />ของดี ราคาโดน ทุกวัน
+              </div>
+            </div>
+
+            {/* ซื้อ-ขาย */}
+            <div style={{ flex: '1 1 120px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 12 }}>ซื้อ-ขาย</div>
+              {[
+                { label: 'ลงขายสินค้า', action: () => { if (session?.user) setListingOpen(true); else setAuthOpen(true); } },
+                { label: 'ดูสินค้าทั้งหมด', action: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
+                { label: 'Premium & เหรียญ', action: () => { if (session?.user) setHubOpen({ mode: 'sell', tab: 'premium' }); else setAuthOpen(true); } },
+              ].map(item => (
+                <div key={item.label} style={{ marginBottom: 8 }}>
+                  <button onClick={item.action} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 13, color: 'var(--ink-2)', textAlign: 'left', fontFamily: 'inherit' }}>
+                    {item.label}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* ความช่วยเหลือ */}
+            <div style={{ flex: '1 1 120px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 12 }}>ความช่วยเหลือ</div>
+              {[
+                { label: 'ศูนย์ช่วยเหลือ',        href: 'mailto:support@ploikhong.com' },
+                { label: 'วิธีการใช้งาน',           href: 'mailto:support@ploikhong.com' },
+                { label: 'ความปลอดภัยในการซื้อขาย', href: 'mailto:support@ploikhong.com' },
+              ].map(item => (
+                <div key={item.label} style={{ marginBottom: 8 }}>
+                  <a href={item.href} style={{ fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>{item.label}</a>
+                </div>
+              ))}
+            </div>
+
+            {/* นโยบาย */}
+            <div style={{ flex: '1 1 120px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 12 }}>นโยบาย</div>
+              {[
+                { label: 'นโยบายความเป็นส่วนตัว', href: '/privacy' },
+                { label: 'เงื่อนไขการใช้งาน',       href: '/terms' },
+                { label: 'กฎและข้อบังคับ',           href: '/rules' },
+                { label: 'นโยบายการคืนสินค้า',       href: '/refund' },
+              ].map(item => (
+                <div key={item.label} style={{ marginBottom: 8 }}>
+                  <a href={item.href} style={{ fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>{item.label}</a>
+                </div>
+              ))}
+            </div>
+
+            {/* ติดต่อ */}
+            <div style={{ flex: '1 1 120px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 12 }}>ติดต่อเรา</div>
+              {[
+                { label: '📧 support@ploikhong.com', href: 'mailto:support@ploikhong.com' },
+                { label: '📘 Facebook Page',          href: 'https://facebook.com/ploikhong' },
+                { label: '🐦 @ploikhong',             href: 'https://twitter.com/ploikhong' },
+              ].map(item => (
+                <div key={item.label} style={{ marginBottom: 8 }}>
+                  <a href={item.href} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>{item.label}</a>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Complaint banner */}
+          <div style={{
+            background: 'var(--surface-2)', border: '1px solid var(--line)',
+            borderRadius: 'var(--radius)', padding: '14px 18px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexWrap: 'wrap', gap: 12, marginBottom: 20,
+          }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>⚠️ พบสินค้าผิดกฎหมายหรือต้องการร้องเรียน?</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>แจ้งทีมงานได้ทันที เราจะตรวจสอบและดำเนินการภายใน 24 ชั่วโมง</div>
+            </div>
+            <a
+              href="mailto:report@ploikhong.com?subject=ร้องเรียน/แจ้งปัญหา"
+              style={{
+                display: 'inline-block', padding: '9px 20px',
+                background: 'var(--neg)', color: '#fff',
+                borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 700,
+                textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+            >
+              🚨 ร้องเรียน / แจ้งปัญหา
+            </a>
+          </div>
+
+          {/* Bottom bar */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexWrap: 'wrap', gap: 8,
+            paddingTop: 16, borderTop: '1px solid var(--line)',
+            fontSize: 12, color: 'var(--ink-3)',
+          }}>
+            <span>© {new Date().getFullYear()} PloiKhong. สงวนลิขสิทธิ์ทุกประการ</span>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <a href="/privacy" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>นโยบายความเป็นส่วนตัว</a>
+              <a href="/terms" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>เงื่อนไขการใช้งาน</a>
+              <a href="/rules" style={{ color: 'var(--ink-3)', textDecoration: 'none' }}>กฎข้อบังคับ</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
       {chatOpen && (
         <ChatDrawer
           onClose={() => { setChatOpen(false); setChatInitialRoomId(undefined); }}
