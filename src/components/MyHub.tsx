@@ -25,13 +25,15 @@ const IMG_TINTS = [
   ['#d4b4a5','#c8987b'],['#b4d4a5','#98c87b'],['#d4a5c4','#c87ba8'],
 ];
 
-const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  active:    { label: 'กำลังขาย',  color: 'var(--pos)',   bg: 'rgba(10,122,69,.1)' },
-  sold:      { label: 'ขายแล้ว',   color: 'var(--ink-3)', bg: 'var(--surface-2)' },
-  'sold-out':{ label: 'ขายแล้ว',   color: 'var(--ink-3)', bg: 'var(--surface-2)' },
-  inactive:  { label: 'ปิดประกาศ', color: 'var(--warn)',  bg: 'rgba(168,90,0,.1)' },
-  draft:     { label: 'ฉบับร่าง',  color: '#c9a24a',      bg: 'rgba(201,162,74,.1)' },
-  hidden:    { label: 'ซ่อนอยู่',  color: 'var(--ink-3)', bg: 'var(--surface-2)' },
+const STATUS_MAP: Record<string, { label: string; color: string; bg: string; dot: string }> = {
+  active:    { label: 'กำลังขาย',  color: '#15803d', bg: '#dcfce7', dot: '#22c55e' },
+  available: { label: 'กำลังขาย',  color: '#15803d', bg: '#dcfce7', dot: '#22c55e' },
+  sold:      { label: 'ขายแล้ว',   color: '#475569', bg: '#f1f5f9', dot: '#94a3b8' },
+  'sold-out':{ label: 'ขายแล้ว',   color: '#475569', bg: '#f1f5f9', dot: '#94a3b8' },
+  reserved:  { label: 'จองแล้ว',   color: '#7c3aed', bg: '#ede9fe', dot: '#a78bfa' },
+  inactive:  { label: 'ปิดประกาศ', color: '#c2410c', bg: '#ffedd5', dot: '#fb923c' },
+  draft:     { label: 'ฉบับร่าง',  color: '#a16207', bg: '#fef9c3', dot: '#facc15' },
+  hidden:    { label: 'ซ่อนอยู่',  color: '#334155', bg: '#e2e8f0', dot: '#64748b' },
 };
 
 const SELL_NAV = [
@@ -600,8 +602,8 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
 
                       {/* Status + date */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: st.color }}>
-                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: st.color, flexShrink: 0 }} />
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: st.color, background: st.bg, padding: '3px 9px', borderRadius: 999 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: st.dot, flexShrink: 0 }} />
                           {st.label}
                         </span>
                         {p.is_boosted && (
