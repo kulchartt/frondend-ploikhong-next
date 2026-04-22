@@ -314,8 +314,10 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
     return () => document.removeEventListener('mousedown', handleMouseDown);
   }, [shareOpenId]);
 
-  function getShareUrl(p: any) {
-    return `${window.location.origin}/products/${p.id}`;
+  function getShareUrl(_p: any) {
+    // No dedicated product detail pages yet — share the site home page.
+    // Update this when /products/[id] routes are added.
+    return window.location.origin;
   }
 
   async function handleCopy(p: any) {
@@ -640,7 +642,7 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
                                   onClick: () => { const msg = encodeURIComponent(`${p.title ?? ''} ฿${Number(p.price).toLocaleString()}\n${getShareUrl(p)}`); window.open(`https://wa.me/?text=${msg}`, '_blank'); setShareOpenId(null); },
                                 },
                               ].map(({ label, icon, onClick }) => (
-                                <button key={label} onClick={onClick}
+                                <button key={label} onClick={e => { e.stopPropagation(); onClick(); }}
                                   style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '10px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
                                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                                   onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
@@ -649,7 +651,7 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
                               ))}
                               {/* Divider + Copy URL */}
                               <div style={{ height: 1, background: 'var(--line)', margin: '4px 0' }} />
-                              <button onClick={() => handleCopy(p)}
+                              <button onClick={e => { e.stopPropagation(); handleCopy(p); }}
                                 style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '10px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
                                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                                 onMouseLeave={e => (e.currentTarget.style.background = 'none')}>

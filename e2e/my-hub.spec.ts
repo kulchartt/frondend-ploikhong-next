@@ -734,6 +734,21 @@ test.describe('V8Hub — SellListings: share popover', () => {
     await newPage.close();
   });
 
+  test('clicking "Facebook" does NOT navigate the main window (no 404 regression)', async ({ page }) => {
+    await openSellHub(page);
+    const mainUrlBefore = page.url();
+    await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
+    // open in new window; ignore the popup
+    await Promise.all([
+      page.context().waitForEvent('page').then(p => p.close()),
+      hub(page).getByRole('button', { name: 'Facebook' }).click(),
+    ]);
+    // Main window must NOT have navigated to /products/... or any 404 page
+    expect(page.url()).toBe(mainUrlBefore);
+    // V8Hub should still be visible (not replaced by a 404 page)
+    await expect(page.locator('[data-testid="v8hub"]')).toBeVisible();
+  });
+
   test('clicking "X (Twitter)" opens X/Twitter share URL in new tab', async ({ page }) => {
     await openSellHub(page);
     await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
@@ -763,13 +778,17 @@ test.describe('V8Hub — SellListings: share popover', () => {
     expect(openedUrls.some(u => u.includes('wa.me'))).toBe(true);
   });
 
-  test('clicking "คัดลอก URL" copies URL and shows "คัดลอกแล้ว!"', async ({ page }) => {
+  test('clicking "คัดลอก URL" copies valid URL and shows "คัดลอกแล้ว!"', async ({ page }) => {
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
     await openSellHub(page);
     await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
     await hub(page).getByRole('button', { name: 'คัดลอก URL' }).click();
     await expect(hub(page).getByRole('button', { name: 'คัดลอกแล้ว!' })).toBeVisible();
     await expect(hub(page).getByRole('button', { name: 'LINE' })).not.toBeVisible();
+    // Verify copied URL is valid (no /products/... which would 404)
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    expect(copied).not.toContain('/products/');
+    expect(copied).toMatch(/^https?:\/\//);
   });
 
   test('"คัดลอกแล้ว!" reverts back to "แชร์" after 2 seconds', async ({ page }) => {
