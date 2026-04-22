@@ -38,6 +38,7 @@ const SELL_NAV = [
   { k: 'listings',  label: 'สินค้าของฉัน' },
   { k: 'offers',    label: 'คำขอราคา' },
   { k: 'insights',  label: 'สถิติ' },
+  { k: 'premium',   label: 'Premium & เหรียญ' },
   { k: 'profile',   label: 'ตั้งค่าร้านค้า' },
 ];
 
@@ -250,6 +251,7 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
           {mode === 'sell' && sellTab === 'listings'  && <SellListings token={token} onNewListing={onNewListing} />}
           {mode === 'sell' && sellTab === 'offers'    && <SellOffers token={token} onBadgeChange={setPendingSellOffers} />}
           {mode === 'sell' && sellTab === 'insights'  && <SellInsights token={token} />}
+          {mode === 'sell' && sellTab === 'premium'   && <SellPremium token={token} />}
           {mode === 'sell' && sellTab === 'profile'   && <HubProfile session={session} mode="sell" />}
           {mode === 'buy'  && buyTab === 'saved'         && <BuySaved token={token} onOpenChat={onOpenChat ? () => { onClose(); onOpenChat(); } : undefined} onViewProduct={onViewProduct ? (p) => { onClose(); onViewProduct(p); } : undefined} />}
           {mode === 'buy'  && buyTab === 'offers'        && <BuyOffers token={token} />}
@@ -269,6 +271,7 @@ function NavIcon({ k, mode, active }: { k: string; mode: string; active?: boolea
   if (k === 'listings')  return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg>;
   if (k === 'offers')    return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>;
   if (k === 'insights')  return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>;
+  if (k === 'premium')   return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
   if (k === 'saved')     return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M6 4h12v16l-6-4-6 4z"/></svg>;
   if (k === 'notifications') return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M6 9a6 6 0 0 1 12 0v4l2 3H4l2-3z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>;
   if (k === 'following') return <svg style={ic} viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.8}><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M17 5v6M14 8h6"/></svg>;
@@ -1523,6 +1526,312 @@ function HubProfile({ session, mode }: { session: any; mode: string }) {
           ))}
         </ul>
       </div>
+    </PageWrap>
+  );
+}
+
+// ─── SELL: Premium & Coins ────────────────────────────────────────────────────
+
+function SellPremium({ token }: { token?: string }) {
+  const [balance, setBalance] = useState<number | null>(null);
+  const [packages, setPackages] = useState<any[]>([]);
+  const [features, setFeatures] = useState<Record<string, any>>({});
+  const [activeFeatures, setActiveFeatures] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [promptpay, setPromptpay] = useState('');
+  const [promptpayName, setPromptpayName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<'store' | 'buy' | 'history'>('store');
+
+  // Buy flow state
+  const [selectedPkg, setSelectedPkg] = useState<any | null>(null);
+  const [senderName, setSenderName] = useState('');
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitMsg, setSubmitMsg] = useState('');
+  const [submitErr, setSubmitErr] = useState('');
+
+  // Feature activate flow
+  const [activating, setActivating] = useState<string | null>(null);
+  const [activateMsg, setActivateMsg] = useState('');
+  const [activateErr, setActivateErr] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [pkgData, balData, featData, txData] = await Promise.allSettled([
+        api.getCoinPackages(),
+        token ? api.getCoinBalance(token) : Promise.resolve({ balance: 0 }),
+        token ? api.getActiveFeatures(token) : Promise.resolve([]),
+        token ? api.getCoinTransactions(token) : Promise.resolve([]),
+      ]);
+      if (pkgData.status === 'fulfilled') {
+        setPackages(pkgData.value.packages ?? []);
+        setFeatures(pkgData.value.features ?? {});
+        setPromptpay(pkgData.value.promptpay ?? '');
+        setPromptpayName(pkgData.value.promptpay_name ?? '');
+      }
+      if (balData.status === 'fulfilled') setBalance((balData.value as any).balance ?? 0);
+      if (featData.status === 'fulfilled') setActiveFeatures(Array.isArray(featData.value) ? featData.value : []);
+      if (txData.status === 'fulfilled') setTransactions(Array.isArray(txData.value) ? txData.value : []);
+    } catch { } finally { setLoading(false); }
+  }, [token]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleActivate(featureKey: string) {
+    if (!token) return;
+    setActivating(featureKey); setActivateMsg(''); setActivateErr('');
+    try {
+      const r = await api.activateFeature(featureKey, null, token);
+      setActivateMsg(r.message ?? 'เปิดใช้งานสำเร็จ!');
+      if (r.new_balance !== undefined) setBalance(r.new_balance);
+      const updated = await api.getActiveFeatures(token);
+      setActiveFeatures(Array.isArray(updated) ? updated : []);
+    } catch (e: any) { setActivateErr(e?.message || 'เกิดข้อผิดพลาด'); }
+    finally { setActivating(null); }
+  }
+
+  async function handleRequestPayment() {
+    if (!token || !selectedPkg || !senderName.trim()) return;
+    setSubmitLoading(true); setSubmitMsg(''); setSubmitErr('');
+    try {
+      const r = await api.requestCoinPayment({ package_key: selectedPkg.key, sender_name: senderName.trim() }, token);
+      setSubmitMsg(r.message ?? 'ส่งคำขอแล้ว รอ Admin ยืนยัน');
+      setSelectedPkg(null); setSenderName('');
+      const txUpdated = await api.getCoinTransactions(token);
+      setTransactions(Array.isArray(txUpdated) ? txUpdated : []);
+    } catch (e: any) { setSubmitErr(e?.message || 'ส่งคำขอไม่สำเร็จ'); }
+    finally { setSubmitLoading(false); }
+  }
+
+  if (!token) return <PageWrap><Err msg="กรุณาเข้าสู่ระบบ" /></PageWrap>;
+
+  const featureEntries = Object.entries(features);
+  const TABS: { k: typeof tab; label: string }[] = [
+    { k: 'store',   label: '⭐ ฟีเจอร์พิเศษ' },
+    { k: 'buy',     label: '💰 เติมเหรียญ' },
+    { k: 'history', label: '📋 ประวัติ' },
+  ];
+
+  return (
+    <PageWrap>
+      {/* Header with balance */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 8 }}>
+        <div>
+          <PageH1>Premium & เหรียญ</PageH1>
+          <PageSub>ปลดล็อกฟีเจอร์พิเศษเพื่อขายได้เร็วขึ้น</PageSub>
+        </div>
+        {/* Coin balance chip */}
+        <div style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', borderRadius: 14, padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <span style={{ fontSize: 22 }}>🪙</span>
+          <div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1, fontFamily: 'var(--font-display)' }}>
+              {balance === null ? '…' : balance.toLocaleString()}
+            </div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.8)', fontWeight: 600 }}>เหรียญของฉัน</div>
+          </div>
+          <button onClick={() => setTab('buy')}
+            style={{ marginLeft: 6, background: 'rgba(255,255,255,.2)', border: '1px solid rgba(255,255,255,.4)', borderRadius: 8, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 10px', cursor: 'pointer' }}>
+            + เติม
+          </button>
+        </div>
+      </div>
+
+      {/* Alerts */}
+      {activateMsg && <div style={{ marginBottom: 14, padding: '12px 16px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 'var(--radius-sm)', fontSize: 13, color: '#16a34a', fontWeight: 600 }}>🎉 {activateMsg}</div>}
+      {activateErr && <div style={{ marginBottom: 14, padding: '12px 16px', background: 'rgba(184,50,22,.07)', border: '1px solid rgba(184,50,22,.2)', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--neg)' }}>⚠️ {activateErr}</div>}
+      {submitMsg && <div style={{ marginBottom: 14, padding: '12px 16px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 'var(--radius-sm)', fontSize: 13, color: '#16a34a', fontWeight: 600 }}>✅ {submitMsg}</div>}
+
+      {/* Sub-tabs */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 22 }}>
+        {TABS.map(t => (
+          <button key={t.k} onClick={() => setTab(t.k)}
+            style={{ padding: '7px 16px', border: `1.5px solid ${tab === t.k ? '#f59e0b' : 'var(--line)'}`, borderRadius: 999, background: tab === t.k ? '#fff7ed' : 'var(--surface)', color: tab === t.k ? '#d97706' : 'var(--ink-2)', fontWeight: tab === t.k ? 700 : 400, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .12s' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {loading && <Skeleton h={120} n={3} />}
+
+      {/* ── Feature Store ── */}
+      {!loading && tab === 'store' && (
+        <div>
+          {/* Active features banner */}
+          {activeFeatures.length > 0 && (
+            <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 'var(--radius)', padding: '14px 18px', marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#c2410c', marginBottom: 10 }}>✅ ฟีเจอร์ที่ใช้งานอยู่</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {activeFeatures.map((f: any, i) => (
+                  <div key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #fed7aa', borderRadius: 999, padding: '5px 12px', fontSize: 12 }}>
+                    <span>{features[f.feature_key]?.icon ?? '⭐'}</span>
+                    <span style={{ fontWeight: 600, color: '#c2410c' }}>{features[f.feature_key]?.label ?? f.feature_key}</span>
+                    <span style={{ color: '#92400e' }}>
+                      · หมดอายุ {new Date(f.expires_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 14 }}>
+            {featureEntries.map(([key, feat]: [string, any]) => {
+              const isActive = activeFeatures.some(f => f.feature_key === key);
+              const canAfford = (balance ?? 0) >= feat.coins;
+              const isActivating = activating === key;
+              return (
+                <div key={key} style={{ background: 'var(--surface)', border: `1.5px solid ${isActive ? '#f59e0b' : 'var(--line)'}`, borderRadius: 'var(--radius)', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10, transition: 'border-color .15s' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 28 }}>{feat.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{feat.label}</div>
+                      <div style={{ fontSize: 11, color: '#d97706', fontWeight: 600 }}>🪙 {feat.coins} เหรียญ / {feat.days} วัน</div>
+                    </div>
+                    {isActive && <span style={{ background: '#f59e0b', color: '#fff', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999 }}>ACTIVE</span>}
+                  </div>
+                  <p style={{ margin: 0, fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.6 }}>{feat.desc}</p>
+                  <button
+                    onClick={() => { setActivateMsg(''); setActivateErr(''); handleActivate(key); }}
+                    disabled={isActivating || isActive}
+                    style={{
+                      padding: '9px 0', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 700, cursor: (isActivating || isActive) ? 'not-allowed' : 'pointer',
+                      background: isActive ? '#e5e7eb' : canAfford ? '#f59e0b' : 'var(--surface-2)',
+                      color: isActive ? '#9ca3af' : canAfford ? '#fff' : 'var(--ink-3)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}>
+                    {isActivating
+                      ? <><svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> กำลังเปิด…</>
+                      : isActive ? '✓ ใช้งานอยู่'
+                      : canAfford ? `เปิดใช้งาน · 🪙 ${feat.coins}`
+                      : `เหรียญไม่พอ (ต้องการ ${feat.coins})`
+                    }
+                  </button>
+                  {!canAfford && !isActive && (
+                    <button onClick={() => setTab('buy')} style={{ padding: '6px 0', border: '1.5px solid #f59e0b', borderRadius: 'var(--radius-sm)', background: 'none', color: '#d97706', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      🪙 เติมเหรียญก่อน
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Buy Coins ── */}
+      {!loading && tab === 'buy' && (
+        <div>
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 'var(--radius)', padding: '14px 18px', marginBottom: 22 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', marginBottom: 6 }}>📲 วิธีเติมเหรียญ</div>
+            <ol style={{ margin: 0, padding: '0 0 0 18px', fontSize: 13, color: '#78350f', lineHeight: 1.8 }}>
+              <li>เลือกแพ็กเกจเหรียญที่ต้องการ</li>
+              <li>โอนเงินผ่าน PromptPay: <strong>{promptpay}</strong> ({promptpayName})</li>
+              <li>กรอกชื่อผู้โอน แล้วกด "ส่งคำขอ"</li>
+              <li>Admin ยืนยันภายใน 15–30 นาที เหรียญเข้าบัญชีอัตโนมัติ</li>
+            </ol>
+          </div>
+
+          {/* Package grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 12, marginBottom: 24 }}>
+            {packages.map((pkg: any) => (
+              <div key={pkg.key} onClick={() => { setSelectedPkg(selectedPkg?.key === pkg.key ? null : pkg); setSubmitErr(''); setSubmitMsg(''); }}
+                style={{
+                  border: `2px solid ${selectedPkg?.key === pkg.key ? '#f59e0b' : 'var(--line)'}`,
+                  borderRadius: 'var(--radius)', padding: '18px 16px', cursor: 'pointer', background: selectedPkg?.key === pkg.key ? '#fffbeb' : 'var(--surface)',
+                  textAlign: 'center', position: 'relative', transition: 'all .15s',
+                }}>
+                {pkg.bonus && (
+                  <span style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: '#f59e0b', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+                    {pkg.bonus}
+                  </span>
+                )}
+                <div style={{ fontSize: 32, fontWeight: 800, color: '#d97706', fontFamily: 'var(--font-display)', lineHeight: 1 }}>{pkg.coins.toLocaleString()}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2, marginBottom: 10 }}>เหรียญ</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>฿{pkg.price}</div>
+                {selectedPkg?.key === pkg.key && (
+                  <div style={{ marginTop: 8, background: '#f59e0b', borderRadius: 999, color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 0' }}>✓ เลือกแล้ว</div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Payment form */}
+          {selectedPkg && (
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '20px 22px' }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 16 }}>
+                ยืนยันการโอน: {selectedPkg.coins} เหรียญ · ฿{selectedPkg.price}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14, marginBottom: 16 }}>
+                <div>
+                  <label style={labelSt}>PromptPay ปลายทาง</label>
+                  <div style={{ padding: '10px 12px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 600, color: '#92400e', letterSpacing: '.05em' }}>
+                    📲 {promptpay} ({promptpayName})
+                  </div>
+                </div>
+                <div>
+                  <label style={labelSt}>ชื่อผู้โอน (ตามที่บัญชีธนาคาร) *</label>
+                  <input
+                    value={senderName}
+                    onChange={e => setSenderName(e.target.value)}
+                    placeholder="เช่น สมชาย ใจดี"
+                    style={inputSt}
+                    maxLength={60}
+                  />
+                </div>
+              </div>
+              {submitErr && <div style={{ fontSize: 13, color: 'var(--neg)', marginBottom: 12 }}>⚠️ {submitErr}</div>}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => { setSelectedPkg(null); setSenderName(''); setSubmitErr(''); }}
+                  style={{ flex: 1, padding: '10px 0', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)', fontFamily: 'inherit' }}>
+                  ยกเลิก
+                </button>
+                <button onClick={handleRequestPayment} disabled={submitLoading || !senderName.trim()}
+                  style={{ flex: 2, padding: '10px 0', border: 'none', borderRadius: 'var(--radius-sm)', background: (!senderName.trim() || submitLoading) ? '#e5e7eb' : '#f59e0b', color: (!senderName.trim() || submitLoading) ? '#9ca3af' : '#fff', fontSize: 13, fontWeight: 700, cursor: (submitLoading || !senderName.trim()) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
+                  {submitLoading ? <><svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> กำลังส่ง…</> : '✓ ยืนยันการโอน — ส่งคำขอ'}
+                </button>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 12, textAlign: 'center' }}>
+                Admin จะยืนยันและเพิ่มเหรียญภายใน 15–30 นาที คุณจะได้รับการแจ้งเตือน
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── History ── */}
+      {!loading && tab === 'history' && (
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 16 }}>ประวัติการใช้เหรียญ</div>
+          {transactions.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--ink-3)' }}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>🪙</div>
+              <div style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>ยังไม่มีประวัติ</div>
+              <div style={{ fontSize: 13 }}>เติมเหรียญหรือใช้ฟีเจอร์ก็จะปรากฏที่นี่</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {transactions.map((tx: any) => {
+                const isPos = tx.delta > 0;
+                return (
+                  <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: isPos ? '#f0fdf4' : '#fff7ed', display: 'grid', placeItems: 'center', fontSize: 18, flexShrink: 0 }}>
+                      {isPos ? '⬆️' : '⬇️'}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2 }}>{tx.description}</div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{new Date(tx.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: isPos ? '#16a34a' : '#d97706', flexShrink: 0 }}>
+                      {isPos ? '+' : ''}{tx.delta} 🪙
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </PageWrap>
   );
 }

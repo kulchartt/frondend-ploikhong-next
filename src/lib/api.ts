@@ -181,6 +181,42 @@ export const getSellerAnalytics = (token: string) =>
 export const getProductRecommendations = (productId: number, token: string) =>
   req<{ product_id: number; stats: any; recommendations: any[] }>(`/api/analytics/recommendations/${productId}`, {}, token);
 
+// ─── Coins / Premium ─────────────────────────────────────────────────────────
+
+export const getCoinPackages = () =>
+  req<{ packages: any[]; features: any; promptpay: string; promptpay_name: string }>('/api/coins/packages');
+
+export const getCoinBalance = (token: string) =>
+  req<{ balance: number }>('/api/coins/balance', {}, token);
+
+export const getCoinTransactions = (token: string) =>
+  req<any[]>('/api/coins/transactions', {}, token);
+
+export const requestCoinPayment = (body: { package_key: string; sender_name: string; slip_url?: string }, token: string) =>
+  req<any>('/api/coins/request-payment', { method: 'POST', body: JSON.stringify(body) }, token);
+
+export const getMyPaymentRequests = (token: string) =>
+  req<any[]>('/api/coins/payment-requests/my', {}, token);
+
+export const activateFeature = (featureKey: string, productId: number | null, token: string) =>
+  req<any>('/api/coins/activate-feature', {
+    method: 'POST',
+    body: JSON.stringify({ feature_key: featureKey, product_id: productId }),
+  }, token);
+
+export const getActiveFeatures = (token: string) =>
+  req<any[]>('/api/coins/active-features', {}, token);
+
+// Admin coin management
+export const getPaymentRequests = (status: string, token: string) =>
+  req<any[]>(`/api/coins/payment-requests?status=${status}`, {}, token);
+
+export const confirmPayment = (id: number, token: string) =>
+  req<any>(`/api/coins/payment-requests/${id}/confirm`, { method: 'POST' }, token);
+
+export const rejectPayment = (id: number, note: string, token: string) =>
+  req<any>(`/api/coins/payment-requests/${id}/reject`, { method: 'POST', body: JSON.stringify({ note }) }, token);
+
 // ─── Upload ──────────────────────────────────────────────────────────────────
 
 export const uploadImage = async (file: File, token: string): Promise<string> => {
