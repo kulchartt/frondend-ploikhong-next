@@ -693,49 +693,90 @@ test.describe('V8Hub — Profile tab', () => {
 
 test.describe('V8Hub — SellListings: share popover', () => {
 
-  test('clicking "แชร์" opens the share popover', async ({ page }) => {
+  test('clicking "แชร์" opens the share popover with all options', async ({ page }) => {
     await openSellHub(page);
     await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
-    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).toBeVisible();
-    await expect(hub(page).getByRole('button', { name: /คัดลอก URL/ })).toBeVisible();
+    await expect(hub(page).getByText('แชร์สินค้านี้ไปยัง')).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'LINE' })).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'Facebook' })).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'X (Twitter)' })).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'WhatsApp' })).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'คัดลอก URL' })).toBeVisible();
   });
 
-  test('popover closes when clicking backdrop', async ({ page }) => {
+  test('popover closes when clicking outside', async ({ page }) => {
     await openSellHub(page);
     await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
-    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).toBeVisible();
-    // click backdrop (top-left corner)
+    await expect(hub(page).getByRole('button', { name: 'LINE' })).toBeVisible();
     await page.mouse.click(10, 10);
-    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).not.toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'LINE' })).not.toBeVisible();
   });
 
-  test('clicking "แชร์ไป LINE" opens LINE share URL in new tab', async ({ page }) => {
+  test('clicking "LINE" opens LINE share URL in new tab', async ({ page }) => {
     await openSellHub(page);
     await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
     const [newPage] = await Promise.all([
       page.context().waitForEvent('page'),
-      hub(page).getByRole('button', { name: 'แชร์ไป LINE' }).click(),
+      hub(page).getByRole('button', { name: 'LINE' }).click(),
     ]);
     expect(newPage.url()).toContain('social-plugins.line.me');
     await newPage.close();
   });
 
+  test('clicking "Facebook" opens Facebook share URL in new tab', async ({ page }) => {
+    await openSellHub(page);
+    await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
+    const [newPage] = await Promise.all([
+      page.context().waitForEvent('page'),
+      hub(page).getByRole('button', { name: 'Facebook' }).click(),
+    ]);
+    expect(newPage.url()).toContain('facebook.com/sharer');
+    await newPage.close();
+  });
+
+  test('clicking "X (Twitter)" opens X/Twitter share URL in new tab', async ({ page }) => {
+    await openSellHub(page);
+    await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
+    // Intercept window.open to capture the URL (Twitter may redirect x.com ↔ twitter.com)
+    const openedUrls: string[] = [];
+    await page.exposeFunction('__captureOpen', (url: string) => { openedUrls.push(url); });
+    await page.evaluate(() => {
+      const orig = window.open.bind(window);
+      (window as any).open = (url: string, ...args: any[]) => { (window as any).__captureOpen(url); return orig(url, ...args); };
+    });
+    await hub(page).getByRole('button', { name: 'X (Twitter)' }).click();
+    await page.waitForTimeout(300);
+    expect(openedUrls.some(u => u.includes('twitter.com/intent/tweet') || u.includes('x.com/intent/tweet'))).toBe(true);
+  });
+
+  test('clicking "WhatsApp" calls WhatsApp share URL', async ({ page }) => {
+    await openSellHub(page);
+    await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
+    const openedUrls: string[] = [];
+    await page.exposeFunction('__captureOpen2', (url: string) => { openedUrls.push(url); });
+    await page.evaluate(() => {
+      const orig = window.open.bind(window);
+      (window as any).open = (url: string, ...args: any[]) => { (window as any).__captureOpen2(url); return orig(url, ...args); };
+    });
+    await hub(page).getByRole('button', { name: 'WhatsApp' }).click();
+    await page.waitForTimeout(300);
+    expect(openedUrls.some(u => u.includes('wa.me'))).toBe(true);
+  });
+
   test('clicking "คัดลอก URL" copies URL and shows "คัดลอกแล้ว!"', async ({ page }) => {
-    // Grant clipboard-write permission
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
     await openSellHub(page);
     await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
-    await hub(page).getByRole('button', { name: /คัดลอก URL/ }).click();
-    // Popover closes and button shows "คัดลอกแล้ว!"
+    await hub(page).getByRole('button', { name: 'คัดลอก URL' }).click();
     await expect(hub(page).getByRole('button', { name: 'คัดลอกแล้ว!' })).toBeVisible();
-    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).not.toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'LINE' })).not.toBeVisible();
   });
 
   test('"คัดลอกแล้ว!" reverts back to "แชร์" after 2 seconds', async ({ page }) => {
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
     await openSellHub(page);
     await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
-    await hub(page).getByRole('button', { name: /คัดลอก URL/ }).click();
+    await hub(page).getByRole('button', { name: 'คัดลอก URL' }).click();
     await expect(hub(page).getByRole('button', { name: 'คัดลอกแล้ว!' })).toBeVisible();
     await expect(hub(page).getByRole('button', { name: 'แชร์' }).first()).toBeVisible({ timeout: 3000 });
   });
@@ -743,18 +784,12 @@ test.describe('V8Hub — SellListings: share popover', () => {
   test('each product has its own independent share popover', async ({ page }) => {
     await openSellHub(page);
     const shareBtns = hub(page).getByRole('button', { name: 'แชร์' });
-
-    // open first product's popover
     await shareBtns.nth(0).click();
-    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).toBeVisible();
-
-    // click outside to close
+    await expect(hub(page).getByText('แชร์สินค้านี้ไปยัง')).toBeVisible();
     await page.mouse.click(10, 10);
-    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).not.toBeVisible();
-
-    // open second product's popover — should work independently
+    await expect(hub(page).getByText('แชร์สินค้านี้ไปยัง')).not.toBeVisible();
     await shareBtns.nth(1).click();
-    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).toBeVisible();
+    await expect(hub(page).getByText('แชร์สินค้านี้ไปยัง')).toBeVisible();
   });
 
 });
