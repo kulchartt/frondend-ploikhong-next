@@ -527,11 +527,11 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
               const isActive = !p.status || p.status === 'active';
               const isSold = p.status === 'sold' || p.status === 'sold-out';
               const isDraft = p.status === 'draft';
-              // Mock stats based on product id
-              const mockGroups = (p.id % 5) + 1;
-              const mockClicks = Math.floor(p.id * 17 + 43) % 200 + 10;
-              // Stale warning: show for active listings (mocked: every 3rd product)
-              const isStale = isActive && p.id % 3 === 0;
+              // Stale warning: listing not bumped/updated in 14+ days
+              const daysSinceActivity = p.bumped_at
+                ? (Date.now() - new Date(p.bumped_at).getTime()) / 86400000
+                : (Date.now() - new Date(p.created_at).getTime()) / 86400000;
+              const isStale = isActive && daysSinceActivity > 14;
               const dateStr = p.created_at
                 ? new Date(p.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: '2-digit', year: 'numeric' }).replace(/\//g, '/')
                 : '—';
@@ -583,12 +583,11 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
                         <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>ประกาศเมื่อ {dateStr}</span>
                       </div>
 
-                      {/* Stats */}
-                      <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span>ลงประกาศใน {mockGroups} กลุ่ม · การคลิกจากการค้นหา {mockClicks} ครั้ง</span>
-                        <span title="ข้อมูลเชิงลึก" style={{ display: 'inline-flex', alignItems: 'center', cursor: 'help' }}>
-                          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth={1.8}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-                        </span>
+                      {/* Stats — real data */}
+                      <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span>👁️ {(p.view_count || 0).toLocaleString()} การเข้าชม</span>
+                        {p.is_featured && <span style={{ color: '#d97706', fontWeight: 600 }}>⭐ Featured</span>}
+                        {p.bumped_at && <span style={{ color: '#7c3aed', fontWeight: 500 }}>🚀 Boosted</span>}
                       </div>
 
                       {/* Action buttons */}
