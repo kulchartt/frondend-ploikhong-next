@@ -298,16 +298,24 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
   const [deleting, setDeleting] = useState(false);
   const [warnDismissed, setWarnDismissed] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [shareOpenId, setShareOpenId] = useState<number | null>(null);
 
-  async function handleShare(p: any) {
-    const url = `${window.location.origin}/products/${p.id}`;
-    const title = p.title ?? 'สินค้า';
-    if (navigator.share) {
-      try { await navigator.share({ title, url }); return; } catch {}
-    }
-    await navigator.clipboard.writeText(url);
+  function getShareUrl(p: any) {
+    return `${window.location.origin}/products/${p.id}`;
+  }
+
+  async function handleCopy(p: any) {
+    await navigator.clipboard.writeText(getShareUrl(p));
     setCopiedId(p.id);
+    setShareOpenId(null);
     setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  function handleLineShare(p: any) {
+    const url = encodeURIComponent(getShareUrl(p));
+    const text = encodeURIComponent(`${p.title ?? 'สินค้า'} — ฿${Number(p.price).toLocaleString()}\n`);
+    window.open(`https://social-plugins.line.me/lineit/share?url=${url}&text=${text}`, '_blank', 'width=600,height=500');
+    setShareOpenId(null);
   }
 
   const load = useCallback(async () => {
@@ -574,15 +582,42 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
                           </>
                         )}
 
-                        {/* Share button */}
-                        <button onClick={() => handleShare(p)}
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: `1px solid ${copiedId === p.id ? 'var(--pos)' : 'var(--line)'}`, borderRadius: 'var(--radius-sm)', background: copiedId === p.id ? 'rgba(10,122,69,.08)' : 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: copiedId === p.id ? 'var(--pos)' : 'var(--ink-2)', transition: 'all .2s' }}>
-                          {copiedId === p.id
-                            ? <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="20 6 9 17 4 12"/></svg>
-                            : <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                          }
-                          {copiedId === p.id ? 'คัดลอกแล้ว!' : 'แชร์'}
-                        </button>
+                        {/* Share button + popover */}
+                        <div style={{ position: 'relative' }}>
+                          <button onClick={() => setShareOpenId(shareOpenId === p.id ? null : p.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: `1px solid ${copiedId === p.id ? 'var(--pos)' : 'var(--line)'}`, borderRadius: 'var(--radius-sm)', background: copiedId === p.id ? 'rgba(10,122,69,.08)' : 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: copiedId === p.id ? 'var(--pos)' : 'var(--ink-2)', transition: 'all .2s' }}>
+                            {copiedId === p.id
+                              ? <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="20 6 9 17 4 12"/></svg>
+                              : <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                            }
+                            {copiedId === p.id ? 'คัดลอกแล้ว!' : 'แชร์'}
+                          </button>
+                          {shareOpenId === p.id && (
+                            <>
+                              {/* backdrop to close */}
+                              <div onClick={() => setShareOpenId(null)} style={{ position: 'fixed', inset: 0, zIndex: 299 }} />
+                              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 300, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', boxShadow: '0 8px 24px rgba(0,0,0,.12)', minWidth: 160, overflow: 'hidden' }}>
+                                {/* LINE */}
+                                <button onClick={() => handleLineShare(p)}
+                                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+                                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+                                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                                  <svg width={16} height={16} viewBox="0 0 24 24" fill="#06C755"><path d="M19.952 11.015c0-4.15-4.162-7.525-9.276-7.525-5.115 0-9.276 3.375-9.276 7.525 0 3.72 3.298 6.835 7.757 7.426.302.065.713.2.817.459.094.235.061.604.03.843l-.132.793c-.04.235-.187.919.805.501 1-.42 5.358-3.155 7.311-5.401C19.402 13.784 19.952 12.461 19.952 11.015z"/></svg>
+                                  แชร์ไป LINE
+                                </button>
+                                <div style={{ height: 1, background: 'var(--line)' }} />
+                                {/* Copy URL (ใช้วางใน IG) */}
+                                <button onClick={() => handleCopy(p)}
+                                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+                                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+                                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                  คัดลอก URL (IG / อื่นๆ)
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
 
                         {/* More / Edit / Delete */}
                         <button onClick={() => { if (isEditing) setEditId(null); else { setEditId(p.id); setEditForm({ title: p.title ?? '', price: String(p.price ?? ''), description: p.description ?? '' }); } }}
