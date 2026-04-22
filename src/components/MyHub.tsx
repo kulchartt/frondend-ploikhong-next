@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import * as api from '@/lib/api';
@@ -299,6 +299,20 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
   const [warnDismissed, setWarnDismissed] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [shareOpenId, setShareOpenId] = useState<number | null>(null);
+  const shareWrapperRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  // Close share popover on mousedown outside the wrapper
+  useEffect(() => {
+    if (shareOpenId === null) return;
+    function handleMouseDown(e: MouseEvent) {
+      const wrapper = shareWrapperRefs.current[shareOpenId!];
+      if (wrapper && !wrapper.contains(e.target as Node)) {
+        setShareOpenId(null);
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, [shareOpenId]);
 
   function getShareUrl(p: any) {
     return `${window.location.origin}/products/${p.id}`;
@@ -487,14 +501,15 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
                 : '—';
 
               return (
-                <div key={p.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                <div key={p.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)' }}>
                   <div style={{ display: 'flex', gap: 0, alignItems: 'stretch' }}>
-                    {/* Large image */}
+                    {/* Large image — radius on image itself so card can overflow for popovers */}
                     <div style={{
                       width: 180, minHeight: 180, flexShrink: 0,
                       background: imgUrl ? undefined : `linear-gradient(135deg,${tints[0]},${tints[1]})`,
                       backgroundImage: imgUrl ? `url(${imgUrl})` : undefined,
                       backgroundSize: 'cover', backgroundPosition: 'center',
+                      borderRadius: 'var(--radius) 0 0 var(--radius)',
                     }} />
 
                     {/* Content area */}
@@ -583,7 +598,7 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
                         )}
 
                         {/* Share button + popover */}
-                        <div style={{ position: 'relative' }}>
+                        <div style={{ position: 'relative' }} ref={el => { shareWrapperRefs.current[p.id] = el; }}>
                           <button onClick={() => setShareOpenId(shareOpenId === p.id ? null : p.id)}
                             style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: `1px solid ${copiedId === p.id ? 'var(--pos)' : 'var(--line)'}`, borderRadius: 'var(--radius-sm)', background: copiedId === p.id ? 'rgba(10,122,69,.08)' : 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: copiedId === p.id ? 'var(--pos)' : 'var(--ink-2)', transition: 'all .2s' }}>
                             {copiedId === p.id
@@ -594,8 +609,6 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
                           </button>
                           {shareOpenId === p.id && (
                             <>
-                              {/* backdrop to close */}
-                              <div onClick={() => setShareOpenId(null)} style={{ position: 'fixed', inset: 0, zIndex: 299 }} />
                               <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 300, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', boxShadow: '0 8px 24px rgba(0,0,0,.12)', minWidth: 160, overflow: 'hidden' }}>
                                 {/* LINE */}
                                 <button onClick={() => handleLineShare(p)}
@@ -618,6 +631,7 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
                             </>
                           )}
                         </div>
+
 
                         {/* More / Edit / Delete */}
                         <button onClick={() => { if (isEditing) setEditId(null); else { setEditId(p.id); setEditForm({ title: p.title ?? '', price: String(p.price ?? ''), description: p.description ?? '' }); } }}

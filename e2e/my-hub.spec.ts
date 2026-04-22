@@ -688,6 +688,78 @@ test.describe('V8Hub — Profile tab', () => {
 });
 
 // =============================================================================
+// SELL: LISTINGS — share popover
+// =============================================================================
+
+test.describe('V8Hub — SellListings: share popover', () => {
+
+  test('clicking "แชร์" opens the share popover', async ({ page }) => {
+    await openSellHub(page);
+    await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
+    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: /คัดลอก URL/ })).toBeVisible();
+  });
+
+  test('popover closes when clicking backdrop', async ({ page }) => {
+    await openSellHub(page);
+    await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
+    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).toBeVisible();
+    // click backdrop (top-left corner)
+    await page.mouse.click(10, 10);
+    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).not.toBeVisible();
+  });
+
+  test('clicking "แชร์ไป LINE" opens LINE share URL in new tab', async ({ page }) => {
+    await openSellHub(page);
+    await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
+    const [newPage] = await Promise.all([
+      page.context().waitForEvent('page'),
+      hub(page).getByRole('button', { name: 'แชร์ไป LINE' }).click(),
+    ]);
+    expect(newPage.url()).toContain('social-plugins.line.me');
+    await newPage.close();
+  });
+
+  test('clicking "คัดลอก URL" copies URL and shows "คัดลอกแล้ว!"', async ({ page }) => {
+    // Grant clipboard-write permission
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await openSellHub(page);
+    await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
+    await hub(page).getByRole('button', { name: /คัดลอก URL/ }).click();
+    // Popover closes and button shows "คัดลอกแล้ว!"
+    await expect(hub(page).getByRole('button', { name: 'คัดลอกแล้ว!' })).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).not.toBeVisible();
+  });
+
+  test('"คัดลอกแล้ว!" reverts back to "แชร์" after 2 seconds', async ({ page }) => {
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await openSellHub(page);
+    await hub(page).getByRole('button', { name: 'แชร์' }).first().click();
+    await hub(page).getByRole('button', { name: /คัดลอก URL/ }).click();
+    await expect(hub(page).getByRole('button', { name: 'คัดลอกแล้ว!' })).toBeVisible();
+    await expect(hub(page).getByRole('button', { name: 'แชร์' }).first()).toBeVisible({ timeout: 3000 });
+  });
+
+  test('each product has its own independent share popover', async ({ page }) => {
+    await openSellHub(page);
+    const shareBtns = hub(page).getByRole('button', { name: 'แชร์' });
+
+    // open first product's popover
+    await shareBtns.nth(0).click();
+    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).toBeVisible();
+
+    // click outside to close
+    await page.mouse.click(10, 10);
+    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).not.toBeVisible();
+
+    // open second product's popover — should work independently
+    await shareBtns.nth(1).click();
+    await expect(hub(page).getByRole('button', { name: 'แชร์ไป LINE' })).toBeVisible();
+  });
+
+});
+
+// =============================================================================
 // AUTH GUARD
 // =============================================================================
 
