@@ -152,11 +152,14 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<'all'|'unread'|'pinned'>('all');
   const chatRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const latestId = useRef(0);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   // Lock scroll + ESC
   useEffect(() => {
@@ -258,6 +261,34 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
     } catch {} finally {
       setSending(false);
     }
+  }
+
+  async function handleImageUpload(file: File) {
+    if (!token || !selectedRoom) return;
+    setUploadingImg(true);
+    const optimistic = { id: Date.now(), who: 'me', text: '__img__:uploading', time: nowTime() };
+    setMsgs(m => [...m, optimistic]);
+    try {
+      const msg = await api.sendChatImage(selectedRoom.id, file, token);
+      const content = msg.content ?? '';
+      setMsgs(m => m.map(x => x.id === optimistic.id
+        ? { ...x, text: content }
+        : x
+      ));
+      setRooms(rs => rs.map(r => r.id === selectedRoom.id
+        ? { ...r, last_message: '📷 รูปภาพ', updated_at: new Date().toISOString() }
+        : r
+      ));
+    } catch {
+      setMsgs(m => m.filter(x => x.id !== optimistic.id));
+    } finally {
+      setUploadingImg(false);
+    }
+  }
+
+  function insertEmoji(emoji: string) {
+    setDraft(d => d + emoji);
+    setShowEmoji(false);
   }
 
   function timeAgo(dateStr?: string) {
@@ -603,13 +634,26 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
                         }}>{getInitials(sellerName)}</div>
                       )}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: m.who === 'me' ? 'flex-end' : 'flex-start' }}>
-                        <div style={{
-                          padding: '9px 13px', borderRadius: 18, fontSize: 13.5, lineHeight: 1.45, wordBreak: 'break-word',
-                          background: m.who === 'me' ? 'var(--accent)' : 'var(--line-2)',
-                          color: m.who === 'me' ? '#fff' : 'var(--ink)',
-                          borderBottomRightRadius: m.who === 'me' ? 4 : 18,
-                          borderBottomLeftRadius: m.who !== 'me' ? 4 : 18,
-                        }}>{m.text}</div>
+                        {m.text === '__img__:uploading' ? (
+                          <div style={{ padding: '9px 13px', borderRadius: 18, background: m.who === 'me' ? 'var(--accent)' : 'var(--line-2)', color: m.who === 'me' ? '#fff' : 'var(--ink)', opacity: 0.6, fontSize: 13 }}>
+                            📷 กำลังอัพโหลด…
+                          </div>
+                        ) : m.text.startsWith('__img__:') ? (
+                          <img
+                            src={m.text.slice(8)}
+                            alt="รูปภาพ"
+                            style={{ maxWidth: 220, maxHeight: 280, borderRadius: 12, display: 'block', cursor: 'pointer', objectFit: 'cover' }}
+                            onClick={() => window.open(m.text.slice(8), '_blank')}
+                          />
+                        ) : (
+                          <div style={{
+                            padding: '9px 13px', borderRadius: 18, fontSize: 13.5, lineHeight: 1.45, wordBreak: 'break-word',
+                            background: m.who === 'me' ? 'var(--accent)' : 'var(--line-2)',
+                            color: m.who === 'me' ? '#fff' : 'var(--ink)',
+                            borderBottomRightRadius: m.who === 'me' ? 4 : 18,
+                            borderBottomLeftRadius: m.who !== 'me' ? 4 : 18,
+                          }}>{m.text}</div>
+                        )}
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', padding: '0 4px' }}>{m.time}</div>
                       </div>
                     </div>
@@ -623,25 +667,72 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
                   ))}
                 </div>
 
+                {/* Input area wrapper (relative for emoji picker) */}
+                <div style={{ position: 'relative', flexShrink: 0, width: '100%' }}>
+
+                {/* Emoji picker */}
+                {showEmoji && (
+                  <div style={{
+                    position: 'absolute', bottom: '100%', left: 0, marginBottom: 6,
+                    background: 'var(--surface)', border: '1px solid var(--line)',
+                    borderRadius: 'var(--radius)', boxShadow: '0 8px 24px rgba(0,0,0,.12)',
+                    padding: 10, zIndex: 300, display: 'flex', flexWrap: 'wrap', gap: 2, maxWidth: 280,
+                  }}>
+                    {['😊','😂','🥰','😍','🤩','😎','🙏','👍','👏','🎉','❤️','💕','🔥','✨','💯','😅','😭','🤔','😴','🥺','😤','🫡','💪','👀','🙈','🐱','🎁','💰','📦','⭐'].map(e => (
+                      <button key={e} type="button" onClick={() => insertEmoji(e)}
+                        style={{ width: 36, height: 36, border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={ev => { (ev.currentTarget as HTMLElement).style.background = 'var(--surface-2)'; }}
+                        onMouseLeave={ev => { (ev.currentTarget as HTMLElement).style.background = 'none'; }}>
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {/* Input */}
                 <form onSubmit={e => { e.preventDefault(); handleSend(); }}
-                  style={{ display: 'flex', gap: 6, padding: '10px 14px', borderTop: '1px solid var(--line)', background: 'var(--surface)', alignItems: 'center', flexShrink: 0 }}>
+                  style={{ display: 'flex', gap: 6, padding: '10px 14px', borderTop: '1px solid var(--line)', background: 'var(--surface)', alignItems: 'center' }}>
 
-                  {/* Attach */}
-                  <button type="button" style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%', flexShrink: 0 }} title="แนบรูป">
-                    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m3 17 5-5 6 6 4-4 3 3"/></svg>
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(file);
+                      e.target.value = '';
+                    }}
+                  />
+
+                  {/* Attach image button */}
+                  <button
+                    type="button"
+                    disabled={uploadingImg}
+                    onClick={() => fileRef.current?.click()}
+                    style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: uploadingImg ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%', flexShrink: 0, opacity: uploadingImg ? 0.5 : 1 }}
+                    title="แนบรูป">
+                    {uploadingImg
+                      ? <IconSpin />
+                      : <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m3 17 5-5 6 6 4-4 3 3"/></svg>
+                    }
                   </button>
-                  {/* Emoji */}
-                  <button type="button" style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%', flexShrink: 0 }} title="อิโมจิ">
+
+                  {/* Emoji button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowEmoji(v => !v)}
+                    style={{ width: 32, height: 32, border: 'none', background: showEmoji ? 'var(--surface-2)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%', flexShrink: 0 }}
+                    title="อิโมจิ">
                     <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
                   </button>
-                  {/* GIF */}
-                  <button type="button" style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)', borderRadius: '50%', flexShrink: 0, fontSize: 10, fontWeight: 800 }} title="GIF">GIF</button>
 
                   <input
                     data-testid="chat-input"
                     value={draft}
                     onChange={e => setDraft(e.target.value)}
+                    onFocus={() => setShowEmoji(false)}
                     placeholder="พิมพ์ข้อความ…"
                     style={{
                       flex: 1, padding: '10px 14px', border: '1px solid var(--line)', borderRadius: 999,
@@ -675,6 +766,7 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
                     </button>
                   )}
                 </form>
+                </div>{/* end input area wrapper */}
               </>
             ) : (
               /* Empty state - desktop only, no room selected */

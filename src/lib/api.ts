@@ -90,6 +90,22 @@ export const sendMessage = (roomId: number, content: string, token: string) =>
     body: JSON.stringify({ content }),
   }, token);
 
+export const getUnreadCount = (token: string) =>
+  req<{ unread: number }>('/api/chat/unread', {}, token);
+
+export const sendChatImage = async (roomId: number, file: File, token: string): Promise<any> => {
+  const form = new FormData();
+  form.append('image', file);
+  const res = await fetch(`${BASE}/api/chat/rooms/${roomId}/image`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'อัพโหลดรูปไม่สำเร็จ');
+  return data;
+};
+
 // ─── Wishlist ────────────────────────────────────────────────────────────────
 
 export const getWishlist = (token: string) =>

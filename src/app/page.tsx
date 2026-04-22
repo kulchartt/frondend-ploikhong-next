@@ -63,6 +63,7 @@ export default function HomePage() {
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [shopSellerId, setShopSellerId] = useState<number | null>(null);
+  const [unreadChat, setUnreadChat] = useState(0);
   const isMobile = useBreakpoint(768);
   const token: string | undefined = (session as any)?.token;
   const debouncedSearch = useDebounce(search, 400);
@@ -91,6 +92,15 @@ export default function HomePage() {
   }, [debouncedSearch, sort, filters]);
 
   useEffect(() => { loadProducts(); }, [loadProducts]);
+
+  // Poll unread chat count every 30s
+  useEffect(() => {
+    if (!token) { setUnreadChat(0); return; }
+    const poll = () => api.getUnreadCount(token).then(d => setUnreadChat(d.unread ?? 0)).catch(() => {});
+    poll();
+    const t = setInterval(poll, 30000);
+    return () => clearInterval(t);
+  }, [token]);
 
   // Load wishlist from API when logged in
   useEffect(() => {
@@ -128,7 +138,8 @@ export default function HomePage() {
         onOpenAuth={() => { setAuthMode('login'); setAuthOpen(true); }}
         onResetPassword={() => { setAuthMode('reset'); setAuthOpen(true); }}
         onOpenListing={openListing}
-        onOpenChat={() => { if (!session?.user) { setAuthMode('login'); setAuthOpen(true); return; } setChatOpen(true); }}
+        unreadChat={unreadChat}
+        onOpenChat={() => { if (!session?.user) { setAuthMode('login'); setAuthOpen(true); return; } setChatOpen(true); setUnreadChat(0); }}
         onOpenHub={(mode, tab) => {
           if (!session?.user) { setAuthMode('login'); setAuthOpen(true); return; }
           setHubOpen({ mode, tab });
