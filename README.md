@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛍️ PloiKhong — Frontend (Next.js 14)
 
-## Getting Started
+UI ของ PloiKhong marketplace ของมือสอง พัฒนาด้วย Next.js 14 App Router + TypeScript
 
-First, run the development server:
+**Production:** https://frondend-ploikhong-next.vercel.app  
+**Backend API:** https://khai-claude-production.up.railway.app
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 📁 โครงสร้าง
+
+```
+src/
+├── app/
+│   ├── page.tsx              ← หน้าแรก (marketplace + sidebar + promo)
+│   ├── admin/page.tsx        ← Admin panel (KPI, users, products, premium)
+│   ├── terms/page.tsx        ← เงื่อนไขการใช้งาน
+│   ├── rules/page.tsx        ← กฎและข้อบังคับ (สินค้าต้องห้าม/ควบคุม)
+│   ├── refund/page.tsx       ← นโยบายการคืนสินค้า
+│   ├── privacy/page.tsx      ← นโยบายความเป็นส่วนตัว
+│   ├── layout.tsx            ← Root layout (fonts, metadata)
+│   └── providers.tsx         ← SessionProvider + BgColorApplier (theme sync)
+├── components/
+│   ├── Navbar.tsx            ← Top nav (logo, search, auth, hub, chat)
+│   ├── Sidebar.tsx           ← Category filter (real counts from DB)
+│   ├── MyHub.tsx             ← User hub: ซื้อ/ขาย/เหรียญ/ตั้งค่า/ธีม
+│   ├── ProductCard.tsx       ← Grid + List layout cards
+│   ├── ProductDetail.tsx     ← รายละเอียดสินค้า + analytics tracking
+│   ├── ListingFlow.tsx       ← Wizard ลงขาย/แก้ไขสินค้า
+│   ├── ChatDrawer.tsx        ← Real-time chat (Socket.io)
+│   ├── AuthModal.tsx         ← Login / Register modal
+│   └── ...
+└── lib/
+    └── api.ts                ← All API call functions (typed)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ✨ ฟีเจอร์หลัก
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### หน้า Marketplace (`/`)
+- แสดงสินค้าพร้อม Grid / List view toggle
+- Sidebar filter: หมวดหมู่ (จำนวนจริงจาก DB), ราคา, สภาพ, พื้นที่, วิธีส่ง
+- Promo banner → CTA ไปหน้า Premium
+- Feature rail: 4 cards (featured listing, auto-relist, analytics, more) → เปิด Premium tab
+- Footer: brand info, legal links, ปุ่มร้องเรียน
 
-## Learn More
+### ธีม & Appearance Preferences
+- เลือกสีพื้นหลัง 12 สี (BG_PALETTE) พร้อมปุ่ม Apply
+- Dark / Light mode toggle
+- Checkbox "จำการตั้งค่าข้ามอุปกรณ์" → sync ผ่าน backend DB
+- BgColorApplier ใน providers.tsx โหลด localStorage ก่อน (ไม่กระพริบ) แล้ว sync จาก session
 
-To learn more about Next.js, take a look at the following resources:
+### MyHub
+- **ซื้อ tab**: wishlist, offers ขาเข้า
+- **ขาย tab**: รายการสินค้า + สถานะ, ปุ่มลงขายใหม่, analytics
+- **เหรียญ tab**: ยอดเหรียญ, ซื้อเหรียญ PromptPay, เปิด features premium
+- **ตั้งค่า tab**: ธีมสี, dark mode, remember preferences
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Admin Panel (`/admin`)
+- KPI stats: users, products, revenue
+- จัดการ users: ban/unban, toggle admin
+- จัดการ products: search + delete
+- Premium tab: revenue sources breakdown, per-feature bars (ทุก 5 features เสมอ แม้ไม่มี data)
+- อนุมัติ/ปฏิเสธ payment requests
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🔧 Local Development
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+cp .env.local.example .env.local
+# แก้ไข NEXT_PUBLIC_API_URL, NEXTAUTH_SECRET, NEXTAUTH_URL, GOOGLE_CLIENT_ID/SECRET
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+npm install
+npm run dev   # http://localhost:3000
+```
+
+---
+
+## 🔑 Environment Variables
+
+```env
+NEXT_PUBLIC_API_URL=https://khai-claude-production.up.railway.app
+NEXTAUTH_SECRET=<random string>
+NEXTAUTH_URL=https://frondend-ploikhong-next.vercel.app
+GOOGLE_CLIENT_ID=<from Google Cloud Console>
+GOOGLE_CLIENT_SECRET=<from Google Cloud Console>
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| | |
+|---|---|
+| Framework | Next.js 14 App Router |
+| Language | TypeScript |
+| Styling | Inline styles + CSS variables (`globals.css`) |
+| Auth | NextAuth.js v5 (JWT + Google OAuth) |
+| Real-time | Socket.io client |
+| Deploy | Vercel (auto-deploy จาก GitHub push ที่ branch `master`) |
+
+---
+
+## 🎨 Design Tokens (`globals.css`)
+
+```css
+--accent: #e02d2d        /* red CTA */
+--ink / --ink-2 / --ink-3
+--surface / --surface-2
+--line
+--radius / --radius-sm
+--font-mono
+```
+
+Dark mode: `[data-theme="dark"]` selector ใน globals.css  
+ตั้งค่าผ่าน `document.documentElement.setAttribute('data-theme', 'dark')`
+
+---
+
+## 🧪 E2E Tests
+
+```bash
+npx playwright test          # run all tests
+npx playwright test --ui     # interactive mode
+```
+
+Reports อยู่ที่ `playwright-report/`
