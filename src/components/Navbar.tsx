@@ -1,7 +1,6 @@
 'use client';
 
 import { ChevronDown } from 'lucide-react';
-import { PloiWordmark } from './PloiLogo';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -72,7 +71,12 @@ export function Navbar({
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14,
         padding: isMobile ? '8px 14px' : '10px 20px', maxWidth: 1440, margin: '0 auto' }}>
 
-        <Link href="/"><PloiWordmark /></Link>
+        <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <span style={{ fontSize: 22 }}>🛍️</span>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: 'var(--ink)', letterSpacing: '-.02em' }}>
+            PloiKhong
+          </span>
+        </Link>
 
         {/* Search bar */}
         <div style={{ flex: 1, maxWidth: isMobile ? undefined : 640, display: 'flex',
