@@ -23,29 +23,29 @@ const MONEY_RAIL = [
     title: 'ลงขายฟรีไม่จำกัด',
     desc: 'โพสต์สินค้าได้ไม่มีเพดาน ไม่เก็บค่าธรรมเนียมลงประกาศ',
     featured: false,
-    icon: '🛍️',
+    cta: true,
   },
   {
     badge: '002',
     title: '⭐ สินค้าเด่น',
     desc: 'ปักหมุดขึ้นหน้าแนะนำ เพิ่มยอดเห็นสูงสุด 10 เท่า เริ่มเพียง 80 เหรียญ / 7 วัน',
     featured: true,
-    icon: '⭐',
+    cta: true,
   },
   {
     badge: '003',
     title: '🔔 แจ้งเตือนผู้ติดตาม',
     desc: 'ส่ง push อัตโนมัติถึงทุกคนที่ติดตามร้าน เมื่อคุณลดราคา — ปิดดีลเร็วขึ้น',
     featured: false,
-    icon: '🔔',
+    cta: true,
   },
   {
     badge: '004',
     title: 'ฟีเจอร์อื่นๆ',
     desc: 'Analytics Pro · ลงประกาศอัตโนมัติ · Priority Support และอีกมากมาย',
     featured: false,
-    icon: '✦',
     cta: true,
+    ctaLast: true,
   },
 ];
 
@@ -214,22 +214,22 @@ export default function HomePage() {
           }}>
             {MONEY_RAIL.map(m => (
               <div key={m.badge}
-                onClick={m.cta ? () => {
+                onClick={() => {
                   if (session?.user) setHubOpen({ mode: 'sell', tab: 'premium' });
                   else setAuthOpen(true);
-                } : undefined}
+                }}
                 style={{
                   background: m.featured ? 'var(--ink)' : 'var(--surface-2)',
                   color: m.featured ? 'var(--bg)' : 'var(--ink)',
                   borderRadius: 'var(--radius)',
                   padding: '14px 16px',
-                  border: m.cta
+                  border: (m as any).ctaLast
                     ? '1.5px dashed var(--line-2)'
                     : `1px solid ${m.featured ? 'var(--ink)' : 'var(--line)'}`,
                   display: 'flex', flexDirection: 'column', gap: 4,
                   position: 'relative', overflow: 'hidden',
-                  cursor: m.cta ? 'pointer' : 'default',
-                  transition: m.cta ? 'border-color .15s, background .15s' : undefined,
+                  cursor: 'pointer',
+                  transition: 'opacity .15s',
                 }}>
                 <span style={{
                   position: 'absolute', top: 10, right: 10,
@@ -244,13 +244,13 @@ export default function HomePage() {
                   display: 'flex', alignItems: 'center', gap: 6,
                 }}>
                   {m.title}
-                  {m.cta && <span style={{ fontSize: 13, color: 'var(--accent)' }}>→</span>}
+                  {(m as any).ctaLast && <span style={{ fontSize: 13, color: 'var(--accent)' }}>→</span>}
                 </div>
                 <div style={{
                   fontSize: 12, lineHeight: 1.5,
                   color: m.featured ? 'rgba(250,250,247,.72)' : 'var(--ink-2)',
                 }}>{m.desc}</div>
-                {m.cta && (
+                {(m as any).ctaLast && (
                   <div style={{ marginTop: 6, fontSize: 11, fontWeight: 600, color: 'var(--accent)' }}>
                     ดูทั้งหมด →
                   </div>
