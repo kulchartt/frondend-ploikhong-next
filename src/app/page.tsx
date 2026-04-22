@@ -165,42 +165,6 @@ export default function HomePage() {
         {/* Main */}
         <main>
 
-          {/* Promo Banner — gradient, not solid red */}
-          <div style={{
-            background: 'linear-gradient(120deg, var(--surface), var(--surface-2))',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius)',
-            padding: isMobile ? '14px 16px' : '18px 22px',
-            marginBottom: 18,
-            display: 'flex', alignItems: 'center', gap: 16,
-          }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 'var(--radius-sm)',
-              background: 'var(--accent)', color: '#fff',
-              display: isMobile ? 'none' : 'grid', placeItems: 'center',
-              fontWeight: 700, fontFamily: 'var(--font-display)',
-              fontSize: 18, flexShrink: 0,
-            }}>฿</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 16,
-                fontWeight: 700, letterSpacing: '-.01em', marginBottom: 2, color: 'var(--ink)' }}>
-                ขายของชิ้นแรกได้ใน 48 ชม. — การันตี
-              </div>
-              <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
-                ถ้าประกาศ 3 ชิ้นแรกไม่ได้รับข้อความภายใน 2 วัน เราจะ Boost ฟรีให้ทั้งหมด
-              </div>
-            </div>
-            <button
-              onClick={openListing}
-              style={{
-                padding: '9px 16px', background: 'var(--accent)', color: '#fff',
-                border: 'none', borderRadius: 'var(--radius-sm)',
-                fontWeight: 500, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap',
-              }}>
-              ลงขายฟรี
-            </button>
-          </div>
-
           {/* Money Rail — bordered container */}
           <div style={{
             background: 'var(--surface)',
