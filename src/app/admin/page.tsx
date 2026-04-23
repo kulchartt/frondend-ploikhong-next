@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import * as api from '@/lib/api';
 
@@ -747,6 +747,7 @@ function ComplaintsTab({ token }: { token: string }) {
   const [messages, setMessages] = useState<Record<number, any[]>>({});
   const [msgsLoading, setMsgsLoading] = useState<Record<number, boolean>>({});
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const expandedIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -755,6 +756,27 @@ function ComplaintsTab({ token }: { token: string }) {
       .catch(e => setErr(e.message))
       .finally(() => setLoading(false));
   }, [filter, token]);
+
+  // Keep ref in sync so the polling interval can read the latest expandedId
+  useEffect(() => { expandedIdRef.current = expandedId; }, [expandedId]);
+
+  // Auto-poll messages every 8s when a chat thread is open
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const id = expandedIdRef.current;
+      if (id === null) return;
+      try {
+        const msgs = await api.getComplaintMessages(id, token);
+        setMessages(prev => {
+          const existing = prev[id] || [];
+          // Only update if there are actually new messages (avoid unnecessary re-renders)
+          if (msgs.length === existing.length) return prev;
+          return { ...prev, [id]: msgs };
+        });
+      } catch {}
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [token]);
 
   const updateStatus = async (id: number, status: string) => {
     try {
