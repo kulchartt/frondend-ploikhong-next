@@ -37,11 +37,12 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string; dot
 };
 
 const SELL_NAV = [
-  { k: 'listings',  label: 'สินค้าของฉัน' },
-  { k: 'offers',    label: 'คำขอราคา' },
-  { k: 'insights',  label: 'สถิติ' },
-  { k: 'premium',   label: 'Premium & เหรียญ' },
-  { k: 'profile',   label: 'ตั้งค่าร้านค้า' },
+  { k: 'listings',   label: 'สินค้าของฉัน' },
+  { k: 'offers',     label: 'คำขอราคา' },
+  { k: 'insights',   label: 'สถิติ' },
+  { k: 'premium',    label: 'Premium & เหรียญ' },
+  { k: 'profile',    label: 'ตั้งค่าร้านค้า' },
+  { k: 'complaints', label: '🚨 ร้องเรียนของฉัน' },
 ];
 
 const BUY_NAV = [
@@ -49,7 +50,6 @@ const BUY_NAV = [
   { k: 'offers',        label: 'ข้อเสนอของฉัน' },
   { k: 'notifications', label: 'การแจ้งเตือน' },
   { k: 'following',     label: 'ร้านที่ติดตาม' },
-  { k: 'complaints',    label: '🚨 ร้องเรียนของฉัน' },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -251,16 +251,16 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
               </button>
             </div>
           )}
-          {mode === 'sell' && sellTab === 'listings'  && <SellListings token={token} onNewListing={onNewListing} />}
-          {mode === 'sell' && sellTab === 'offers'    && <SellOffers token={token} onBadgeChange={setPendingSellOffers} />}
-          {mode === 'sell' && sellTab === 'insights'  && <SellInsights token={token} />}
-          {mode === 'sell' && sellTab === 'premium'   && <SellPremium token={token} isAdmin={!!(session as any)?.user?.is_admin} />}
-          {mode === 'sell' && sellTab === 'profile'   && <HubProfile session={session} mode="sell" />}
+          {mode === 'sell' && sellTab === 'listings'   && <SellListings token={token} onNewListing={onNewListing} />}
+          {mode === 'sell' && sellTab === 'offers'     && <SellOffers token={token} onBadgeChange={setPendingSellOffers} />}
+          {mode === 'sell' && sellTab === 'insights'   && <SellInsights token={token} />}
+          {mode === 'sell' && sellTab === 'premium'    && <SellPremium token={token} isAdmin={!!(session as any)?.user?.is_admin} />}
+          {mode === 'sell' && sellTab === 'profile'    && <HubProfile session={session} mode="sell" />}
+          {mode === 'sell' && sellTab === 'complaints' && <BuyComplaints token={token} />}
           {mode === 'buy'  && buyTab === 'saved'         && <BuySaved token={token} onOpenChat={onOpenChat ? () => { onClose(); onOpenChat(); } : undefined} onViewProduct={onViewProduct ? (p) => { onClose(); onViewProduct(p); } : undefined} />}
           {mode === 'buy'  && buyTab === 'offers'        && <BuyOffers token={token} />}
           {mode === 'buy'  && buyTab === 'notifications' && <BuyNotifications token={token} />}
           {mode === 'buy'  && buyTab === 'following'     && <BuyFollowing token={token} />}
-          {mode === 'buy'  && buyTab === 'complaints'    && <BuyComplaints token={token} />}
         </main>
       </div>
     </div>
