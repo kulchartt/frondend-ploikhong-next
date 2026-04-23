@@ -15,7 +15,7 @@ interface AuthModalProps {
 
 export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalProps) {
   const [mode, setMode] = useState<Mode>(initialMode);
-  const dragging = useRef(false);
+  const mouseDownInside = useRef(false);
 
   // Reset to initialMode whenever modal opens
   useEffect(() => {
@@ -78,12 +78,11 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
 
   return (
     <div data-testid="auth-modal"
-      onMouseDown={() => { dragging.current = false; }}
-      onMouseMove={e => { if (e.buttons > 0) dragging.current = true; }}
-      onClick={e => { if (e.target === e.currentTarget && !dragging.current) onClose(); dragging.current = false; }}
+      onMouseDown={e => { if (e.target === e.currentTarget) mouseDownInside.current = false; }}
+      onClick={e => { if (e.target === e.currentTarget && !mouseDownInside.current) onClose(); mouseDownInside.current = false; }}
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
       zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div>
+      <div onMouseDown={() => { mouseDownInside.current = true; }}>
         style={{ background: 'var(--surface)', borderRadius: 12, padding: 36, width: '100%',
           maxWidth: 420, boxShadow: '0 30px 80px rgba(0,0,0,.35)', position: 'relative' }}>
 
