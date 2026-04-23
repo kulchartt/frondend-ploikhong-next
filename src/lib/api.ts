@@ -231,6 +231,12 @@ export const rejectPayment = (id: number, note: string, token: string) =>
 export const getMyComplaints = (token: string) =>
   req<any[]>('/api/complaints/my', {}, token);
 
+export const getComplaintMessages = (id: number, token: string) =>
+  req<any[]>(`/api/complaints/${id}/messages`, {}, token);
+
+export const sendComplaintMessage = (id: number, content: string, token: string) =>
+  req<any>(`/api/complaints/${id}/messages`, { method: 'POST', body: JSON.stringify({ content }) }, token);
+
 export const getComplaints = (status: string, token: string) =>
   req<any[]>(`/api/complaints${status ? `?status=${status}` : ''}`, {}, token);
 

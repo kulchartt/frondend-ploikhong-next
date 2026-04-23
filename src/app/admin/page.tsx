@@ -744,6 +744,9 @@ function ComplaintsTab({ token }: { token: string }) {
   const [err, setErr] = useState('');
   const [replyDraft, setReplyDraft] = useState<Record<number, string>>({});
   const [replySending, setReplySending] = useState<Record<number, boolean>>({});
+  const [messages, setMessages] = useState<Record<number, any[]>>({});
+  const [msgsLoading, setMsgsLoading] = useState<Record<number, boolean>>({});
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -760,18 +763,37 @@ function ComplaintsTab({ token }: { token: string }) {
     } catch (e: any) { alert(e.message); }
   };
 
+  const loadMessages = async (id: number) => {
+    setMsgsLoading(prev => ({ ...prev, [id]: true }));
+    try {
+      const msgs = await api.getComplaintMessages(id, token);
+      setMessages(prev => ({ ...prev, [id]: msgs }));
+    } catch {}
+    finally { setMsgsLoading(prev => ({ ...prev, [id]: false })); }
+  };
+
+  const toggleExpand = (id: number) => {
+    if (expandedId === id) { setExpandedId(null); return; }
+    setExpandedId(id);
+    if (!messages[id]) loadMessages(id);
+  };
+
   const sendReply = async (id: number, newStatus?: string) => {
     const reply = replyDraft[id]?.trim();
     if (!reply) return;
     setReplySending(prev => ({ ...prev, [id]: true }));
     try {
-      const body: any = { admin_reply: reply };
-      if (newStatus) body.status = newStatus;
-      await api.updateComplaintStatus(id, body, token);
-      setComplaints(prev => prev.map(c =>
-        c.id === id ? { ...c, admin_reply: reply, replied_at: new Date().toISOString(), ...(newStatus ? { status: newStatus } : {}) } : c
-      ));
-      setReplyDraft(prev => ({ ...prev, [id]: '' }));
+      const msg = await api.sendComplaintMessage(id, reply, token);
+      // update messages list
+      setMessages(prev => ({ ...prev, [id]: [...(prev[id] || []), msg] }));
+      // update status if needed
+      if (newStatus) {
+        await api.updateComplaintStatus(id, newStatus, token);
+        setComplaints(prev => prev.map(c => c.id === id ? { ...c, status: newStatus, admin_reply: reply } : c));
+      } else {
+        setComplaints(prev => prev.map(c => c.id === id ? { ...c, admin_reply: reply } : c));
+      }
+      setReplyDraft(prev => ({ ...prev, [id]: '' })); // clear ONLY the input, sent msg shows in list
     } catch (e: any) { alert(e.message); }
     finally { setReplySending(prev => ({ ...prev, [id]: false })); }
   };
@@ -833,49 +855,64 @@ function ComplaintsTab({ token }: { token: string }) {
               <p style={{ fontSize: 14, color: '#1e293b', marginBottom: 8, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{c.detail}</p>
               {c.contact && <div style={{ fontSize: 12, color: '#475569', marginBottom: 12 }}>📞 ช่องทางติดต่อ: <strong>{c.contact}</strong></div>}
 
-              {/* Existing reply */}
-              {c.admin_reply && (
-                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13 }}>
-                  <div style={{ fontWeight: 600, color: '#15803d', marginBottom: 4 }}>🛡️ ตอบกลับแล้ว · {c.replied_at ? new Date(c.replied_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}</div>
-                  <div style={{ color: '#166534', lineHeight: 1.6 }}>{c.admin_reply}</div>
-                </div>
-              )}
-
               {/* Status buttons */}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
                 {c.status === 'pending' && <>
                   <ActionBtn onClick={() => updateStatus(c.id, 'reviewing')} variant="default">🔍 ตรวจสอบ</ActionBtn>
-                  <ActionBtn onClick={() => updateStatus(c.id, 'resolved')} variant="success">✅ แก้ไขแล้ว</ActionBtn>
+                  <ActionBtn onClick={() => updateStatus(c.id, 'resolved')} variant="success">✅ ปิดเรื่อง</ActionBtn>
                   <ActionBtn onClick={() => updateStatus(c.id, 'rejected')} variant="danger">❌ ปฏิเสธ</ActionBtn>
                 </>}
                 {c.status === 'reviewing' && <>
-                  <ActionBtn onClick={() => updateStatus(c.id, 'resolved')} variant="success">✅ แก้ไขแล้ว</ActionBtn>
+                  <ActionBtn onClick={() => updateStatus(c.id, 'resolved')} variant="success">✅ ปิดเรื่อง</ActionBtn>
                   <ActionBtn onClick={() => updateStatus(c.id, 'rejected')} variant="danger">❌ ปฏิเสธ</ActionBtn>
                 </>}
+                {c.user_id && (
+                  <ActionBtn onClick={() => toggleExpand(c.id)} variant="default">
+                    💬 {expandedId === c.id ? 'ซ่อน' : `แชท${c.admin_reply ? ' (ตอบแล้ว)' : ''}`}
+                  </ActionBtn>
+                )}
               </div>
 
-              {/* Reply box */}
-              {c.user_id && (
+              {/* Chat thread (expandable) */}
+              {expandedId === c.id && c.user_id && (
                 <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 12 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>💬 ตอบกลับผู้ใช้ {c.admin_reply ? '(แก้ไขการตอบกลับ)' : ''}</div>
+                  {/* Messages */}
+                  {msgsLoading[c.id] ? (
+                    <div style={{ color: '#94a3b8', fontSize: 13, padding: '8px 0' }}>กำลังโหลด...</div>
+                  ) : (
+                    <div style={{ maxHeight: 240, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+                      {(messages[c.id] || []).length === 0 && (
+                        <div style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: '12px 0' }}>ยังไม่มีข้อความ</div>
+                      )}
+                      {(messages[c.id] || []).map((m: any) => (
+                        <div key={m.id} style={{ display: 'flex', justifyContent: m.sender_type === 'admin' ? 'flex-end' : 'flex-start' }}>
+                          <div style={{ maxWidth: '80%', padding: '8px 12px', borderRadius: m.sender_type === 'admin' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                            background: m.sender_type === 'admin' ? '#0f172a' : '#f1f5f9', color: m.sender_type === 'admin' ? '#f59e0b' : '#1e293b', fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                            {m.content}
+                            <div style={{ fontSize: 10, opacity: .6, marginTop: 3, textAlign: 'right' }}>
+                              {new Date(m.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Input */}
                   <div style={{ display: 'flex', gap: 8 }}>
                     <textarea
-                      value={replyDraft[c.id] || (c.admin_reply || '')}
+                      value={replyDraft[c.id] || ''}
                       onChange={e => setReplyDraft(prev => ({ ...prev, [c.id]: e.target.value }))}
-                      placeholder="พิมพ์ข้อความตอบกลับ..."
+                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(c.id); } }}
+                      placeholder="พิมพ์ข้อความ... (Enter ส่ง)"
                       rows={2}
                       style={{ flex: 1, padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', outline: 'none', background: '#f8fafc' }}
                     />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      <button
-                        onClick={() => sendReply(c.id)}
-                        disabled={replySending[c.id] || !(replyDraft[c.id]?.trim())}
+                      <button onClick={() => sendReply(c.id)} disabled={replySending[c.id] || !(replyDraft[c.id]?.trim())}
                         style={{ padding: '7px 14px', background: '#0f172a', color: '#f59e0b', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: replySending[c.id] ? .6 : 1, whiteSpace: 'nowrap' }}>
                         {replySending[c.id] ? '...' : '📨 ส่ง'}
                       </button>
-                      <button
-                        onClick={() => sendReply(c.id, 'resolved')}
-                        disabled={replySending[c.id] || !(replyDraft[c.id]?.trim())}
+                      <button onClick={() => sendReply(c.id, 'resolved')} disabled={replySending[c.id] || !(replyDraft[c.id]?.trim())}
                         style={{ padding: '7px 14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: replySending[c.id] ? .6 : 1, whiteSpace: 'nowrap' }}>
                         ✅ ส่ง+ปิด
                       </button>
