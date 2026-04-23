@@ -201,7 +201,7 @@ export function Navbar({
                       { label: 'สินค้าของฉัน',     icon: <DropStoreIcon />,     action: () => onOpenHub?.('sell') },
                       { label: 'การซื้อของฉัน',    icon: <DropBagIcon />,       action: () => onOpenHub?.('buy') },
                       { label: 'รายการถูกใจ',      icon: <DropHeartIcon />,     action: () => onOpenHub?.('buy', 'saved') },
-                      { label: 'ร้องเรียนของฉัน',  icon: <DropAlertIcon />,     action: () => onOpenHub?.('sell', 'complaints') },
+                      { label: 'ร้องเรียนของฉัน',  icon: <DropAlertIcon />,     action: () => window.location.href = '/complaints' },
                     ] as { label: string; icon: React.ReactNode; action: () => void }[]).map(({ label, icon, action }) => (
                       <button key={label} onClick={action}
                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%',
