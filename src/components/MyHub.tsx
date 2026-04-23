@@ -49,6 +49,7 @@ const BUY_NAV = [
   { k: 'offers',        label: 'ข้อเสนอของฉัน' },
   { k: 'notifications', label: 'การแจ้งเตือน' },
   { k: 'following',     label: 'ร้านที่ติดตาม' },
+  { k: 'complaints',    label: '🚨 ร้องเรียนของฉัน' },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -259,6 +260,7 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
           {mode === 'buy'  && buyTab === 'offers'        && <BuyOffers token={token} />}
           {mode === 'buy'  && buyTab === 'notifications' && <BuyNotifications token={token} />}
           {mode === 'buy'  && buyTab === 'following'     && <BuyFollowing token={token} />}
+          {mode === 'buy'  && buyTab === 'complaints'    && <BuyComplaints token={token} />}
         </main>
       </div>
     </div>
@@ -1505,6 +1507,102 @@ function BuyFollowing({ token }: { token?: string }) {
           })}
         </div>
       )}
+    </PageWrap>
+  );
+}
+
+// ─── Buy: My Complaints ───────────────────────────────────────────────────────
+
+function BuyComplaints({ token }: { token?: string }) {
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState('');
+
+  useEffect(() => {
+    if (!token) return;
+    api.getMyComplaints(token)
+      .then(setComplaints)
+      .catch(e => setErr(e.message))
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const statusInfo: Record<string, { label: string; color: string; icon: string }> = {
+    pending:   { label: 'รอดำเนินการ',     color: '#d97706', icon: '⏳' },
+    reviewing: { label: 'กำลังตรวจสอบ',   color: '#2563eb', icon: '🔍' },
+    resolved:  { label: 'แก้ไขแล้ว',       color: '#16a34a', icon: '✅' },
+    rejected:  { label: 'ปฏิเสธ',          color: '#dc2626', icon: '❌' },
+  };
+
+  const typeLabel: Record<string, string> = {
+    fraud:   'ถูกโกง',
+    product: 'สินค้า',
+    user:    'ผู้ใช้',
+    payment: 'การชำระ',
+    other:   'อื่นๆ',
+  };
+
+  return (
+    <PageWrap title="🚨 ร้องเรียนของฉัน" subtitle="ติดตามสถานะเรื่องร้องเรียนที่คุณส่งไป">
+      {loading && <div style={{ color: 'var(--ink-3)', padding: 40, textAlign: 'center' }}>กำลังโหลด…</div>}
+      {err && <div style={{ color: 'var(--neg)', padding: 16 }}>{err}</div>}
+      {!loading && !err && complaints.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-3)' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>ยังไม่มีเรื่องร้องเรียน</div>
+          <div style={{ fontSize: 13 }}>เรื่องร้องเรียนที่คุณส่งจะแสดงที่นี่พร้อมสถานะ</div>
+        </div>
+      )}
+      {!loading && complaints.map(c => {
+        const s = statusInfo[c.status] || { label: c.status, color: '#64748b', icon: '📋' };
+        return (
+          <div key={c.id} style={{
+            background: 'var(--surface)', borderRadius: 12,
+            border: `1.5px solid ${s.color}30`,
+            borderLeft: `4px solid ${s.color}`,
+            padding: '16px 18px', marginBottom: 12,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 999, background: s.color + '18', color: s.color }}>
+                  {s.icon} {s.label}
+                </span>
+                <span style={{ fontSize: 12, color: 'var(--ink-3)', background: 'var(--bg)', padding: '2px 8px', borderRadius: 999 }}>
+                  {typeLabel[c.type] || c.type}
+                </span>
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+                #{c.id} · {new Date(c.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
+            </div>
+            <p style={{ fontSize: 14, color: 'var(--ink)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{c.detail}</p>
+            {c.contact && (
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 8 }}>
+                📞 ช่องทางติดต่อที่แจ้งไว้: {c.contact}
+              </div>
+            )}
+            {c.status === 'pending' && (
+              <div style={{ fontSize: 12, color: '#d97706', marginTop: 10, padding: '6px 10px', background: '#fef3c720', borderRadius: 8 }}>
+                ทีมงานจะตรวจสอบภายใน 24 ชั่วโมง
+              </div>
+            )}
+            {c.status === 'reviewing' && (
+              <div style={{ fontSize: 12, color: '#2563eb', marginTop: 10, padding: '6px 10px', background: '#eff6ff', borderRadius: 8 }}>
+                ทีมงานกำลังตรวจสอบเรื่องของคุณอยู่
+              </div>
+            )}
+            {c.status === 'resolved' && (
+              <div style={{ fontSize: 12, color: '#16a34a', marginTop: 10, padding: '6px 10px', background: '#f0fdf4', borderRadius: 8 }}>
+                เรื่องของคุณได้รับการแก้ไขแล้ว ขอบคุณที่แจ้งให้ทราบ 🙏
+              </div>
+            )}
+            {c.status === 'rejected' && (
+              <div style={{ fontSize: 12, color: '#dc2626', marginTop: 10, padding: '6px 10px', background: '#fff5f5', borderRadius: 8 }}>
+                ไม่สามารถดำเนินการตามเรื่องร้องเรียนนี้ได้
+              </div>
+            )}
+          </div>
+        );
+      })}
     </PageWrap>
   );
 }

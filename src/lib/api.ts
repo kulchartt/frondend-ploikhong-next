@@ -228,6 +228,9 @@ export const rejectPayment = (id: number, note: string, token: string) =>
 
 // ─── Complaints ──────────────────────────────────────────────────────────────
 
+export const getMyComplaints = (token: string) =>
+  req<any[]>('/api/complaints/my', {}, token);
+
 export const getComplaints = (status: string, token: string) =>
   req<any[]>(`/api/complaints${status ? `?status=${status}` : ''}`, {}, token);
 
