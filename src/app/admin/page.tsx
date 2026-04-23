@@ -937,16 +937,10 @@ function ComplaintsTab({ token }: { token: string }) {
                       rows={2}
                       style={{ flex: 1, padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', outline: 'none', background: '#f8fafc' }}
                     />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      <button onClick={() => sendReply(c.id)} disabled={replySending[c.id] || !(replyDraft[c.id]?.trim())}
-                        style={{ padding: '7px 14px', background: '#0f172a', color: '#f59e0b', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: replySending[c.id] ? .6 : 1, whiteSpace: 'nowrap' }}>
-                        {replySending[c.id] ? '...' : '📨 ส่ง'}
-                      </button>
-                      <button onClick={() => sendReply(c.id, 'resolved')} disabled={replySending[c.id] || !(replyDraft[c.id]?.trim())}
-                        style={{ padding: '7px 14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: replySending[c.id] ? .6 : 1, whiteSpace: 'nowrap' }}>
-                        ✅ ส่ง+ปิด
-                      </button>
-                    </div>
+                    <button onClick={() => sendReply(c.id)} disabled={replySending[c.id] || !(replyDraft[c.id]?.trim())}
+                      style={{ padding: '7px 14px', background: '#0f172a', color: '#f59e0b', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: replySending[c.id] ? .6 : 1, whiteSpace: 'nowrap', alignSelf: 'flex-end' }}>
+                      {replySending[c.id] ? '...' : '📨 ส่ง'}
+                    </button>
                   </div>
                 </div>
               )}
