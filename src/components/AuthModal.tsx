@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { signIn } from 'next-auth/react';
 import { PloiWordmark } from './PloiLogo';
 import { X, Eye, EyeOff } from 'lucide-react';
@@ -15,6 +15,7 @@ interface AuthModalProps {
 
 export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalProps) {
   const [mode, setMode] = useState<Mode>(initialMode);
+  const dragging = useRef(false);
 
   // Reset to initialMode whenever modal opens
   useEffect(() => {
@@ -77,10 +78,12 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
 
   return (
     <div data-testid="auth-modal"
-      onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={() => { dragging.current = false; }}
+      onMouseMove={e => { if (e.buttons > 0) dragging.current = true; }}
+      onClick={e => { if (e.target === e.currentTarget && !dragging.current) onClose(); dragging.current = false; }}
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
       zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onMouseDown={e => e.stopPropagation()}>
+      <div>
         style={{ background: 'var(--surface)', borderRadius: 12, padding: 36, width: '100%',
           maxWidth: 420, boxShadow: '0 30px 80px rgba(0,0,0,.35)', position: 'relative' }}>
 
