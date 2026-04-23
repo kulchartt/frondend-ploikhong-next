@@ -775,7 +775,7 @@ function ComplaintsTab({ token }: { token: string }) {
   const toggleExpand = (id: number) => {
     if (expandedId === id) { setExpandedId(null); return; }
     setExpandedId(id);
-    if (!messages[id]) loadMessages(id);
+    loadMessages(id); // always reload to catch new user messages
   };
 
   const sendReply = async (id: number, newStatus?: string) => {
@@ -876,6 +876,14 @@ function ComplaintsTab({ token }: { token: string }) {
               {/* Chat thread (expandable) */}
               {expandedId === c.id && c.user_id && (
                 <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 12 }}>
+                  {/* Messages header with refresh */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>💬 ประวัติการสนทนา</span>
+                    <button onClick={() => loadMessages(c.id)} disabled={msgsLoading[c.id]}
+                      style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 6, padding: '3px 8px', fontSize: 11, color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      {msgsLoading[c.id] ? '⏳' : '🔄 รีเฟรช'}
+                    </button>
+                  </div>
                   {/* Messages */}
                   {msgsLoading[c.id] ? (
                     <div style={{ color: '#94a3b8', fontSize: 13, padding: '8px 0' }}>กำลังโหลด...</div>
