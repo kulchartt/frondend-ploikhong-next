@@ -1542,7 +1542,9 @@ function BuyComplaints({ token }: { token?: string }) {
   };
 
   return (
-    <PageWrap title="🚨 ร้องเรียนของฉัน" subtitle="ติดตามสถานะเรื่องร้องเรียนที่คุณส่งไป">
+    <PageWrap>
+      <PageH1>🚨 ร้องเรียนของฉัน</PageH1>
+      <PageSub>ติดตามสถานะเรื่องร้องเรียนที่คุณส่งไป</PageSub>
       {loading && <div style={{ color: 'var(--ink-3)', padding: 40, textAlign: 'center' }}>กำลังโหลด…</div>}
       {err && <div style={{ color: 'var(--neg)', padding: 16 }}>{err}</div>}
       {!loading && !err && complaints.length === 0 && (
