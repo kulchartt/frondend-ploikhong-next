@@ -58,6 +58,9 @@ export default function HomePage() {
   const [sort, setSort] = useState('newest');
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'reset'>('login');
+  const [complaintOpen, setComplaintOpen] = useState(false);
+  const [complaintForm, setComplaintForm] = useState({ type: 'สินค้าผิดกฎหมาย', detail: '', contact: '' });
+  const [complaintSent, setComplaintSent] = useState(false);
   const [listingOpen, setListingOpen] = useState(false);
   const [hubOpen, setHubOpen] = useState<{ mode: 'sell' | 'buy'; tab?: string } | null>(null);
   const [wishlistOpen, setWishlistOpen] = useState(false);
@@ -396,9 +399,9 @@ export default function HomePage() {
             <div style={{ flex: '1 1 120px' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 12 }}>ความช่วยเหลือ</div>
               {[
-                { label: 'ศูนย์ช่วยเหลือ',        href: 'mailto:support@ploikhong.com' },
-                { label: 'วิธีการใช้งาน',           href: 'mailto:support@ploikhong.com' },
-                { label: 'ความปลอดภัยในการซื้อขาย', href: 'mailto:support@ploikhong.com' },
+                { label: 'ศูนย์ช่วยเหลือ',        href: '/help' },
+                { label: 'วิธีการใช้งาน',           href: '/guide' },
+                { label: 'ความปลอดภัยในการซื้อขาย', href: '/rules' },
               ].map(item => (
                 <div key={item.label} style={{ marginBottom: 8 }}>
                   <a href={item.href} style={{ fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>{item.label}</a>
@@ -447,17 +450,16 @@ export default function HomePage() {
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>⚠️ พบสินค้าผิดกฎหมายหรือต้องการร้องเรียน?</div>
               <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>แจ้งทีมงานได้ทันที เราจะตรวจสอบและดำเนินการภายใน 24 ชั่วโมง</div>
             </div>
-            <a
-              href="mailto:report@ploikhong.com?subject=ร้องเรียน/แจ้งปัญหา"
+            <button
+              onClick={() => setComplaintOpen(true)}
               style={{
-                display: 'inline-block', padding: '9px 20px',
-                background: 'var(--neg)', color: '#fff',
-                borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 700,
-                textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0,
+                padding: '9px 20px', background: 'var(--neg)', color: '#fff',
+                border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 700,
+                cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
               🚨 ร้องเรียน / แจ้งปัญหา
-            </a>
+            </button>
           </div>
 
           {/* Bottom bar */}
@@ -499,6 +501,69 @@ export default function HomePage() {
         />
       )}
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} initialMode={authMode} />
+
+      {/* Complaint Modal */}
+      {complaintOpen && (
+        <div onClick={() => { setComplaintOpen(false); setComplaintSent(false); setComplaintForm({ type: 'สินค้าผิดกฎหมาย', detail: '', contact: '' }); }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: 'var(--surface)', borderRadius: 12, padding: 32, width: '100%', maxWidth: 460, boxShadow: '0 30px 80px rgba(0,0,0,.3)' }}>
+            {complaintSent ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
+                <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>รับเรื่องแล้วครับ</div>
+                <div style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 24 }}>ทีมงานจะตรวจสอบและดำเนินการภายใน 24 ชั่วโมง</div>
+                <button onClick={() => { setComplaintOpen(false); setComplaintSent(false); setComplaintForm({ type: 'สินค้าผิดกฎหมาย', detail: '', contact: '' }); }}
+                  style={{ padding: '10px 28px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer' }}>
+                  ปิด
+                </button>
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>🚨 ร้องเรียน / แจ้งปัญหา</div>
+                <div style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 20 }}>ทีมงานจะดำเนินการภายใน 24 ชั่วโมง</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>ประเภทปัญหา</div>
+                    <select value={complaintForm.type} onChange={e => setComplaintForm(f => ({ ...f, type: e.target.value }))}
+                      style={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 14, background: 'var(--surface)', color: 'var(--ink)' }}>
+                      <option>สินค้าผิดกฎหมาย</option>
+                      <option>สินค้าไม่ตรงปก</option>
+                      <option>ผู้ใช้ละเมิดกฎ</option>
+                      <option>การโกงหรือฉ้อโกง</option>
+                      <option>เนื้อหาไม่เหมาะสม</option>
+                      <option>อื่นๆ</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>รายละเอียด</div>
+                    <textarea value={complaintForm.detail} onChange={e => setComplaintForm(f => ({ ...f, detail: e.target.value }))}
+                      placeholder="อธิบายปัญหาที่พบ เช่น ลิงก์สินค้า ชื่อผู้ใช้ หรือรายละเอียดอื่นๆ"
+                      rows={4} style={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 14, background: 'var(--surface)', color: 'var(--ink)', resize: 'vertical', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>ช่องทางติดต่อกลับ (ไม่บังคับ)</div>
+                    <input value={complaintForm.contact} onChange={e => setComplaintForm(f => ({ ...f, contact: e.target.value }))}
+                      placeholder="อีเมล หรือเบอร์โทรศัพท์"
+                      style={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 14, background: 'var(--surface)', color: 'var(--ink)', boxSizing: 'border-box' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                    <button onClick={() => { setComplaintOpen(false); setComplaintForm({ type: 'สินค้าผิดกฎหมาย', detail: '', contact: '' }); }}
+                      style={{ flex: 1, padding: '10px', border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 14, cursor: 'pointer' }}>
+                      ยกเลิก
+                    </button>
+                    <button onClick={() => { if (complaintForm.detail.trim()) setComplaintSent(true); }}
+                      disabled={!complaintForm.detail.trim()}
+                      style={{ flex: 2, padding: '10px', border: 'none', borderRadius: 'var(--radius-sm)', background: 'var(--neg)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: complaintForm.detail.trim() ? 'pointer' : 'not-allowed', opacity: complaintForm.detail.trim() ? 1 : 0.5 }}>
+                      ส่งเรื่องร้องเรียน
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       {listingOpen && <ListingFlow onClose={() => setListingOpen(false)} onPosted={loadProducts} />}
       {hubOpen && (
         <MyHub
