@@ -61,6 +61,7 @@ export default function HomePage() {
   const [complaintOpen, setComplaintOpen] = useState(false);
   const [complaintForm, setComplaintForm] = useState({ type: 'สินค้าผิดกฎหมาย', detail: '', contact: '' });
   const [complaintSent, setComplaintSent] = useState(false);
+  const [complaintLoading, setComplaintLoading] = useState(false);
   const [listingOpen, setListingOpen] = useState(false);
   const [hubOpen, setHubOpen] = useState<{ mode: 'sell' | 'buy'; tab?: string } | null>(null);
   const [wishlistOpen, setWishlistOpen] = useState(false);
@@ -552,10 +553,23 @@ export default function HomePage() {
                       style={{ flex: 1, padding: '10px', border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 14, cursor: 'pointer' }}>
                       ยกเลิก
                     </button>
-                    <button onClick={() => { if (complaintForm.detail.trim()) setComplaintSent(true); }}
-                      disabled={!complaintForm.detail.trim()}
+                    <button onClick={async () => {
+                        if (!complaintForm.detail.trim()) return;
+                        setComplaintLoading(true);
+                        try {
+                          const API = process.env.NEXT_PUBLIC_API_URL || 'https://khai-claude-production.up.railway.app';
+                          await fetch(`${API}/api/complaints`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ...complaintForm, user_id: (session as any)?.userId || null }),
+                          });
+                          setComplaintSent(true);
+                        } catch { setComplaintSent(true); }
+                        finally { setComplaintLoading(false); }
+                      }}
+                      disabled={!complaintForm.detail.trim() || complaintLoading}
                       style={{ flex: 2, padding: '10px', border: 'none', borderRadius: 'var(--radius-sm)', background: 'var(--neg)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: complaintForm.detail.trim() ? 'pointer' : 'not-allowed', opacity: complaintForm.detail.trim() ? 1 : 0.5 }}>
-                      ส่งเรื่องร้องเรียน
+                      {complaintLoading ? 'กำลังส่ง…' : 'ส่งเรื่องร้องเรียน'}
                     </button>
                   </div>
                 </div>

@@ -736,6 +736,126 @@ function PaymentsTab({ token }: { token: string }) {
   );
 }
 
+// ─── Tab: Complaints ──────────────────────────────────────────────────────────
+function ComplaintsTab({ token }: { token: string }) {
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [filter, setFilter] = useState('pending');
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    api.getComplaints(filter, token)
+      .then(setComplaints)
+      .catch(e => setErr(e.message))
+      .finally(() => setLoading(false));
+  }, [filter, token]);
+
+  const updateStatus = async (id: number, status: string) => {
+    try {
+      await api.updateComplaintStatus(id, status, token);
+      setComplaints(prev => prev.map(c => c.id === id ? { ...c, status } : c));
+    } catch (e: any) { alert(e.message); }
+  };
+
+  const typeLabel: Record<string, string> = {
+    fraud: '🚨 ถูกโกง',
+    product: '📦 สินค้า',
+    user: '👤 ผู้ใช้',
+    payment: '💳 การชำระ',
+    other: '📝 อื่นๆ',
+  };
+
+  const statusColor: Record<string, string> = {
+    pending: '#d97706',
+    reviewing: '#2563eb',
+    resolved: '#16a34a',
+    rejected: '#dc2626',
+  };
+
+  const statusLabel: Record<string, string> = {
+    pending: 'รอดำเนินการ',
+    reviewing: 'กำลังตรวจสอบ',
+    resolved: 'แก้ไขแล้ว',
+    rejected: 'ปฏิเสธ',
+  };
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>🚨 ร้องเรียน</h2>
+      <p style={{ color: '#64748b', marginBottom: 24, fontSize: 14 }}>จัดการเรื่องร้องเรียนจากผู้ใช้</p>
+
+      {/* Filter tabs */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        {[
+          { key: 'pending', label: '⏳ รอดำเนินการ' },
+          { key: 'reviewing', label: '🔍 กำลังตรวจสอบ' },
+          { key: 'resolved', label: '✅ แก้ไขแล้ว' },
+          { key: 'rejected', label: '❌ ปฏิเสธ' },
+          { key: '', label: '📋 ทั้งหมด' },
+        ].map(f => (
+          <button key={f.key} onClick={() => setFilter(f.key)}
+            style={{ padding: '7px 16px', border: 'none', borderRadius: 999, cursor: 'pointer',
+              fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
+              background: filter === f.key ? '#0f172a' : '#e2e8f0',
+              color: filter === f.key ? '#f59e0b' : '#475569' }}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {err && <div style={{ color: '#dc2626', marginBottom: 16 }}>{err}</div>}
+
+      {loading ? (
+        <div style={{ color: '#64748b', padding: 40, textAlign: 'center' }}>กำลังโหลด...</div>
+      ) : complaints.length === 0 ? (
+        <div style={{ ...card, textAlign: 'center', color: '#64748b', padding: 48 }}>
+          ไม่มีเรื่องร้องเรียน
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {complaints.map(c => (
+            <div key={c.id} style={{ ...card, borderLeft: `4px solid ${statusColor[c.status] || '#e2e8f0'}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <Badge label={typeLabel[c.type] || c.type} color="#6366f1" />
+                  <Badge label={statusLabel[c.status] || c.status} color={statusColor[c.status] || '#64748b'} />
+                  <span style={{ fontSize: 11, color: '#94a3b8' }}>#{c.id} · {new Date(c.created_at).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                {c.user_name && (
+                  <span style={{ fontSize: 12, color: '#475569' }}>👤 {c.user_name} ({c.user_email})</span>
+                )}
+              </div>
+
+              <p style={{ fontSize: 14, color: '#1e293b', marginBottom: 10, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{c.detail}</p>
+
+              {c.contact && (
+                <div style={{ fontSize: 12, color: '#475569', marginBottom: 12 }}>
+                  📞 ช่องทางติดต่อ: <strong>{c.contact}</strong>
+                </div>
+              )}
+
+              {c.status === 'pending' && (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <ActionBtn onClick={() => updateStatus(c.id, 'reviewing')} variant="default">🔍 ตรวจสอบ</ActionBtn>
+                  <ActionBtn onClick={() => updateStatus(c.id, 'resolved')} variant="success">✅ แก้ไขแล้ว</ActionBtn>
+                  <ActionBtn onClick={() => updateStatus(c.id, 'rejected')} variant="danger">❌ ปฏิเสธ</ActionBtn>
+                </div>
+              )}
+              {c.status === 'reviewing' && (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <ActionBtn onClick={() => updateStatus(c.id, 'resolved')} variant="success">✅ แก้ไขแล้ว</ActionBtn>
+                  <ActionBtn onClick={() => updateStatus(c.id, 'rejected')} variant="danger">❌ ปฏิเสธ</ActionBtn>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -762,11 +882,13 @@ export default function AdminPage() {
     { key: 'products',  label: '📦 สินค้า' },
     { key: 'premium',   label: '🪙 Premium' },
     { key: 'payments',  label: '💳 คำขอเติมเหรียญ' },
+    { key: 'complaints', label: '🚨 ร้องเรียน' },
   ];
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif', background: '#f8fafc' }}>
       {/* Sidebar */}
+
       <aside style={{
         width: 220, background: '#0f172a', color: '#fff',
         display: 'flex', flexDirection: 'column', flexShrink: 0,
@@ -810,7 +932,8 @@ export default function AdminPage() {
         {tab === 'users'     && <UsersTab     token={token} />}
         {tab === 'products'  && <ProductsTab  token={token} />}
         {tab === 'premium'   && <PremiumTab   token={token} />}
-        {tab === 'payments'  && <PaymentsTab  token={token} />}
+        {tab === 'payments'   && <PaymentsTab   token={token} />}
+        {tab === 'complaints' && <ComplaintsTab token={token} />}
       </main>
     </div>
   );

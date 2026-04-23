@@ -16,6 +16,8 @@ interface AuthModalProps {
 export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalProps) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const modalRef = useRef<HTMLDivElement>(null);
+  // Use ref so value persists even if effect re-runs mid-drag
+  const startedInsideRef = useRef(false);
 
   useEffect(() => {
     if (open) setMode(initialMode);
@@ -24,20 +26,20 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
   // Close on click outside — safe against drag-to-outside
   useEffect(() => {
     if (!open) return;
-    let startedInside = false;
     function onDown(e: MouseEvent) {
-      startedInside = !!modalRef.current?.contains(e.target as Node);
+      startedInsideRef.current = !!modalRef.current?.contains(e.target as Node);
     }
     function onUp(e: MouseEvent) {
-      if (!startedInside && !modalRef.current?.contains(e.target as Node)) {
+      if (!startedInsideRef.current && !modalRef.current?.contains(e.target as Node)) {
         onClose();
       }
+      startedInsideRef.current = false;
     }
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('mouseup', onUp);
+    document.addEventListener('mousedown', onDown, true);
+    document.addEventListener('mouseup', onUp, true);
     return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('mousedown', onDown, true);
+      document.removeEventListener('mouseup', onUp, true);
     };
   }, [open, onClose]);
   const [email, setEmail] = useState('');

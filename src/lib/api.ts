@@ -226,6 +226,14 @@ export const confirmPayment = (id: number, token: string) =>
 export const rejectPayment = (id: number, note: string, token: string) =>
   req<any>(`/api/coins/payment-requests/${id}/reject`, { method: 'POST', body: JSON.stringify({ note }) }, token);
 
+// ─── Complaints ──────────────────────────────────────────────────────────────
+
+export const getComplaints = (status: string, token: string) =>
+  req<any[]>(`/api/complaints${status ? `?status=${status}` : ''}`, {}, token);
+
+export const updateComplaintStatus = (id: number, status: string, token: string) =>
+  req<any>(`/api/complaints/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
+
 // ─── Upload ──────────────────────────────────────────────────────────────────
 
 export const uploadImage = async (file: File, token: string): Promise<string> => {
