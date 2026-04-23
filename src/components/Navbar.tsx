@@ -198,9 +198,10 @@ export function Navbar({
 
                     {/* Menu items */}
                     {([
-                      { label: 'สินค้าของฉัน',  icon: <DropStoreIcon />, action: () => onOpenHub?.('sell') },
-                      { label: 'การซื้อของฉัน', icon: <DropBagIcon />,   action: () => onOpenHub?.('buy') },
-                      { label: 'รายการถูกใจ',   icon: <DropHeartIcon />, action: () => onOpenHub?.('buy', 'saved') },
+                      { label: 'สินค้าของฉัน',     icon: <DropStoreIcon />,     action: () => onOpenHub?.('sell') },
+                      { label: 'การซื้อของฉัน',    icon: <DropBagIcon />,       action: () => onOpenHub?.('buy') },
+                      { label: 'รายการถูกใจ',      icon: <DropHeartIcon />,     action: () => onOpenHub?.('buy', 'saved') },
+                      { label: 'ร้องเรียนของฉัน',  icon: <DropAlertIcon />,     action: () => onOpenHub?.('buy', 'complaints') },
                     ] as { label: string; icon: React.ReactNode; action: () => void }[]).map(({ label, icon, action }) => (
                       <button key={label} onClick={action}
                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%',
@@ -386,6 +387,13 @@ function KeyIcon() {
   return <svg style={icSm} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
     <circle cx="7.5" cy="15.5" r="5.5"/>
     <path d="M21 8.5l-5 5-2-2M21 8.5l-2-2-2 2"/>
+  </svg>;
+}
+function DropAlertIcon() {
+  return <svg style={icSm} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/>
+    <line x1="12" y1="17" x2="12.01" y2="17"/>
   </svg>;
 }
 function LogoutIcon() {
