@@ -270,6 +270,14 @@ function ChatPanel({ complaint, token }: { complaint: Complaint; token: string }
   );
 }
 
+const STATUS_FILTERS = [
+  { key: '', label: 'ทั้งหมด' },
+  { key: 'pending', label: '⏳ รอดำเนินการ' },
+  { key: 'reviewing', label: '🔍 กำลังตรวจสอบ' },
+  { key: 'resolved', label: '✅ แก้ไขแล้ว' },
+  { key: 'rejected', label: '❌ ปฏิเสธ' },
+];
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ComplaintsPage() {
   const { data: session, status } = useSession();
@@ -281,6 +289,7 @@ export default function ComplaintsPage() {
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('');
 
   function load() {
     if (!token) return;
@@ -302,6 +311,7 @@ export default function ComplaintsPage() {
   if (!session?.user) { if (typeof window !== 'undefined') router.push('/'); return null; }
 
   const s = selected ? (STATUS[selected.status] || { label: selected.status, color: '#64748b', bg: '#f1f5f9', icon: '📋' }) : null;
+  const filteredComplaints = statusFilter ? complaints.filter(c => c.status === statusFilter) : complaints;
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -329,6 +339,27 @@ export default function ComplaintsPage() {
 
         {/* Left: list */}
         <div style={{ width: 300, flexShrink: 0, borderRight: '1px solid var(--line)', display: showDetail ? 'none' : 'flex', flexDirection: 'column', background: 'var(--surface)' }}>
+
+          {/* Status filter chips */}
+          {complaints.length > 0 && (
+            <div style={{ padding: '10px 12px 6px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {STATUS_FILTERS.map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => setStatusFilter(f.key)}
+                  style={{
+                    padding: '3px 9px', border: 'none', borderRadius: 999, cursor: 'pointer',
+                    fontSize: 11, fontWeight: 600, fontFamily: 'inherit',
+                    background: statusFilter === f.key ? '#dc2626' : 'var(--surface-2)',
+                    color: statusFilter === f.key ? '#fff' : 'var(--ink-2)',
+                    transition: 'all .15s',
+                  }}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {loading ? (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 14 }}>กำลังโหลด...</div>
           ) : complaints.length === 0 ? (
@@ -341,9 +372,14 @@ export default function ComplaintsPage() {
                 + แจ้งปัญหา
               </button>
             </div>
+          ) : filteredComplaints.length === 0 ? (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 32, textAlign: 'center' }}>
+              <div style={{ fontSize: 32 }}>🔍</div>
+              <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>ไม่มีเรื่องร้องเรียนในหมวดนี้</div>
+            </div>
           ) : (
             <div style={{ overflowY: 'auto', flex: 1 }}>
-              {complaints.map(c => {
+              {filteredComplaints.map(c => {
                 const st = STATUS[c.status] || { label: c.status, color: '#64748b', bg: '#f1f5f9', icon: '📋' };
                 const isActive = selected?.id === c.id;
                 return (
