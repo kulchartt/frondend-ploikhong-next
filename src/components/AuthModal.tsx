@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { PloiWordmark } from './PloiLogo';
 import { X, Eye, EyeOff } from 'lucide-react';
@@ -15,7 +15,6 @@ interface AuthModalProps {
 
 export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalProps) {
   const [mode, setMode] = useState<Mode>(initialMode);
-  const mouseDownOnOverlay = useRef(false);
 
   // Reset to initialMode whenever modal opens
   useEffect(() => {
@@ -78,8 +77,7 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
 
   return (
     <div data-testid="auth-modal"
-      onMouseDown={e => { mouseDownOnOverlay.current = e.target === e.currentTarget; }}
-      onMouseUp={e => { if (mouseDownOnOverlay.current && e.target === e.currentTarget) onClose(); mouseDownOnOverlay.current = false; }}
+      onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
       zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div onMouseDown={e => e.stopPropagation()}>
