@@ -15,12 +15,31 @@ interface AuthModalProps {
 
 export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalProps) {
   const [mode, setMode] = useState<Mode>(initialMode);
-  const mouseDownInside = useRef(false);
+  const modalRef = useRef<HTMLDivElement>(null);
 
-  // Reset to initialMode whenever modal opens
   useEffect(() => {
     if (open) setMode(initialMode);
   }, [open, initialMode]);
+
+  // Close on click outside — safe against drag-to-outside
+  useEffect(() => {
+    if (!open) return;
+    let startedInside = false;
+    function onDown(e: MouseEvent) {
+      startedInside = !!modalRef.current?.contains(e.target as Node);
+    }
+    function onUp(e: MouseEvent) {
+      if (!startedInside && !modalRef.current?.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, [open, onClose]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -78,11 +97,9 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
 
   return (
     <div data-testid="auth-modal"
-      onMouseDown={e => { if (e.target === e.currentTarget) mouseDownInside.current = false; }}
-      onClick={e => { if (e.target === e.currentTarget && !mouseDownInside.current) onClose(); mouseDownInside.current = false; }}
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
       zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onMouseDown={() => { mouseDownInside.current = true; }}
+      <div ref={modalRef}
         style={{ background: 'var(--surface)', borderRadius: 12, padding: 36, width: '100%',
           maxWidth: 420, boxShadow: '0 30px 80px rgba(0,0,0,.35)', position: 'relative' }}>
 
