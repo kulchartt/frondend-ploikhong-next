@@ -12,6 +12,8 @@ interface Complaint {
   detail: string;
   contact: string | null;
   status: string;
+  admin_reply: string | null;
+  replied_at: string | null;
   created_at: string;
 }
 
@@ -334,23 +336,43 @@ export default function ComplaintsPage() {
                   </div>
                 )}
 
-                {/* System reply bubble */}
-                <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 16 }}>
+                {/* System auto-reply bubble */}
+                <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: selected.admin_reply ? 16 : 0 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: '75%' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fee2e2', display: 'grid', placeItems: 'center', color: '#dc2626', flexShrink: 0 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fee2e2', display: 'grid', placeItems: 'center', flexShrink: 0, fontSize: 16 }}>
                       🛡️
                     </div>
                     <div>
                       <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '16px 16px 16px 4px', padding: '12px 16px', fontSize: 14, lineHeight: 1.6, color: 'var(--ink)' }}>
                         {selected.status === 'pending' && 'รับเรื่องร้องเรียนของคุณแล้ว ทีมงานจะดำเนินการตรวจสอบภายใน 24 ชั่วโมง'}
                         {selected.status === 'reviewing' && 'ทีมงานกำลังตรวจสอบเรื่องร้องเรียนของคุณอยู่ โปรดรอสักครู่'}
-                        {selected.status === 'resolved' && 'เรื่องร้องเรียนของคุณได้รับการแก้ไขแล้ว ขอบคุณที่แจ้งให้ทีมงานทราบ 🙏'}
-                        {selected.status === 'rejected' && 'ขออภัย เรื่องร้องเรียนของคุณไม่สามารถดำเนินการได้ หากมีข้อสงสัยสามารถติดต่อทีมงานได้โดยตรง'}
+                        {selected.status === 'resolved' && !selected.admin_reply && 'เรื่องร้องเรียนของคุณได้รับการแก้ไขแล้ว ขอบคุณที่แจ้งให้ทีมงานทราบ 🙏'}
+                        {selected.status === 'rejected' && !selected.admin_reply && 'ขออภัย เรื่องร้องเรียนของคุณไม่สามารถดำเนินการได้'}
+                        {selected.admin_reply && 'รับเรื่องร้องเรียนของคุณแล้ว'}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4, paddingLeft: 4 }}>ทีมงาน PloiKhong</div>
                     </div>
                   </div>
                 </div>
+
+                {/* Admin reply bubble */}
+                {selected.admin_reply && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 16 }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: '75%' }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fee2e2', display: 'grid', placeItems: 'center', flexShrink: 0, fontSize: 16 }}>
+                        🛡️
+                      </div>
+                      <div>
+                        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '16px 16px 16px 4px', padding: '12px 16px', fontSize: 14, lineHeight: 1.6, color: 'var(--ink)', whiteSpace: 'pre-wrap' }}>
+                          {selected.admin_reply}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4, paddingLeft: 4 }}>
+                          ทีมงาน PloiKhong · {selected.replied_at ? new Date(selected.replied_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}

@@ -234,8 +234,8 @@ export const getMyComplaints = (token: string) =>
 export const getComplaints = (status: string, token: string) =>
   req<any[]>(`/api/complaints${status ? `?status=${status}` : ''}`, {}, token);
 
-export const updateComplaintStatus = (id: number, status: string, token: string) =>
-  req<any>(`/api/complaints/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
+export const updateComplaintStatus = (id: number, body: string | Record<string, any>, token: string) =>
+  req<any>(`/api/complaints/${id}`, { method: 'PATCH', body: JSON.stringify(typeof body === 'string' ? { status: body } : body) }, token);
 
 // ─── Upload ──────────────────────────────────────────────────────────────────
 

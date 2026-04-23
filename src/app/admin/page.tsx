@@ -742,6 +742,8 @@ function ComplaintsTab({ token }: { token: string }) {
   const [filter, setFilter] = useState('pending');
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
+  const [replyDraft, setReplyDraft] = useState<Record<number, string>>({});
+  const [replySending, setReplySending] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     setLoading(true);
@@ -758,26 +760,30 @@ function ComplaintsTab({ token }: { token: string }) {
     } catch (e: any) { alert(e.message); }
   };
 
+  const sendReply = async (id: number, newStatus?: string) => {
+    const reply = replyDraft[id]?.trim();
+    if (!reply) return;
+    setReplySending(prev => ({ ...prev, [id]: true }));
+    try {
+      const body: any = { admin_reply: reply };
+      if (newStatus) body.status = newStatus;
+      await api.updateComplaintStatus(id, body, token);
+      setComplaints(prev => prev.map(c =>
+        c.id === id ? { ...c, admin_reply: reply, replied_at: new Date().toISOString(), ...(newStatus ? { status: newStatus } : {}) } : c
+      ));
+      setReplyDraft(prev => ({ ...prev, [id]: '' }));
+    } catch (e: any) { alert(e.message); }
+    finally { setReplySending(prev => ({ ...prev, [id]: false })); }
+  };
+
   const typeLabel: Record<string, string> = {
-    fraud: '🚨 ถูกโกง',
-    product: '📦 สินค้า',
-    user: '👤 ผู้ใช้',
-    payment: '💳 การชำระ',
-    other: '📝 อื่นๆ',
+    fraud: '🚨 ถูกโกง', product: '📦 สินค้า', user: '👤 ผู้ใช้', payment: '💳 การชำระ', other: '📝 อื่นๆ',
   };
-
   const statusColor: Record<string, string> = {
-    pending: '#d97706',
-    reviewing: '#2563eb',
-    resolved: '#16a34a',
-    rejected: '#dc2626',
+    pending: '#d97706', reviewing: '#2563eb', resolved: '#16a34a', rejected: '#dc2626',
   };
-
   const statusLabel: Record<string, string> = {
-    pending: 'รอดำเนินการ',
-    reviewing: 'กำลังตรวจสอบ',
-    resolved: 'แก้ไขแล้ว',
-    rejected: 'ปฏิเสธ',
+    pending: 'รอดำเนินการ', reviewing: 'กำลังตรวจสอบ', resolved: 'แก้ไขแล้ว', rejected: 'ปฏิเสธ',
   };
 
   return (
@@ -785,7 +791,6 @@ function ComplaintsTab({ token }: { token: string }) {
       <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>🚨 ร้องเรียน</h2>
       <p style={{ color: '#64748b', marginBottom: 24, fontSize: 14 }}>จัดการเรื่องร้องเรียนจากผู้ใช้</p>
 
-      {/* Filter tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         {[
           { key: 'pending', label: '⏳ รอดำเนินการ' },
@@ -809,43 +814,73 @@ function ComplaintsTab({ token }: { token: string }) {
       {loading ? (
         <div style={{ color: '#64748b', padding: 40, textAlign: 'center' }}>กำลังโหลด...</div>
       ) : complaints.length === 0 ? (
-        <div style={{ ...card, textAlign: 'center', color: '#64748b', padding: 48 }}>
-          ไม่มีเรื่องร้องเรียน
-        </div>
+        <div style={{ ...card, textAlign: 'center', color: '#64748b', padding: 48 }}>ไม่มีเรื่องร้องเรียน</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {complaints.map(c => (
             <div key={c.id} style={{ ...card, borderLeft: `4px solid ${statusColor[c.status] || '#e2e8f0'}` }}>
+              {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <Badge label={typeLabel[c.type] || c.type} color="#6366f1" />
                   <Badge label={statusLabel[c.status] || c.status} color={statusColor[c.status] || '#64748b'} />
                   <span style={{ fontSize: 11, color: '#94a3b8' }}>#{c.id} · {new Date(c.created_at).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
-                {c.user_name && (
-                  <span style={{ fontSize: 12, color: '#475569' }}>👤 {c.user_name} ({c.user_email})</span>
-                )}
+                {c.user_name && <span style={{ fontSize: 12, color: '#475569' }}>👤 {c.user_name} ({c.user_email})</span>}
               </div>
 
-              <p style={{ fontSize: 14, color: '#1e293b', marginBottom: 10, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{c.detail}</p>
+              {/* Detail */}
+              <p style={{ fontSize: 14, color: '#1e293b', marginBottom: 8, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{c.detail}</p>
+              {c.contact && <div style={{ fontSize: 12, color: '#475569', marginBottom: 12 }}>📞 ช่องทางติดต่อ: <strong>{c.contact}</strong></div>}
 
-              {c.contact && (
-                <div style={{ fontSize: 12, color: '#475569', marginBottom: 12 }}>
-                  📞 ช่องทางติดต่อ: <strong>{c.contact}</strong>
+              {/* Existing reply */}
+              {c.admin_reply && (
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13 }}>
+                  <div style={{ fontWeight: 600, color: '#15803d', marginBottom: 4 }}>🛡️ ตอบกลับแล้ว · {c.replied_at ? new Date(c.replied_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}</div>
+                  <div style={{ color: '#166534', lineHeight: 1.6 }}>{c.admin_reply}</div>
                 </div>
               )}
 
-              {c.status === 'pending' && (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {/* Status buttons */}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                {c.status === 'pending' && <>
                   <ActionBtn onClick={() => updateStatus(c.id, 'reviewing')} variant="default">🔍 ตรวจสอบ</ActionBtn>
                   <ActionBtn onClick={() => updateStatus(c.id, 'resolved')} variant="success">✅ แก้ไขแล้ว</ActionBtn>
                   <ActionBtn onClick={() => updateStatus(c.id, 'rejected')} variant="danger">❌ ปฏิเสธ</ActionBtn>
-                </div>
-              )}
-              {c.status === 'reviewing' && (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                </>}
+                {c.status === 'reviewing' && <>
                   <ActionBtn onClick={() => updateStatus(c.id, 'resolved')} variant="success">✅ แก้ไขแล้ว</ActionBtn>
                   <ActionBtn onClick={() => updateStatus(c.id, 'rejected')} variant="danger">❌ ปฏิเสธ</ActionBtn>
+                </>}
+              </div>
+
+              {/* Reply box */}
+              {c.user_id && (
+                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>💬 ตอบกลับผู้ใช้ {c.admin_reply ? '(แก้ไขการตอบกลับ)' : ''}</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <textarea
+                      value={replyDraft[c.id] || (c.admin_reply || '')}
+                      onChange={e => setReplyDraft(prev => ({ ...prev, [c.id]: e.target.value }))}
+                      placeholder="พิมพ์ข้อความตอบกลับ..."
+                      rows={2}
+                      style={{ flex: 1, padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', outline: 'none', background: '#f8fafc' }}
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <button
+                        onClick={() => sendReply(c.id)}
+                        disabled={replySending[c.id] || !(replyDraft[c.id]?.trim())}
+                        style={{ padding: '7px 14px', background: '#0f172a', color: '#f59e0b', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: replySending[c.id] ? .6 : 1, whiteSpace: 'nowrap' }}>
+                        {replySending[c.id] ? '...' : '📨 ส่ง'}
+                      </button>
+                      <button
+                        onClick={() => sendReply(c.id, 'resolved')}
+                        disabled={replySending[c.id] || !(replyDraft[c.id]?.trim())}
+                        style={{ padding: '7px 14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: replySending[c.id] ? .6 : 1, whiteSpace: 'nowrap' }}>
+                        ✅ ส่ง+ปิด
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
