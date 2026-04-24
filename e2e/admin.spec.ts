@@ -99,25 +99,24 @@ test.describe('Admin Page — Layout', () => {
 
   test('shows "Admin" brand in sidebar', async ({ page }) => {
     await gotoAdmin(page);
-    await expect(page.getByText('Admin')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('Admin').first()).toBeVisible({ timeout: 8000 });
   });
 
-  test('shows all sidebar nav items (no emoji)', async ({ page }) => {
+  test('shows all 5 sidebar nav items', async ({ page }) => {
     await gotoAdmin(page);
-    await expect(page.getByRole('button', { name: 'คิวงาน' })).toBeVisible({ timeout: 6000 });
+    await expect(page.getByRole('button', { name: 'Queue' })).toBeVisible({ timeout: 6000 });
     await expect(page.getByRole('button', { name: 'ผู้ใช้' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'ประกาศ' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Premium & เหรียญ' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'คำขอเติมเหรียญ' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'ร้องเรียน' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'ภาพรวม' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'เคสร้องเรียน' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'การเงิน' })).toBeVisible();
   });
 
-  test('default tab is คิวงาน (queue)', async ({ page }) => {
+  test('default tab is Queue — topbar shows "Queue" and queue shows "Inbox"', async ({ page }) => {
     await gotoAdmin(page);
-    await expect(page.getByText('คิวงาน').first()).toBeVisible({ timeout: 6000 });
-    // Queue heading should be present
-    await expect(page.locator('h3', { hasText: 'คิวงาน' })).toBeVisible({ timeout: 6000 });
+    // Topbar h1 shows current tab label
+    await expect(page.locator('.ad-topbar-title h1', { hasText: 'Queue' })).toBeVisible({ timeout: 6000 });
+    // QueueView heading
+    await expect(page.locator('h3', { hasText: 'Inbox' })).toBeVisible({ timeout: 6000 });
   });
 
   test('sidebar has กลับเว็บหลัก link', async ({ page }) => {
@@ -127,7 +126,7 @@ test.describe('Admin Page — Layout', () => {
     await expect(link).toHaveAttribute('href', '/');
   });
 
-  test('admin card shows logged-in username', async ({ page }) => {
+  test('admin card shows ADMIN role', async ({ page }) => {
     await gotoAdmin(page);
     await expect(page.getByText('ADMIN')).toBeVisible({ timeout: 6000 });
   });
@@ -135,6 +134,14 @@ test.describe('Admin Page — Layout', () => {
   test('⌘K button is visible in topbar', async ({ page }) => {
     await gotoAdmin(page);
     await expect(page.getByText('⌘K')).toBeVisible({ timeout: 6000 });
+  });
+
+  test('Saved Views section is shown in sidebar', async ({ page }) => {
+    await gotoAdmin(page);
+    await expect(page.getByText('Saved Views')).toBeVisible({ timeout: 6000 });
+    await expect(page.getByText('SLA เสี่ยงตก')).toBeVisible();
+    await expect(page.getByText('สมาชิกใหม่')).toBeVisible();
+    await expect(page.getByText('รอตรวจประกาศ')).toBeVisible();
   });
 
 });
@@ -155,8 +162,10 @@ test.describe('Admin Page — Command Palette', () => {
     await gotoAdmin(page);
     await page.keyboard.press('Control+k');
     await expect(page.getByText('นำทาง')).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText('คิวงาน').first()).toBeVisible();
+    await expect(page.getByText('Queue').first()).toBeVisible();
     await expect(page.getByText('ผู้ใช้').first()).toBeVisible();
+    await expect(page.getByText('เคสร้องเรียน').first()).toBeVisible();
+    await expect(page.getByText('การเงิน').first()).toBeVisible();
   });
 
   test('Escape closes the command palette', async ({ page }) => {
@@ -173,11 +182,11 @@ test.describe('Admin Page — Command Palette', () => {
     await expect(page.getByPlaceholder('ค้นหาเมนูหรือพิมพ์คำสั่ง...')).toBeVisible({ timeout: 5000 });
   });
 
-  test('navigating via palette switches tab', async ({ page }) => {
+  test('navigating via palette switches to การเงิน tab', async ({ page }) => {
     await gotoAdmin(page);
     await page.keyboard.press('Control+k');
-    await page.locator('.ad-cmdk-item').filter({ hasText: 'ภาพรวม' }).click();
-    await expect(page.locator('h1', { hasText: 'ภาพรวม' })).toBeVisible({ timeout: 5000 });
+    await page.locator('.ad-cmdk-item').filter({ hasText: 'การเงิน' }).click();
+    await expect(page.locator('.ad-topbar-title h1', { hasText: 'การเงิน' })).toBeVisible({ timeout: 5000 });
   });
 
 });
@@ -188,9 +197,9 @@ test.describe('Admin Page — Command Palette', () => {
 
 test.describe('Admin Page — Queue View', () => {
 
-  test('queue tab shows queue list heading', async ({ page }) => {
+  test('queue shows "Inbox" heading', async ({ page }) => {
     await gotoAdmin(page, MOCK_COMPLAINTS_ADMIN);
-    await expect(page.locator('h3', { hasText: 'คิวงาน' })).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('h3', { hasText: 'Inbox' })).toBeVisible({ timeout: 8000 });
   });
 
   test('queue shows filter tabs: ทั้งหมด / ร้องเรียน / เติมเหรียญ', async ({ page }) => {
@@ -224,9 +233,7 @@ test.describe('Admin Page — Queue View', () => {
 
   test('complaint detail shows action buttons for pending complaint', async ({ page }) => {
     await gotoAdmin(page, MOCK_COMPLAINTS_ADMIN);
-    // Click item with pending status
     await page.locator('.ad-q-item').first().click();
-    // Should see ตรวจสอบ or ปิดเคส buttons
     await expect(page.getByRole('button', { name: /ตรวจสอบ|ปิดเคส/ }).first()).toBeVisible({ timeout: 6000 });
   });
 
@@ -254,35 +261,6 @@ test.describe('Admin Page — Queue View', () => {
     await expect(page.getByText('ร้องเรียน #', { exact: false })).toBeVisible({ timeout: 6000 });
     await page.locator('.ad-q-dhead .btn-ghost').click();
     await expect(page.getByText('เลือกรายการ')).toBeVisible({ timeout: 5000 });
-  });
-
-});
-
-// =============================================================================
-// OVERVIEW TAB
-// =============================================================================
-
-test.describe('Admin Page — Overview tab', () => {
-
-  test('overview tab shows KPI stat cards', async ({ page }) => {
-    await gotoAdmin(page);
-    await page.getByRole('button', { name: 'ภาพรวม' }).click();
-    await expect(page.getByText('ผู้ใช้').first()).toBeVisible({ timeout: 8000 });
-    await expect(page.getByText('สินค้าทั้งหมด')).toBeVisible();
-    await expect(page.getByText('ขายอยู่')).toBeVisible();
-    await expect(page.getByText('รายได้รวม')).toBeVisible();
-  });
-
-  test('overview shows user count 42', async ({ page }) => {
-    await gotoAdmin(page);
-    await page.getByRole('button', { name: 'ภาพรวม' }).click();
-    await expect(page.getByText('42')).toBeVisible({ timeout: 8000 });
-  });
-
-  test('overview shows product ratio chart', async ({ page }) => {
-    await gotoAdmin(page);
-    await page.getByRole('button', { name: 'ภาพรวม' }).click();
-    await expect(page.getByText('สัดส่วนสินค้า')).toBeVisible({ timeout: 8000 });
   });
 
 });
@@ -353,43 +331,36 @@ test.describe('Admin Page — Products tab', () => {
 });
 
 // =============================================================================
-// PREMIUM TAB
+// FINANCE TAB (replaces Premium + Payments tabs)
 // =============================================================================
 
-test.describe('Admin Page — Premium tab', () => {
+test.describe('Admin Page — Finance tab', () => {
 
-  test('clicking Premium & เหรียญ shows revenue stats', async ({ page }) => {
+  test('clicking การเงิน shows revenue stats', async ({ page }) => {
     await gotoAdmin(page);
-    await page.getByRole('button', { name: 'Premium & เหรียญ' }).click();
+    await page.getByRole('button', { name: 'การเงิน' }).click();
     await expect(page.getByText('รายได้รวม')).toBeVisible({ timeout: 6000 });
     await expect(page.getByText('รอยืนยัน')).toBeVisible();
   });
 
-  test('premium tab shows feature breakdown chart', async ({ page }) => {
+  test('finance tab shows coin stats: เหรียญแจก and เหรียญคงค้าง', async ({ page }) => {
     await gotoAdmin(page);
-    await page.getByRole('button', { name: 'Premium & เหรียญ' }).click();
-    await expect(page.getByText('แหล่งรายได้ตามฟีเจอร์')).toBeVisible({ timeout: 6000 });
+    await page.getByRole('button', { name: 'การเงิน' }).click();
+    await expect(page.getByText('เหรียญแจก')).toBeVisible({ timeout: 6000 });
+    await expect(page.getByText('เหรียญคงค้าง')).toBeVisible();
   });
 
-});
-
-// =============================================================================
-// PAYMENTS TAB
-// =============================================================================
-
-test.describe('Admin Page — Payments tab', () => {
-
-  test('clicking คำขอเติมเหรียญ shows filter buttons', async ({ page }) => {
+  test('finance tab shows payment request filter buttons', async ({ page }) => {
     await gotoAdmin(page);
-    await page.getByRole('button', { name: 'คำขอเติมเหรียญ' }).click();
+    await page.getByRole('button', { name: 'การเงิน' }).click();
     await expect(page.getByRole('button', { name: 'รอยืนยัน' })).toBeVisible({ timeout: 6000 });
     await expect(page.getByRole('button', { name: 'ยืนยันแล้ว' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'ปฏิเสธแล้ว' })).toBeVisible();
   });
 
-  test('empty payments shows "ไม่มีคำขอ"', async ({ page }) => {
+  test('empty payment requests shows "ไม่มีคำขอ"', async ({ page }) => {
     await gotoAdmin(page);
-    await page.getByRole('button', { name: 'คำขอเติมเหรียญ' }).click();
+    await page.getByRole('button', { name: 'การเงิน' }).click();
     await expect(page.getByText('ไม่มีคำขอ')).toBeVisible({ timeout: 6000 });
   });
 
@@ -401,9 +372,9 @@ test.describe('Admin Page — Payments tab', () => {
 
 test.describe('Admin Page — Complaints tab', () => {
 
-  test('clicking ร้องเรียน shows filter buttons (no emoji)', async ({ page }) => {
+  test('clicking เคสร้องเรียน shows filter buttons (no emoji)', async ({ page }) => {
     await gotoAdmin(page, MOCK_COMPLAINTS_ADMIN);
-    await page.getByRole('button', { name: 'ร้องเรียน' }).click();
+    await page.getByRole('button', { name: 'เคสร้องเรียน' }).click();
     await expect(page.locator('.ad-flt-grp button', { hasText: 'รอดำเนินการ' })).toBeVisible({ timeout: 6000 });
     await expect(page.locator('.ad-flt-grp button', { hasText: 'กำลังตรวจสอบ' })).toBeVisible();
     await expect(page.locator('.ad-flt-grp button', { hasText: 'แก้ไขแล้ว' })).toBeVisible();
@@ -413,44 +384,44 @@ test.describe('Admin Page — Complaints tab', () => {
 
   test('complaints tab shows complaint rows', async ({ page }) => {
     await gotoAdmin(page, MOCK_COMPLAINTS_ADMIN);
-    await page.getByRole('button', { name: 'ร้องเรียน' }).click();
+    await page.getByRole('button', { name: 'เคสร้องเรียน' }).click();
     await expect(page.getByText('ผู้ขายส่งของปลอม')).toBeVisible({ timeout: 6000 });
   });
 
   test('complaint row shows user name', async ({ page }) => {
     await gotoAdmin(page, MOCK_COMPLAINTS_ADMIN);
-    await page.getByRole('button', { name: 'ร้องเรียน' }).click();
+    await page.getByRole('button', { name: 'เคสร้องเรียน' }).click();
     await expect(page.getByText('Demo User')).toBeVisible({ timeout: 6000 });
   });
 
   test('pending complaint shows ตรวจสอบ button (no emoji)', async ({ page }) => {
     await gotoAdmin(page, MOCK_COMPLAINTS_ADMIN);
-    await page.getByRole('button', { name: 'ร้องเรียน' }).click();
+    await page.getByRole('button', { name: 'เคสร้องเรียน' }).click();
     await expect(page.getByRole('button', { name: 'ตรวจสอบ' }).first()).toBeVisible({ timeout: 6000 });
   });
 
   test('pending complaint shows ปิดเคส button', async ({ page }) => {
     await gotoAdmin(page, MOCK_COMPLAINTS_ADMIN);
-    await page.getByRole('button', { name: 'ร้องเรียน' }).click();
+    await page.getByRole('button', { name: 'เคสร้องเรียน' }).click();
     await expect(page.getByRole('button', { name: 'ปิดเคส' }).first()).toBeVisible({ timeout: 6000 });
   });
 
   test('complaint row shows แชท button (no emoji)', async ({ page }) => {
     await gotoAdmin(page, MOCK_COMPLAINTS_ADMIN);
-    await page.getByRole('button', { name: 'ร้องเรียน' }).click();
+    await page.getByRole('button', { name: 'เคสร้องเรียน' }).click();
     await expect(page.getByRole('button', { name: 'แชท' }).first()).toBeVisible({ timeout: 6000 });
   });
 
   test('clicking แชท expands the message thread', async ({ page }) => {
     await gotoAdmin(page, MOCK_COMPLAINTS_ADMIN);
-    await page.getByRole('button', { name: 'ร้องเรียน' }).click();
+    await page.getByRole('button', { name: 'เคสร้องเรียน' }).click();
     await page.getByRole('button', { name: 'แชท' }).first().click();
     await expect(page.getByPlaceholder('พิมพ์ข้อความ... (Enter ส่ง)')).toBeVisible({ timeout: 6000 });
   });
 
   test('clicking ซ่อน collapses the thread', async ({ page }) => {
     await gotoAdmin(page, MOCK_COMPLAINTS_ADMIN);
-    await page.getByRole('button', { name: 'ร้องเรียน' }).click();
+    await page.getByRole('button', { name: 'เคสร้องเรียน' }).click();
     await page.getByRole('button', { name: 'แชท' }).first().click();
     await expect(page.getByPlaceholder('พิมพ์ข้อความ... (Enter ส่ง)')).toBeVisible({ timeout: 6000 });
     await page.getByRole('button', { name: 'ซ่อน' }).first().click();
@@ -465,7 +436,7 @@ test.describe('Admin Page — Complaints tab', () => {
       ],
     }));
     await gotoAdmin(page, MOCK_COMPLAINTS_ADMIN);
-    await page.getByRole('button', { name: 'ร้องเรียน' }).click();
+    await page.getByRole('button', { name: 'เคสร้องเรียน' }).click();
     await page.getByRole('button', { name: 'แชท' }).first().click();
     await expect(page.getByText('ข้อความจากผู้ใช้')).toBeVisible({ timeout: 6000 });
     await expect(page.getByText('ข้อความจากแอดมิน')).toBeVisible();
@@ -482,7 +453,7 @@ test.describe('Admin Page — Complaints tab', () => {
       }
     });
     await gotoAdmin(page, MOCK_COMPLAINTS_ADMIN);
-    await page.getByRole('button', { name: 'ร้องเรียน' }).click();
+    await page.getByRole('button', { name: 'เคสร้องเรียน' }).click();
     await page.getByRole('button', { name: 'แชท' }).first().click();
     const textarea = page.getByPlaceholder('พิมพ์ข้อความ... (Enter ส่ง)');
     await textarea.fill('ทดสอบส่ง');
@@ -497,14 +468,14 @@ test.describe('Admin Page — Complaints tab', () => {
       else r.continue();
     });
     await gotoAdmin(page, MOCK_COMPLAINTS_ADMIN);
-    await page.getByRole('button', { name: 'ร้องเรียน' }).click();
+    await page.getByRole('button', { name: 'เคสร้องเรียน' }).click();
     await page.getByRole('button', { name: 'ปิดเคส' }).first().click();
     expect(patched).toBe(true);
   });
 
   test('empty complaints list shows "ไม่มีเรื่องร้องเรียน"', async ({ page }) => {
     await gotoAdmin(page, []);
-    await page.getByRole('button', { name: 'ร้องเรียน' }).click();
+    await page.getByRole('button', { name: 'เคสร้องเรียน' }).click();
     await expect(page.getByText('ไม่มีเรื่องร้องเรียน')).toBeVisible({ timeout: 6000 });
   });
 

@@ -89,10 +89,11 @@ test.describe('Coins Page — Page structure', () => {
     await expect(page.getByText('เหรียญ & Premium')).toBeVisible({ timeout: 8000 });
   });
 
-  test('shows coin balance in topbar', async ({ page }) => {
+  test('shows coin balance with ◎ icon in topbar', async ({ page }) => {
     await gotoCoins(page, { balance: 250 });
     await expect(page.locator('.co-balance')).toContainText('250', { timeout: 8000 });
     await expect(page.locator('.co-balance')).toContainText('เหรียญ');
+    await expect(page.locator('.co-balance')).toContainText('◎');
   });
 
   test('shows all 4 tab buttons', async ({ page }) => {
@@ -100,7 +101,7 @@ test.describe('Coins Page — Page structure', () => {
     await expect(page.getByRole('button', { name: 'เติมเหรียญ' })).toBeVisible({ timeout: 8000 });
     await expect(page.getByRole('button', { name: 'Boost ที่ใช้งาน' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Premium' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'ประวัติ' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'ประวัติการใช้' })).toBeVisible();
   });
 
   test('default tab is "เติมเหรียญ"', async ({ page }) => {
@@ -122,16 +123,10 @@ test.describe('Coins Page — Page structure', () => {
 
 test.describe('Coins Page — Topup tab', () => {
 
-  test('shows hero heading "เติมเหรียญ PloiKhong"', async ({ page }) => {
+  test('shows hero heading about Boost', async ({ page }) => {
     await gotoCoins(page);
-    await expect(page.getByText(/เติมเหรียญ/).first()).toBeVisible({ timeout: 8000 });
-    await expect(page.getByText('PloiKhong')).toBeVisible();
-  });
-
-  test('shows current balance in hero', async ({ page }) => {
-    await gotoCoins(page, { balance: 250 });
-    await expect(page.locator('.co-hero')).toContainText('250', { timeout: 8000 });
-    await expect(page.locator('.co-hero')).toContainText('เหรียญ');
+    await expect(page.getByText(/ใช้เหรียญเพื่อ/)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(/Boost/)).toBeVisible();
   });
 
   test('renders coin pack cards from API', async ({ page }) => {
@@ -145,16 +140,16 @@ test.describe('Coins Page — Topup tab', () => {
     await expect(page.locator('.co-tag', { hasText: 'ยอดนิยม' })).toBeVisible({ timeout: 8000 });
   });
 
-  test('each card has a "ซื้อเลย" button', async ({ page }) => {
+  test('each card has a "ซื้อแพ็คนี้" button', async ({ page }) => {
     await gotoCoins(page);
-    const buyBtns = page.getByRole('button', { name: 'ซื้อเลย' });
+    const buyBtns = page.getByRole('button', { name: 'ซื้อแพ็คนี้' });
     await expect(buyBtns).toHaveCount(4, { timeout: 8000 });
   });
 
   test('shows hint about coin usage', async ({ page }) => {
     await gotoCoins(page);
     await expect(page.locator('.co-hint')).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('.co-hint')).toContainText('เหรียญไม่มีวันหมดอายุ');
+    await expect(page.locator('.co-hint')).toContainText('เหรียญไม่หมดอายุ');
   });
 
 });
@@ -165,38 +160,53 @@ test.describe('Coins Page — Topup tab', () => {
 
 test.describe('Coins Page — Checkout modal', () => {
 
-  test('clicking "ซื้อเลย" opens checkout modal with "ยืนยันการซื้อ" title', async ({ page }) => {
+  test('clicking "ซื้อแพ็คนี้" opens checkout modal with "ยืนยันการชำระเงิน" title', async ({ page }) => {
     await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
-    await expect(page.getByText('ยืนยันการซื้อ')).toBeVisible({ timeout: 5000 });
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await expect(page.getByText('ยืนยันการชำระเงิน')).toBeVisible({ timeout: 5000 });
   });
 
   test('checkout shows selected pack item', async ({ page }) => {
     await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
     // 100 + 0 bonus = 100 เหรียญ
     await expect(page.locator('.co-ck-item-s', { hasText: '100 เหรียญ' })).toBeVisible({ timeout: 5000 });
   });
 
+  test('checkout shows payment method section heading', async ({ page }) => {
+    await gotoCoins(page);
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await expect(page.getByText('วิธีการชำระเงิน')).toBeVisible({ timeout: 5000 });
+  });
+
   test('checkout shows payment methods', async ({ page }) => {
     await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
     await expect(page.getByText('PromptPay')).toBeVisible({ timeout: 5000 });
     await expect(page.getByText('บัตรเครดิต / เดบิต')).toBeVisible();
     await expect(page.getByText('TrueMoney Wallet')).toBeVisible();
     await expect(page.getByText('LINE Pay')).toBeVisible();
   });
 
-  test('pay button is disabled when consent checkbox is unchecked', async ({ page }) => {
+  test('pay button is enabled by default (consent pre-checked)', async ({ page }) => {
     await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
     const payBtn = page.locator('.co-ck-foot .btn-primary');
-    await expect(payBtn).toBeDisabled({ timeout: 5000 });
+    await expect(payBtn).toBeEnabled({ timeout: 5000 });
   });
 
-  test('pay button enables after checking consent', async ({ page }) => {
+  test('pay button is disabled when consent is unchecked', async ({ page }) => {
     await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-consent input[type="checkbox"]').uncheck();
+    const payBtn = page.locator('.co-ck-foot .btn-primary');
+    await expect(payBtn).toBeDisabled({ timeout: 3000 });
+  });
+
+  test('pay button re-enables after re-checking consent', async ({ page }) => {
+    await gotoCoins(page);
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-consent input[type="checkbox"]').uncheck();
     await page.locator('.co-ck-consent input[type="checkbox"]').check();
     const payBtn = page.locator('.co-ck-foot .btn-primary');
     await expect(payBtn).toBeEnabled({ timeout: 3000 });
@@ -204,15 +214,15 @@ test.describe('Coins Page — Checkout modal', () => {
 
   test('"ยกเลิก" closes the checkout modal', async ({ page }) => {
     await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
-    await expect(page.getByText('ยืนยันการซื้อ')).toBeVisible({ timeout: 5000 });
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await expect(page.getByText('ยืนยันการชำระเงิน')).toBeVisible({ timeout: 5000 });
     await page.getByRole('button', { name: 'ยกเลิก' }).click();
-    await expect(page.getByText('ยืนยันการซื้อ')).not.toBeVisible();
+    await expect(page.getByText('ยืนยันการชำระเงิน')).not.toBeVisible();
   });
 
   test('clicking backdrop closes the modal', async ({ page }) => {
     await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
     await expect(page.locator('.co-ck-overlay')).toBeVisible({ timeout: 5000 });
     await page.locator('.co-ck-overlay').click({ position: { x: 5, y: 5 } });
     await expect(page.locator('.co-ck-overlay')).not.toBeVisible();
@@ -220,7 +230,7 @@ test.describe('Coins Page — Checkout modal', () => {
 
   test('selecting a payment method marks it as active', async ({ page }) => {
     await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
     const linePayBtn = page.locator('.co-pay', { hasText: 'LINE Pay' });
     await linePayBtn.click();
     await expect(linePayBtn).toHaveClass(/on/, { timeout: 3000 });
@@ -228,15 +238,15 @@ test.describe('Coins Page — Checkout modal', () => {
 
   test('can fill sender name field', async ({ page }) => {
     await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
     await page.getByPlaceholder('ชื่อผู้โอนเงิน เพื่อให้ยืนยันได้เร็วขึ้น').fill('สมชาย ทดสอบ');
     await expect(page.getByPlaceholder('ชื่อผู้โอนเงิน เพื่อให้ยืนยันได้เร็วขึ้น')).toHaveValue('สมชาย ทดสอบ');
   });
 
-  test('paying shows "กำลังดำเนินการ..." step then success', async ({ page }) => {
+  test('paying shows "กำลังดำเนินการ..." step then processing', async ({ page }) => {
     await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
-    await page.locator('.co-ck-consent input[type="checkbox"]').check();
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    // Consent is pre-checked so pay button is already enabled
     await page.locator('.co-ck-foot .btn-primary').click();
     // Should show paying step
     await expect(page.getByText('กำลังดำเนินการ...')).toBeVisible({ timeout: 3000 });
@@ -245,8 +255,7 @@ test.describe('Coins Page — Checkout modal', () => {
 
   test('success step shows receipt and "เสร็จสิ้น" button', async ({ page }) => {
     await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
-    await page.locator('.co-ck-consent input[type="checkbox"]').check();
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
     await page.locator('.co-ck-foot .btn-primary').click();
     // Wait for success (after ~1.8s delay in mock)
     await expect(page.getByText('ชำระเงินสำเร็จ!')).toBeVisible({ timeout: 6000 });
@@ -256,8 +265,7 @@ test.describe('Coins Page — Checkout modal', () => {
 
   test('success receipt shows pack details', async ({ page }) => {
     await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
-    await page.locator('.co-ck-consent input[type="checkbox"]').check();
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
     await page.locator('.co-ck-foot .btn-primary').click();
     await expect(page.getByText('ชำระเงินสำเร็จ!')).toBeVisible({ timeout: 6000 });
     // Receipt shows เหรียญ amount and จำนวนเงิน
@@ -267,20 +275,11 @@ test.describe('Coins Page — Checkout modal', () => {
 
   test('clicking "เสร็จสิ้น" closes the modal', async ({ page }) => {
     await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
-    await page.locator('.co-ck-consent input[type="checkbox"]').check();
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
     await page.locator('.co-ck-foot .btn-primary').click();
     await expect(page.getByText('ชำระเงินสำเร็จ!')).toBeVisible({ timeout: 6000 });
     await page.getByRole('button', { name: 'เสร็จสิ้น' }).click();
     await expect(page.locator('.co-ck-overlay')).not.toBeVisible();
-  });
-
-  test('unchecked consent shows error message on pay click', async ({ page }) => {
-    await gotoCoins(page);
-    await page.getByRole('button', { name: 'ซื้อเลย' }).first().click();
-    // consent unchecked → button is disabled, so error won't fire via button click
-    // Verify pay button is disabled as insurance
-    await expect(page.locator('.co-ck-foot .btn-primary')).toBeDisabled({ timeout: 5000 });
   });
 
 });
@@ -294,13 +293,13 @@ test.describe('Coins Page — Boost tab', () => {
   test('clicking "Boost ที่ใช้งาน" shows boost heading', async ({ page }) => {
     await gotoCoins(page, { features: [] });
     await page.getByRole('button', { name: 'Boost ที่ใช้งาน' }).click();
-    await expect(page.getByText('Boost ที่ใช้งานอยู่')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('ประกาศที่กำลัง Boost')).toBeVisible({ timeout: 8000 });
   });
 
-  test('empty boosts shows "ยังไม่มี Boost ที่ใช้งานอยู่"', async ({ page }) => {
+  test('empty boosts shows "ยังไม่มีประกาศที่กำลัง Boost"', async ({ page }) => {
     await gotoCoins(page, { features: [] });
     await page.getByRole('button', { name: 'Boost ที่ใช้งาน' }).click();
-    await expect(page.getByText('ยังไม่มี Boost ที่ใช้งานอยู่')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('ยังไม่มีประกาศที่กำลัง Boost')).toBeVisible({ timeout: 8000 });
   });
 
   test('active boost is shown with product title', async ({ page }) => {
@@ -370,23 +369,30 @@ test.describe('Coins Page — Premium tab', () => {
     await expect(page.locator('.co-price-amt')).toContainText('1,290');
   });
 
-  test('shows perks grid', async ({ page }) => {
+  test('shows perks grid with heading "สิทธิพิเศษที่คุณจะได้รับ"', async ({ page }) => {
     await gotoCoins(page);
     await page.getByRole('button', { name: 'Premium' }).click();
-    await expect(page.getByText('สิ่งที่ได้รับกับ Premium')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('สิทธิพิเศษที่คุณจะได้รับ')).toBeVisible({ timeout: 8000 });
     await expect(page.locator('.co-perk')).toHaveCount(6, { timeout: 8000 });
   });
 
-  test('live perks have "พร้อมใช้งาน" tag', async ({ page }) => {
+  test('live perks have "ใช้งานอยู่" tag', async ({ page }) => {
     await gotoCoins(page);
     await page.getByRole('button', { name: 'Premium' }).click();
-    await expect(page.locator('.co-perk-tag', { hasText: 'พร้อมใช้งาน' }).first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('.co-perk-tag', { hasText: 'ใช้งานอยู่' }).first()).toBeVisible({ timeout: 8000 });
   });
 
-  test('shows "เริ่มใช้งาน Premium" CTA button', async ({ page }) => {
+  test('shows "เริ่มใช้ Premium ฟรี 7 วัน" CTA button', async ({ page }) => {
     await gotoCoins(page);
     await page.getByRole('button', { name: 'Premium' }).click();
-    await expect(page.getByRole('button', { name: 'เริ่มใช้งาน Premium' })).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole('button', { name: 'เริ่มใช้ Premium ฟรี 7 วัน' })).toBeVisible({ timeout: 8000 });
+  });
+
+  test('shows fine print with free trial and cancel text', async ({ page }) => {
+    await gotoCoins(page);
+    await page.getByRole('button', { name: 'Premium' }).click();
+    await expect(page.locator('.co-prem-fine')).toContainText('ไม่มีค่าใช้จ่ายใน 7 วันแรก', { timeout: 8000 });
+    await expect(page.locator('.co-prem-fine')).toContainText('ยกเลิกได้ทุกเมื่อ');
   });
 
   test('shows FAQ accordion', async ({ page }) => {
@@ -404,12 +410,6 @@ test.describe('Coins Page — Premium tab', () => {
     await expect(faq).toHaveAttribute('open');
   });
 
-  test('shows "ยกเลิกได้ทุกเมื่อ" fine print', async ({ page }) => {
-    await gotoCoins(page);
-    await page.getByRole('button', { name: 'Premium' }).click();
-    await expect(page.getByText('ยกเลิกได้ทุกเมื่อ ไม่มีสัญญาผูกมัด')).toBeVisible({ timeout: 8000 });
-  });
-
 });
 
 // =============================================================================
@@ -418,15 +418,15 @@ test.describe('Coins Page — Premium tab', () => {
 
 test.describe('Coins Page — History tab', () => {
 
-  test('clicking ประวัติ shows "ประวัติเหรียญ" heading', async ({ page }) => {
+  test('clicking "ประวัติการใช้" shows "ประวัติการใช้" heading', async ({ page }) => {
     await gotoCoins(page, { txs: MOCK_TRANSACTIONS });
-    await page.getByRole('button', { name: 'ประวัติ' }).click();
-    await expect(page.getByText('ประวัติเหรียญ')).toBeVisible({ timeout: 8000 });
+    await page.getByRole('button', { name: 'ประวัติการใช้' }).click();
+    await expect(page.locator('.co-hist-head h2', { hasText: 'ประวัติการใช้' })).toBeVisible({ timeout: 8000 });
   });
 
   test('history shows summary stats: เหรียญที่ได้รับ / เหรียญที่ใช้', async ({ page }) => {
     await gotoCoins(page, { txs: MOCK_TRANSACTIONS });
-    await page.getByRole('button', { name: 'ประวัติ' }).click();
+    await page.getByRole('button', { name: 'ประวัติการใช้' }).click();
     await expect(page.getByText('เหรียญที่ได้รับ')).toBeVisible({ timeout: 8000 });
     await expect(page.getByText('เหรียญที่ใช้')).toBeVisible();
     await expect(page.getByText('คงเหลือ (จากประวัติ)')).toBeVisible();
@@ -434,55 +434,55 @@ test.describe('Coins Page — History tab', () => {
 
   test('history summary shows correct total in (100)', async ({ page }) => {
     await gotoCoins(page, { txs: MOCK_TRANSACTIONS });
-    await page.getByRole('button', { name: 'ประวัติ' }).click();
+    await page.getByRole('button', { name: 'ประวัติการใช้' }).click();
     await expect(page.locator('.co-hist-summary')).toContainText('100', { timeout: 8000 });
   });
 
   test('history shows transaction rows', async ({ page }) => {
     await gotoCoins(page, { txs: MOCK_TRANSACTIONS });
-    await page.getByRole('button', { name: 'ประวัติ' }).click();
+    await page.getByRole('button', { name: 'ประวัติการใช้' }).click();
     await expect(page.locator('.co-hist-row')).toHaveCount(2, { timeout: 8000 });
   });
 
   test('credit transaction shows + amount', async ({ page }) => {
     await gotoCoins(page, { txs: MOCK_TRANSACTIONS });
-    await page.getByRole('button', { name: 'ประวัติ' }).click();
+    await page.getByRole('button', { name: 'ประวัติการใช้' }).click();
     await expect(page.locator('.co-hist-n.pos', { hasText: '+100' })).toBeVisible({ timeout: 8000 });
   });
 
   test('debit transaction shows negative amount', async ({ page }) => {
     await gotoCoins(page, { txs: MOCK_TRANSACTIONS });
-    await page.getByRole('button', { name: 'ประวัติ' }).click();
+    await page.getByRole('button', { name: 'ประวัติการใช้' }).click();
     await expect(page.locator('.co-hist-n.neg')).toBeVisible({ timeout: 8000 });
   });
 
   test('history shows transaction descriptions', async ({ page }) => {
     await gotoCoins(page, { txs: MOCK_TRANSACTIONS });
-    await page.getByRole('button', { name: 'ประวัติ' }).click();
+    await page.getByRole('button', { name: 'ประวัติการใช้' }).click();
     await expect(page.getByText('เติมเหรียญ 100')).toBeVisible({ timeout: 8000 });
     await expect(page.getByText('ดันสินค้าขึ้นบนสุด')).toBeVisible();
   });
 
-  test('filter dropdown has ทั้งหมด / รับเหรียญ / ใช้เหรียญ options', async ({ page }) => {
+  test('filter dropdown has ทั้งหมด / รับเข้า / ใช้ไป options', async ({ page }) => {
     await gotoCoins(page, { txs: MOCK_TRANSACTIONS });
-    await page.getByRole('button', { name: 'ประวัติ' }).click();
+    await page.getByRole('button', { name: 'ประวัติการใช้' }).click();
     await expect(page.getByRole('option', { name: 'ทั้งหมด' })).toBeAttached({ timeout: 8000 });
-    await expect(page.getByRole('option', { name: 'รับเหรียญ' })).toBeAttached();
-    await expect(page.getByRole('option', { name: 'ใช้เหรียญ' })).toBeAttached();
+    await expect(page.getByRole('option', { name: 'รับเข้า' })).toBeAttached();
+    await expect(page.getByRole('option', { name: 'ใช้ไป' })).toBeAttached();
   });
 
-  test('"รับเหรียญ" filter shows only credit transactions', async ({ page }) => {
+  test('"รับเข้า" filter shows only credit transactions', async ({ page }) => {
     await gotoCoins(page, { txs: MOCK_TRANSACTIONS });
-    await page.getByRole('button', { name: 'ประวัติ' }).click();
+    await page.getByRole('button', { name: 'ประวัติการใช้' }).click();
     await page.locator('.co-hist-filters select').selectOption('credit');
     await expect(page.locator('.co-hist-row')).toHaveCount(1, { timeout: 5000 });
     await expect(page.getByText('เติมเหรียญ 100')).toBeVisible();
     await expect(page.getByText('ดันสินค้าขึ้นบนสุด')).not.toBeVisible();
   });
 
-  test('"ใช้เหรียญ" filter shows only debit transactions', async ({ page }) => {
+  test('"ใช้ไป" filter shows only debit transactions', async ({ page }) => {
     await gotoCoins(page, { txs: MOCK_TRANSACTIONS });
-    await page.getByRole('button', { name: 'ประวัติ' }).click();
+    await page.getByRole('button', { name: 'ประวัติการใช้' }).click();
     await page.locator('.co-hist-filters select').selectOption('debit');
     await expect(page.locator('.co-hist-row')).toHaveCount(1, { timeout: 5000 });
     await expect(page.getByText('ดันสินค้าขึ้นบนสุด')).toBeVisible();
@@ -491,7 +491,7 @@ test.describe('Coins Page — History tab', () => {
 
   test('empty history shows "ยังไม่มีประวัติธุรกรรม"', async ({ page }) => {
     await gotoCoins(page, { txs: [] });
-    await page.getByRole('button', { name: 'ประวัติ' }).click();
+    await page.getByRole('button', { name: 'ประวัติการใช้' }).click();
     await expect(page.getByText('ยังไม่มีประวัติธุรกรรม')).toBeVisible({ timeout: 8000 });
   });
 
