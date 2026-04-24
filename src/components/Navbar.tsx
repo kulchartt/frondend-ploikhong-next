@@ -202,6 +202,7 @@ export function Navbar({
                       { label: 'การซื้อของฉัน',    icon: <DropBagIcon />,       action: () => onOpenHub?.('buy') },
                       { label: 'รายการถูกใจ',      icon: <DropHeartIcon />,     action: () => onOpenHub?.('buy', 'saved') },
                       { label: 'ร้องเรียนของฉัน',  icon: <DropAlertIcon />,     action: () => window.location.href = '/complaints' },
+                      ...((session?.user as any)?.is_admin ? [{ label: '🛡️ Admin Panel', icon: <DropShieldIcon />, action: () => window.location.href = '/admin' }] : []),
                     ] as { label: string; icon: React.ReactNode; action: () => void }[]).map(({ label, icon, action }) => (
                       <button key={label} onClick={action}
                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%',
@@ -270,14 +271,6 @@ export function Navbar({
               </>
             )}
           </div>
-
-          {/* Admin button */}
-          {(session?.user as any)?.is_admin && (
-            <a href="/admin"
-              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 10px', background: '#0f172a', color: '#f59e0b', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', border: 'none', cursor: 'pointer' }}>
-              🛡️ {!isMobile && 'Admin'}
-            </a>
-          )}
 
           {/* + ลงขาย */}
           <button onClick={onOpenListing}
@@ -401,5 +394,10 @@ function LogoutIcon() {
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
     <polyline points="16 17 21 12 16 7"/>
     <line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>;
+}
+function DropShieldIcon() {
+  return <svg style={icSm} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
   </svg>;
 }

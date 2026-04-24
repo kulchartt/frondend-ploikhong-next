@@ -60,12 +60,11 @@ function CommandPalette({ onClose, onNavigate }: { onClose: () => void; onNaviga
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   const navItems = [
-    { key: 'queue', label: 'คิวงาน', sub: 'ร้องเรียน · pending items' },
+    { key: 'queue', label: 'Queue', sub: 'ร้องเรียน · pending items' },
     { key: 'users', label: 'ผู้ใช้', sub: 'จัดการบัญชีผู้ใช้' },
     { key: 'products', label: 'ประกาศ', sub: 'จัดการสินค้า' },
-    { key: 'premium', label: 'Premium & เหรียญ', sub: 'รายได้ · feature usage' },
-    { key: 'payments', label: 'คำขอเติมเหรียญ', sub: 'ยืนยัน · ปฏิเสธ' },
-    { key: 'overview', label: 'ภาพรวม', sub: 'stats ทั้งหมด' },
+    { key: 'complaints', label: 'เคสร้องเรียน', sub: 'จัดการเคสร้องเรียน' },
+    { key: 'finance', label: 'การเงิน', sub: 'คำขอเติมเหรียญ · รายได้' },
   ].filter(i => !q || i.label.includes(q) || i.sub.includes(q));
 
   return (
@@ -142,7 +141,7 @@ function QueueView({ token }: { token: string }) {
       {/* List */}
       <div className="ad-queue-list">
         <div className="ad-queue-head">
-          <h3>คิวงาน</h3>
+          <h3>Inbox</h3>
           <span className="count">{visible.length} รายการ</span>
           <div className="ad-queue-tabs">
             {(['all', 'complaint', 'payment'] as const).map(k => (
@@ -749,6 +748,95 @@ function ComplaintsTableTab({ token }: { token: string }) {
   );
 }
 
+// ─── Finance Tab ──────────────────────────────────────────────────────────────
+function FinanceTab({ token }: { token: string }) {
+  const [coinStats, setCoinStats] = useState<any>(null);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [filter, setFilter] = useState<'pending' | 'confirmed' | 'rejected'>('pending');
+  const [loading, setLoading] = useState(true);
+  const [rejectNote, setRejectNote] = useState<Record<number, string>>({});
+  const [msg, setMsg] = useState('');
+
+  useEffect(() => {
+    api.getCoinAdminStats(token).then(setCoinStats).catch(() => {});
+  }, [token]);
+
+  useEffect(() => {
+    setLoading(true);
+    api.getPaymentRequests(filter, token).then(setPayments).catch(() => {}).finally(() => setLoading(false));
+  }, [filter, token]);
+
+  async function confirm(id: number) {
+    try { const r = await api.confirmPayment(id, token); setMsg(r.message || 'ยืนยันแล้ว'); api.getPaymentRequests(filter, token).then(setPayments); }
+    catch (e: any) { setMsg(e.message); }
+  }
+  async function reject(id: number) {
+    try { const r = await api.rejectPayment(id, rejectNote[id] || '', token); setMsg(r.message || 'ปฏิเสธแล้ว'); api.getPaymentRequests(filter, token).then(setPayments); }
+    catch (e: any) { setMsg(e.message); }
+  }
+
+  const totalRevenue = coinStats?.revenue?.total || 0;
+  return (
+    <div>
+      <div className="ad-home-hero" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+        {[
+          { l: 'รายได้รวม', v: fmtMoney(totalRevenue) },
+          { l: 'รอยืนยัน', v: String(coinStats?.pending?.count || 0) },
+          { l: 'เหรียญแจก', v: fmt(coinStats?.coins?.issued || 0) },
+          { l: 'เหรียญคงค้าง', v: fmt(coinStats?.coins?.outstanding || 0) },
+        ].map(s => (
+          <div key={s.l} className="ad-home-stat">
+            <div className="ad-home-stat-l">{s.l}</div>
+            <div className="ad-home-stat-v">{s.v}</div>
+          </div>
+        ))}
+      </div>
+      <div className="ad-flt-row">
+        <div className="ad-flt-grp">
+          {(['pending', 'confirmed', 'rejected'] as const).map(k => (
+            <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>
+              {k === 'pending' ? 'รอยืนยัน' : k === 'confirmed' ? 'ยืนยันแล้ว' : 'ปฏิเสธแล้ว'}
+            </button>
+          ))}
+        </div>
+        {msg && <span style={{ fontSize: 12, color: 'var(--pos)' }}>{msg} <button onClick={() => setMsg('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>✕</button></span>}
+      </div>
+      <div className="ad-tbl-wrap">
+        {loading ? <div style={{ padding: 20, textAlign: 'center', color: 'var(--ink-3)' }}>กำลังโหลด...</div> : payments.length === 0 ? (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>ไม่มีคำขอ</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {payments.map(req => (
+              <div key={req.id} style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 8, background: 'var(--surface)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{req.user_name || `User #${req.user_id}`} <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 400 }}>{req.user_email}</span></div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 2 }}>แพ็กเกจ: <b>{req.package_key}</b> · {req.coins} เหรียญ · <b>{fmtMoney(req.amount)}</b></div>
+                    {req.sender_name && <div style={{ fontSize: 12, color: 'var(--ink-2)' }}>ชื่อผู้โอน: <b>{req.sender_name}</b></div>}
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{fmtDate(req.created_at)}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                    {req.slip_url && <a href={req.slip_url} target="_blank" rel="noreferrer" className="btn-sec" style={{ fontSize: 11, padding: '4px 10px', textDecoration: 'none' }}>ดูสลิป</a>}
+                    <StatusTag status={req.status} />
+                  </div>
+                </div>
+                {filter === 'pending' && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button className="btn-grad" onClick={() => confirm(req.id)} style={{ fontSize: 12, padding: '5px 14px' }}>ยืนยัน ✓</button>
+                    <input placeholder="หมายเหตุปฏิเสธ..." value={rejectNote[req.id] || ''} onChange={e => setRejectNote(prev => ({ ...prev, [req.id]: e.target.value }))} style={{ flex: 1, minWidth: 150, padding: '4px 10px', border: '1px solid var(--line)', borderRadius: 5, fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+                    <button className="btn-sec danger" onClick={() => reject(req.id)} style={{ fontSize: 12, padding: '5px 12px' }}>ปฏิเสธ ✕</button>
+                  </div>
+                )}
+                {req.admin_note && <div style={{ fontSize: 12, color: 'var(--neg)', background: 'color-mix(in srgb,var(--neg) 8%,transparent)', padding: '6px 10px', borderRadius: 5 }}>หมายเหตุ: {req.admin_note}</div>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -776,16 +864,14 @@ export default function AdminPage() {
   );
 
   const navItems = [
-    { key: 'queue',      label: 'คิวงาน',           icon: <IcoQueue /> },
+    { key: 'queue',      label: 'Queue',             icon: <IcoQueue /> },
     { key: 'users',      label: 'ผู้ใช้',            icon: <IcoUsers /> },
     { key: 'products',   label: 'ประกาศ',            icon: <IcoBox /> },
-    { key: 'premium',    label: 'Premium & เหรียญ',  icon: <IcoCoin /> },
-    { key: 'payments',   label: 'คำขอเติมเหรียญ',    icon: <IcoCard /> },
-    { key: 'complaints', label: 'ร้องเรียน',          icon: <IcoAlert /> },
-    { key: 'overview',   label: 'ภาพรวม',            icon: <IcoChart /> },
+    { key: 'complaints', label: 'เคสร้องเรียน',      icon: <IcoAlert /> },
+    { key: 'finance',    label: 'การเงิน',            icon: <IcoChart /> },
   ];
 
-  const tabLabels: Record<string, string> = { queue: 'คิวงาน', users: 'ผู้ใช้', products: 'ประกาศสินค้า', premium: 'Premium & เหรียญ', payments: 'คำขอเติมเหรียญ', complaints: 'ร้องเรียน', overview: 'ภาพรวม' };
+  const tabLabels: Record<string, string> = { queue: 'Queue', users: 'ผู้ใช้', products: 'ประกาศ', complaints: 'เคสร้องเรียน', finance: 'การเงิน' };
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -812,6 +898,22 @@ export default function AdminPage() {
               </button>
             ))}
           </nav>
+
+          <div className="ad-side-label">Saved Views</div>
+          <div className="ad-saved-views">
+            <button onClick={() => setTab('queue')}>
+              <span className="dot" style={{ background: 'var(--neg)' }} />
+              SLA เสี่ยงตก
+            </button>
+            <button onClick={() => setTab('users')}>
+              <span className="dot" style={{ background: 'var(--warn)' }} />
+              สมาชิกใหม่
+            </button>
+            <button onClick={() => setTab('products')}>
+              <span className="dot" style={{ background: 'var(--accent)' }} />
+              รอตรวจประกาศ
+            </button>
+          </div>
 
           <a href="/" className="ad-close">
             <IcoBack />
@@ -845,13 +947,11 @@ export default function AdminPage() {
           </div>
 
           <div className={`ad-content${tab === 'queue' ? ' no-pad' : ''}`}>
-            {tab === 'queue'      && <QueueView       token={token} />}
-            {tab === 'users'      && <UsersTab         token={token} />}
-            {tab === 'products'   && <ProductsTab      token={token} />}
-            {tab === 'premium'    && <PremiumTab       token={token} />}
-            {tab === 'payments'   && <PaymentsTab      token={token} />}
+            {tab === 'queue'      && <QueueView         token={token} />}
+            {tab === 'users'      && <UsersTab           token={token} />}
+            {tab === 'products'   && <ProductsTab        token={token} />}
             {tab === 'complaints' && <ComplaintsTableTab token={token} />}
-            {tab === 'overview'   && <OverviewTab      token={token} />}
+            {tab === 'finance'    && <FinanceTab         token={token} />}
           </div>
         </div>
       </div>

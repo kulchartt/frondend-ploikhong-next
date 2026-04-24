@@ -19,12 +19,12 @@ const PAY_METHODS = [
 ];
 
 const PREMIUM_PERKS = [
-  { ic: '⭐', title: 'สินค้าเด่น (Featured)', desc: 'ปักหมุดสินค้าให้ขึ้นบนสุดของผลการค้นหา 7 วัน', live: true },
-  { ic: '🚀', title: 'ดันสินค้าขึ้นบนสุด', desc: 'Boost สินค้าให้แสดงผลมากขึ้น 24 ชั่วโมง', live: true },
-  { ic: '🔔', title: 'แจ้งเตือนตั้งราคา', desc: 'รับการแจ้งเตือนเมื่อสินค้าที่ตามไว้ลดราคา', live: true },
-  { ic: '📊', title: 'Analytics Pro', desc: 'ดูสถิติการเข้าชมและ Conversion ของประกาศ', live: false },
-  { ic: '💬', title: 'Priority Support', desc: 'ช่องทางติดต่อทีมงานพิเศษ ตอบภายใน 1 ชม.', live: false },
-  { ic: '🔄', title: 'ลงประกาศอัตโนมัติ', desc: 'ต่ออายุประกาศอัตโนมัติทุก 30 วัน', live: false },
+  { ic: '✨', title: 'Boost อัตโนมัติทุก 7 วัน', desc: 'ประกาศของคุณถูกดันขึ้นบนสุดโดยอัตโนมัติทุกสัปดาห์ เลือกได้สูงสุด 3 ประกาศ', live: true },
+  { ic: '⭐', title: 'ป้าย Premium สีทอง', desc: 'ได้ป้ายสีทองใต้ชื่อ ผู้ซื้อมั่นใจกว่าเดิม ขายของได้เร็วขึ้น 3 เท่า', live: true },
+  { ic: '🔎', title: 'Insight แบบละเอียด', desc: 'ดูข้อมูลผู้เข้าชม ช่วงเวลาที่คนสนใจ เปรียบเทียบกับคู่แข่ง', live: false },
+  { ic: '⚡', title: 'ตอบอัตโนมัติ AI', desc: 'ตั้งข้อความตอบกลับเร็วใน 1 วินาที ไม่พลาดลูกค้า', live: false },
+  { ic: '🛡️', title: 'ประกันผู้ขาย', desc: 'คืนเหรียญ Boost ถ้าไม่มีข้อความภายใน 48 ชม. หลัง Boost', live: true },
+  { ic: '📊', title: 'รายงานรายเดือน', desc: 'สรุปยอดขาย + คำแนะนำจาก AI ส่งทุกต้นเดือน', live: false },
 ];
 
 const FEATURE_COINS: Record<string, number> = {
@@ -47,7 +47,7 @@ function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem
   const [step, setStep] = useState<CheckoutStep>('review');
   const [payMethod, setPayMethod] = useState('promptpay');
   const [senderName, setSenderName] = useState('');
-  const [consent, setConsent] = useState(false);
+  const [consent, setConsent] = useState(true);
   const [txId, setTxId] = useState('');
   const [err, setErr] = useState('');
 
@@ -69,7 +69,7 @@ function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem
     <div className="co-ck-overlay" onClick={onClose}>
       <div className="co-ck" onClick={e => e.stopPropagation()}>
         <div className="co-ck-head">
-          <h2>{step === 'success' ? 'ชำระเงินสำเร็จ' : step === 'paying' ? 'กำลังดำเนินการ...' : 'ยืนยันการซื้อ'}</h2>
+          <h2>{step === 'success' ? 'ชำระเงินสำเร็จ' : step === 'paying' ? 'กำลังดำเนินการ...' : 'ยืนยันการชำระเงิน'}</h2>
           {step !== 'paying' && <button className="co-ck-close" onClick={onClose}><IcoClose /></button>}
         </div>
 
@@ -113,7 +113,7 @@ function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem
 
               {/* Payment method */}
               <div className="co-ck-sec">
-                <h3>ช่องทางชำระเงิน</h3>
+                <h3>วิธีการชำระเงิน</h3>
                 {PAY_METHODS.map(m => (
                   <button key={m.id} className={`co-pay${payMethod === m.id ? ' on' : ''}`} onClick={() => setPayMethod(m.id)}>
                     <div className="co-pay-ic">{m.ic}</div>
@@ -191,8 +191,8 @@ function TopupTab({ token, balance, onRefresh }: { token: string; balance: numbe
   return (
     <div className="co-body">
       <div className="co-hero">
-        <h2>เติมเหรียญ <b>PloiKhong</b></h2>
-        <p>ใช้เหรียญเพื่อเพิ่มโอกาสการขาย · ยอดคงเหลือปัจจุบัน: <b style={{ color: 'var(--warn)', fontFamily: 'var(--font-mono)' }}>{balance.toLocaleString()} เหรียญ</b></p>
+        <h2>ใช้เหรียญเพื่อ <b>Boost</b> ประกาศหรือซื้อป้าย Featured</h2>
+        <p>1 Boost = 30 เหรียญ · Featured 7 วัน = 80 เหรียญ · เหรียญไม่หมดอายุ</p>
       </div>
 
       <div className="co-grid">
@@ -204,7 +204,7 @@ function TopupTab({ token, balance, onRefresh }: { token: string; balance: numbe
             <div className="co-price">{fmtMoney(p.price)}</div>
             <div className="co-perprice">{(p.price / (p.coins + p.bonus || 1) * 100).toFixed(1)} สต./เหรียญ</div>
             <button className="btn btn-primary" onClick={() => setCheckout({ label: `${(p.coins + p.bonus).toLocaleString()} เหรียญ`, coins: p.coins + p.bonus, price: p.price, packKey: p.key })}>
-              ซื้อเลย
+              ซื้อแพ็คนี้
             </button>
           </div>
         ))}
@@ -212,7 +212,7 @@ function TopupTab({ token, balance, onRefresh }: { token: string; balance: numbe
 
       <div className="co-hint">
         <IcoInfo />
-        <span>เหรียญใช้ได้กับ: สินค้าเด่น · ดันสินค้า · แจ้งเตือนราคา และฟีเจอร์อื่นๆ ในอนาคต เหรียญไม่มีวันหมดอายุ</span>
+        <span>เหรียญไม่หมดอายุ · สามารถขอเงินคืนได้ภายใน 14 วันถ้ายังไม่ใช้งาน</span>
       </div>
 
       {checkout && (
@@ -241,15 +241,15 @@ function ActiveBoostsTab({ token }: { token: string }) {
   return (
     <div className="co-body">
       <div className="co-actives-head">
-        <h2>Boost ที่ใช้งานอยู่</h2>
-        <p>รายการฟีเจอร์พรีเมียมที่คุณเปิดใช้งานในขณะนี้</p>
+        <h2>ประกาศที่กำลัง Boost</h2>
+        <p>ดูสถานะการใช้งาน Boost/Featured ของคุณแบบเรียลไทม์</p>
       </div>
 
       {features.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-3)' }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🚀</div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>ยังไม่มี Boost ที่ใช้งานอยู่</div>
-          <div style={{ fontSize: 14 }}>ไปที่แท็บ "เติมเหรียญ" เพื่อซื้อแพ็กเกจ แล้วเปิดใช้งาน Boost บนหน้าประกาศ</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>ยังไม่มีประกาศที่กำลัง Boost</div>
+          <div style={{ fontSize: 14 }}>ไปที่แท็บ "เติมเหรียญ" เพื่อซื้อแพ็กเกจ แล้วเปิด Boost บนหน้าประกาศ</div>
         </div>
       ) : (
         <div className="co-actives">
@@ -316,9 +316,9 @@ function PremiumTab() {
             {plan === 'yearly' && <div className="co-price-sub">ประหยัด {fmtMoney(monthly * 12 - yearly)} ต่อปี</div>}
           </div>
           <button className="btn btn-primary co-prem-cta" style={{ padding: '12px 24px', fontSize: 15, fontWeight: 700 }}>
-            เริ่มใช้งาน Premium
+            เริ่มใช้ Premium ฟรี 7 วัน
           </button>
-          <div className="co-prem-fine">ยกเลิกได้ทุกเมื่อ ไม่มีสัญญาผูกมัด</div>
+          <div className="co-prem-fine">ไม่มีค่าใช้จ่ายใน 7 วันแรก · ยกเลิกได้ทุกเมื่อ</div>
         </div>
         <div className="co-prem-right">
           <div className="co-prem-card">
@@ -329,7 +329,7 @@ function PremiumTab() {
         </div>
       </div>
 
-      <div className="co-perks-h">สิ่งที่ได้รับกับ Premium</div>
+      <div className="co-perks-h">สิทธิพิเศษที่คุณจะได้รับ</div>
       <div className="co-perks">
         {PREMIUM_PERKS.map(perk => (
           <div key={perk.title} className={`co-perk${perk.live ? ' live' : ''}`}>
@@ -337,7 +337,7 @@ function PremiumTab() {
             <div className="co-perk-body">
               <h4>{perk.title}</h4>
               <p>{perk.desc}</p>
-              {perk.live && <span className="co-perk-tag">พร้อมใช้งาน</span>}
+              {perk.live && <span className="co-perk-tag">ใช้งานอยู่</span>}
             </div>
           </div>
         ))}
@@ -379,12 +379,12 @@ function HistoryTab({ token }: { token: string }) {
   return (
     <div className="co-body">
       <div className="co-hist-head">
-        <h2>ประวัติเหรียญ</h2>
+        <h2>ประวัติการใช้</h2>
         <div className="co-hist-filters">
           <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
             <option value="">ทั้งหมด</option>
-            <option value="credit">รับเหรียญ</option>
-            <option value="debit">ใช้เหรียญ</option>
+            <option value="credit">รับเข้า</option>
+            <option value="debit">ใช้ไป</option>
           </select>
         </div>
       </div>
@@ -444,7 +444,7 @@ export default function CoinsPage() {
     { key: 'topup',   label: 'เติมเหรียญ' },
     { key: 'boosts',  label: 'Boost ที่ใช้งาน' },
     { key: 'premium', label: 'Premium' },
-    { key: 'history', label: 'ประวัติ' },
+    { key: 'history', label: 'ประวัติการใช้' },
   ];
 
   return (
@@ -454,7 +454,7 @@ export default function CoinsPage() {
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', padding: 4, display: 'flex' }}><IcoBack /></button>
         <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)', flex: 1 }}>เหรียญ & Premium</div>
         <div className="co-balance">
-          <span className="co-ic">🪙</span>
+          <span className="co-ic">◎</span>
           <span style={{ fontFamily: 'var(--font-mono)' }}>{balance.toLocaleString()}</span>
           <span style={{ fontWeight: 400, fontSize: 11, opacity: .8 }}>เหรียญ</span>
         </div>
