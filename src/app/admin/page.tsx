@@ -19,181 +19,387 @@ async function adminFetch(path: string, token: string, opts?: RequestInit) {
   return data;
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface Stats {
-  users: number;
-  products: number;
-  available: number;
-  sold: number;
-  orders: number;
-  revenue: number;
+// ─── Types ───────────────────────────────────────────────────────────────────
+interface Stats { users: number; products: number; available: number; sold: number; orders: number; revenue: number; }
+interface AdminUser { id: number; name: string; email: string; is_admin: number; is_banned: number; created_at: string; rating: number; review_count: number; }
+interface AdminProduct { id: number; title: string; price: number; seller_name: string; status: string; created_at: string; category: string; }
+interface PaymentRequest { id: number; user_id: number; package_key: string; coins: number; amount: number; slip_url: string | null; sender_name: string | null; status: string; admin_note: string | null; created_at: string; user_name?: string; user_email?: string; }
+
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+const fmt = (n: number) => n?.toLocaleString('th-TH') ?? '0';
+const fmtMoney = (n: number) => '฿' + (n ?? 0).toLocaleString('th-TH', { maximumFractionDigits: 0 });
+const fmtDate = (d: string) => new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+
+function StatusTag({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    active: 'active', available: 'active', success: 'success', confirmed: 'success',
+    pending: 'pending', new: 'pending', investigating: 'investigating', reviewing: 'pending',
+    suspended: 'suspended', reported: 'reported', banned: 'suspended', rejected: 'suspended',
+    resolved: 'resolved', sold: 'resolved', draft: 'resolved',
+  };
+  return <span className={`ad-status-tag ${map[status] || 'pending'}`}>{status}</span>;
 }
 
-interface AdminUser {
-  id: number;
-  name: string;
-  email: string;
-  is_admin: number;
-  is_banned: number;
-  created_at: string;
-  rating: number;
-  review_count: number;
-}
+// ─── SVG Icons ─────────────────────────────────────────────────────────────
+function IcoSearch() { return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx={11} cy={11} r={8}/><line x1={21} y1={21} x2={16.65} y2={16.65}/></svg>; }
+function IcoQueue() { return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={3} y={3} width={7} height={7}/><rect x={14} y={3} width={7} height={7}/><rect x={3} y={14} width={7} height={7}/><rect x={14} y={14} width={7} height={7}/></svg>; }
+function IcoUsers() { return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx={9} cy={7} r={4}/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>; }
+function IcoBox() { return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>; }
+function IcoCoin() { return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx={12} cy={12} r={10}/><path d="M12 8v8M8.5 10.5a3.5 3.5 0 0 1 7 0v3a3.5 3.5 0 0 1-7 0v-3z"/></svg>; }
+function IcoCard() { return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x={1} y={4} width={22} height={16} rx={2}/><line x1={1} y1={10} x2={23} y2={10}/></svg>; }
+function IcoAlert() { return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1={12} y1={9} x2={12} y2={13}/><line x1={12} y1={17} x2={12.01} y2={17}/></svg>; }
+function IcoChart() { return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1={18} y1={20} x2={18} y2={10}/><line x1={12} y1={20} x2={12} y2={4}/><line x1={6} y1={20} x2={6} y2={14}/></svg>; }
+function IcoClose() { return <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1={18} y1={6} x2={6} y2={18}/><line x1={6} y1={6} x2={18} y2={18}/></svg>; }
+function IcoSend() { return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1={22} y1={2} x2={11} y2={13}/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>; }
+function IcoBack() { return <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="15 18 9 12 15 6"/></svg>; }
 
-interface AdminProduct {
-  id: number;
-  title: string;
-  price: number;
-  seller_name: string;
-  status: string;
-  created_at: string;
-  category: string;
-}
+// ─── Command Palette ──────────────────────────────────────────────────────────
+function CommandPalette({ onClose, onNavigate }: { onClose: () => void; onNavigate: (key: string) => void }) {
+  const [q, setQ] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
-interface PaymentRequest {
-  id: number;
-  user_id: number;
-  package_key: string;
-  coins: number;
-  amount: number;
-  slip_url: string | null;
-  sender_name: string | null;
-  status: string;
-  admin_note: string | null;
-  created_at: string;
-  user_name?: string;
-  user_email?: string;
-}
+  const navItems = [
+    { key: 'queue', label: 'คิวงาน', sub: 'ร้องเรียน · pending items' },
+    { key: 'users', label: 'ผู้ใช้', sub: 'จัดการบัญชีผู้ใช้' },
+    { key: 'products', label: 'ประกาศ', sub: 'จัดการสินค้า' },
+    { key: 'premium', label: 'Premium & เหรียญ', sub: 'รายได้ · feature usage' },
+    { key: 'payments', label: 'คำขอเติมเหรียญ', sub: 'ยืนยัน · ปฏิเสธ' },
+    { key: 'overview', label: 'ภาพรวม', sub: 'stats ทั้งหมด' },
+  ].filter(i => !q || i.label.includes(q) || i.sub.includes(q));
 
-// ─── Shared styles ────────────────────────────────────────────────────────────
-const card: React.CSSProperties = {
-  background: '#fff',
-  borderRadius: 12,
-  padding: '20px 24px',
-  boxShadow: '0 1px 3px rgba(0,0,0,.08)',
-  marginBottom: 20,
-};
-
-const tbl: React.CSSProperties = {
-  width: '100%',
-  borderCollapse: 'collapse',
-  fontSize: 13,
-};
-
-const th: React.CSSProperties = {
-  textAlign: 'left',
-  padding: '10px 12px',
-  borderBottom: '2px solid #e2e8f0',
-  color: '#64748b',
-  fontWeight: 600,
-  fontSize: 12,
-  whiteSpace: 'nowrap',
-};
-
-const td: React.CSSProperties = {
-  padding: '10px 12px',
-  borderBottom: '1px solid #f1f5f9',
-  color: '#1e293b',
-  verticalAlign: 'middle',
-};
-
-function Badge({ label, color }: { label: string; color: string }) {
   return (
-    <span style={{
-      display: 'inline-block', padding: '2px 8px', borderRadius: 999,
-      fontSize: 11, fontWeight: 600, background: color + '20', color,
-    }}>
-      {label}
-    </span>
-  );
-}
-
-function KpiCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
-  return (
-    <div style={{
-      background: '#fff', borderRadius: 12, padding: '20px 24px',
-      boxShadow: '0 1px 3px rgba(0,0,0,.08)', flex: '1 1 160px', minWidth: 140,
-    }}>
-      <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 700, color: color || '#0f172a', lineHeight: 1.2 }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>{sub}</div>}
+    <div className="ad-cmdk-bd" onClick={onClose}>
+      <div className="ad-cmdk-box" onClick={e => e.stopPropagation()}>
+        <div className="ad-cmdk-inp">
+          <IcoSearch />
+          <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)} placeholder="ค้นหาเมนูหรือพิมพ์คำสั่ง..." onKeyDown={e => { if (e.key === 'Escape') onClose(); }} />
+          <kbd>Esc</kbd>
+        </div>
+        <div className="ad-cmdk-list">
+          <div className="ad-cmdk-group-lbl">นำทาง</div>
+          {navItems.map(item => (
+            <div key={item.key} className="ad-cmdk-item" onClick={() => onNavigate(item.key)}>
+              <div className="ic"><IcoQueue /></div>
+              <div className="main">{item.label}<div className="sub">{item.sub}</div></div>
+              <span className="arr">→</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
-function ActionBtn({ children, onClick, variant = 'default' }: { children: React.ReactNode; onClick: () => void; variant?: 'default' | 'danger' | 'warning' | 'success' }) {
-  const colors: Record<string, { bg: string; color: string }> = {
-    default: { bg: '#e2e8f0', color: '#475569' },
-    danger:  { bg: '#fee2e2', color: '#dc2626' },
-    warning: { bg: '#fef3c7', color: '#d97706' },
-    success: { bg: '#dcfce7', color: '#16a34a' },
-  };
-  const c = colors[variant];
+// ─── Queue View ───────────────────────────────────────────────────────────────
+type QueueKind = 'complaint' | 'payment' | 'listing';
+interface QueueItem { id: string; kind: QueueKind; subj: string; meta: string; prio: 'high' | 'mid' | 'low'; raw: any; }
+
+function QueueView({ token }: { token: string }) {
+  const [items, setItems] = useState<QueueItem[]>([]);
+  const [filter, setFilter] = useState<'all' | QueueKind>('all');
+  const [sel, setSel] = useState<QueueItem | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const out: QueueItem[] = [];
+      try {
+        const complaints = await api.getComplaints('pending', token);
+        complaints.forEach((c: any) => out.push({
+          id: `c-${c.id}`, kind: 'complaint',
+          subj: `[ร้องเรียน] ${c.type} – ${c.detail?.slice(0, 60)}...`,
+          meta: `#${c.id} · ${fmtDate(c.created_at)} · ${c.user_name || 'ผู้ใช้'}`,
+          prio: 'mid', raw: c,
+        }));
+        const reviewing = await api.getComplaints('reviewing', token);
+        reviewing.forEach((c: any) => out.push({
+          id: `cr-${c.id}`, kind: 'complaint',
+          subj: `[กำลังตรวจ] ${c.type} – ${c.detail?.slice(0, 60)}...`,
+          meta: `#${c.id} · ${fmtDate(c.created_at)} · ${c.user_name || 'ผู้ใช้'}`,
+          prio: 'high', raw: c,
+        }));
+      } catch {}
+      try {
+        const payments = await api.getPaymentRequests('pending', token);
+        payments.forEach((p: any) => out.push({
+          id: `p-${p.id}`, kind: 'payment',
+          subj: `[เติมเหรียญ] ${p.user_name || `User #${p.user_id}`} · ${p.package_key}`,
+          meta: `${p.coins} เหรียญ · ${fmtMoney(p.amount)} · ${fmtDate(p.created_at)}`,
+          prio: 'low', raw: p,
+        }));
+      } catch {}
+      setItems(out);
+      setLoading(false);
+    })();
+  }, [token]);
+
+  const visible = filter === 'all' ? items : items.filter(i => i.kind === filter);
+
   return (
-    <button onClick={onClick} style={{
-      padding: '4px 10px', border: 'none', borderRadius: 6, cursor: 'pointer',
-      fontSize: 12, fontWeight: 600, background: c.bg, color: c.color, fontFamily: 'inherit',
-    }}>
-      {children}
-    </button>
+    <div className="ad-queue">
+      {/* List */}
+      <div className="ad-queue-list">
+        <div className="ad-queue-head">
+          <h3>คิวงาน</h3>
+          <span className="count">{visible.length} รายการ</span>
+          <div className="ad-queue-tabs">
+            {(['all', 'complaint', 'payment'] as const).map(k => (
+              <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>
+                {k === 'all' ? 'ทั้งหมด' : k === 'complaint' ? 'ร้องเรียน' : 'เติมเหรียญ'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="ad-queue-scroll">
+          {loading && <div style={{ padding: '20px', color: 'var(--ink-3)', fontSize: 13, textAlign: 'center' }}>กำลังโหลด...</div>}
+          {!loading && visible.length === 0 && (
+            <div className="ad-q-empty"><IcoQueue /><div>ไม่มีงานรอดำเนินการ</div></div>
+          )}
+          {visible.map(item => (
+            <div key={item.id} className={`ad-q-item${sel?.id === item.id ? ' sel' : ''}`} onClick={() => setSel(item)}>
+              <div className="ad-q-item-lbl">
+                <span className={`ad-q-kind ${item.kind}`}>{item.kind === 'complaint' ? 'คมต.' : item.kind === 'payment' ? 'เงิน' : 'ลง'}</span>
+                <span className={`ad-q-prio-dot ${item.prio}`} />
+              </div>
+              <div className="ad-q-main">
+                <div className="ad-q-subj">{item.subj}</div>
+                <div className="ad-q-meta">{item.meta}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Detail */}
+      <div className="ad-q-detail">
+        {!sel ? (
+          <div className="ad-q-empty" style={{ height: '100%' }}>
+            <IcoQueue />
+            <div style={{ fontSize: 15, fontWeight: 600 }}>เลือกรายการ</div>
+            <div style={{ fontSize: 12 }}>คลิกรายการจากคิวทางซ้ายเพื่อดูรายละเอียด</div>
+          </div>
+        ) : sel.kind === 'complaint' ? (
+          <ComplaintDetail complaint={sel.raw} token={token} onBack={() => setSel(null)} />
+        ) : sel.kind === 'payment' ? (
+          <PaymentDetail payment={sel.raw} token={token} onBack={() => setSel(null)} onDone={() => { setSel(null); setItems(prev => prev.filter(i => i.id !== sel.id)); }} />
+        ) : null}
+      </div>
+    </div>
   );
 }
 
-// ─── Tab: Overview ────────────────────────────────────────────────────────────
-function OverviewTab({ token }: { token: string }) {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [err, setErr] = useState('');
+// ─── Complaint Detail (Queue) ─────────────────────────────────────────────────
+function ComplaintDetail({ complaint, token, onBack }: { complaint: any; token: string; onBack: () => void }) {
+  const [messages, setMessages] = useState<any[]>([]);
+  const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+  const [status, setStatus] = useState(complaint.status);
+  const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    adminFetch('/api/admin/stats', token)
-      .then(setStats)
-      .catch(e => setErr(e.message));
-  }, [token]);
+    if (!complaint?.id) return;
+    api.getComplaintMessages(complaint.id, token).then(setMessages).catch(() => {});
+  }, [complaint.id, token]);
 
-  if (err) return <div style={{ color: '#dc2626', padding: 20 }}>ไม่สามารถโหลดข้อมูลได้: {err}</div>;
-  if (!stats) return <div style={{ padding: 20, color: '#94a3b8' }}>กำลังโหลด...</div>;
+  const sendReply = async (newStatus?: string) => {
+    if (!draft.trim()) return;
+    setSending(true);
+    try {
+      const m = await api.sendComplaintMessage(complaint.id, draft.trim(), token);
+      setMessages(prev => [...prev, m]);
+      setDraft('');
+      if (newStatus) {
+        await api.updateComplaintStatus(complaint.id, newStatus, token);
+        setStatus(newStatus);
+        setMsg(`อัปเดตสถานะเป็น "${newStatus}" แล้ว`);
+      }
+    } catch (e: any) { setMsg(e.message); }
+    setSending(false);
+  };
 
-  const fmt = (n: number) => n.toLocaleString('th-TH');
-  const fmtMoney = (n: number) => '฿' + n.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const updateStatus = async (s: string) => {
+    try { await api.updateComplaintStatus(complaint.id, s, token); setStatus(s); setMsg(`สถานะเป็น "${s}"`); }
+    catch (e: any) { setMsg(e.message); }
+  };
+
+  const typeLabel: Record<string, string> = { fraud: 'ถูกโกง', product: 'สินค้า', user: 'ผู้ใช้', payment: 'การชำระ', other: 'อื่นๆ' };
+  const slaColor = status === 'pending' ? 'warn' : status === 'reviewing' ? '' : 'neg';
 
   return (
-    <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', marginBottom: 20 }}>ภาพรวมแพลตฟอร์ม</h2>
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
-        <KpiCard label="ผู้ใช้ทั้งหมด" value={fmt(stats.users)} color="#2563eb" />
-        <KpiCard label="สินค้าทั้งหมด" value={fmt(stats.products)} />
-        <KpiCard label="สินค้าขายอยู่" value={fmt(stats.available)} color="#16a34a" />
-        <KpiCard label="สินค้าขายแล้ว" value={fmt(stats.sold)} color="#d97706" />
-        <KpiCard label="คำสั่งซื้อ" value={fmt(stats.orders)} color="#7c3aed" />
-        <KpiCard label="รายได้รวม" value={fmtMoney(stats.revenue)} color="#0f172a" />
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div className="ad-q-dhead">
+        <button className="btn btn-ghost" onClick={onBack} style={{ padding: '4px 8px' }}><IcoBack /></button>
+        <div className="ad-q-dhead-main">
+          <div className="ad-q-dhead-top">
+            <span className="ad-q-kind complaint">{typeLabel[complaint.type] || complaint.type}</span>
+            <StatusTag status={status} />
+          </div>
+          <h2 className="ad-q-dhead" style={{ fontSize: 16, margin: 0 }}>ร้องเรียน #{complaint.id}</h2>
+          <div className="ad-q-dhead-meta">{complaint.user_name && `${complaint.user_name} · `}{fmtDate(complaint.created_at)}</div>
+        </div>
+        <div className="ad-q-dhead-acts">
+          {status === 'pending' && <button className="btn-sec" onClick={() => updateStatus('reviewing')}>ตรวจสอบ</button>}
+          {(status === 'pending' || status === 'reviewing') && <>
+            <button className="btn-grad" onClick={() => updateStatus('resolved')}>ปิดเคส</button>
+            <button className="btn-sec danger" onClick={() => updateStatus('rejected')}>ปฏิเสธ</button>
+          </>}
+        </div>
       </div>
-      <div style={card}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>สัดส่วนสินค้า</h3>
-        {stats.products > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[
-              { label: 'ขายอยู่', val: stats.available, color: '#16a34a' },
-              { label: 'ขายแล้ว', val: stats.sold, color: '#f59e0b' },
-              { label: 'อื่นๆ', val: stats.products - stats.available - stats.sold, color: '#94a3b8' },
-            ].map(row => (
-              <div key={row.label}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 13 }}>
-                  <span style={{ color: '#475569' }}>{row.label}</span>
-                  <span style={{ fontWeight: 600 }}>{row.val.toLocaleString()}</span>
-                </div>
-                <div style={{ height: 8, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${Math.round((row.val / stats.products) * 100)}%`, background: row.color, borderRadius: 99 }} />
+
+      <div className="ad-q-body" style={{ flex: 1, overflow: 'auto' }}>
+        {msg && <div style={{ padding: '8px 14px', background: 'color-mix(in srgb,var(--pos) 10%,transparent)', border: '1px solid color-mix(in srgb,var(--pos) 25%,transparent)', borderRadius: 6, fontSize: 13, color: 'var(--pos)' }}>{msg}</div>}
+
+        <div className={`ad-dp-sla ${slaColor}`}>
+          <span>สถานะ:</span>
+          <b>{status}</b>
+          <span style={{ marginLeft: 'auto', fontSize: 12, opacity: .7 }}>{complaint.contact && `ติดต่อ: ${complaint.contact}`}</span>
+        </div>
+
+        <div className="ad-dp-sec">
+          <h4>รายละเอียด</h4>
+          <p style={{ fontSize: 14, color: 'var(--ink)', lineHeight: 1.65, whiteSpace: 'pre-wrap', margin: 0 }}>{complaint.detail}</p>
+        </div>
+
+        {/* Messages thread */}
+        <div className="ad-dp-sec">
+          <h4>ประวัติสนทนา</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+            {messages.length === 0 && <div style={{ fontSize: 13, color: 'var(--ink-3)', fontStyle: 'italic' }}>ยังไม่มีข้อความ</div>}
+            {messages.map((m: any) => (
+              <div key={m.id} style={{ display: 'flex', justifyContent: m.sender_type === 'admin' ? 'flex-end' : 'flex-start' }}>
+                <div style={{ maxWidth: '80%', padding: '8px 12px', borderRadius: m.sender_type === 'admin' ? '12px 12px 4px 12px' : '12px 12px 12px 4px', background: m.sender_type === 'admin' ? 'var(--ink)' : 'var(--surface)', border: '1px solid var(--line)', color: m.sender_type === 'admin' ? 'var(--bg)' : 'var(--ink)', fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                  {m.content}
+                  <div style={{ fontSize: 10, opacity: .6, marginTop: 3, textAlign: 'right' }}>{new Date(m.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
               </div>
             ))}
           </div>
-        )}
+          {/* Compose */}
+          <div className="ad-dp-compose">
+            <textarea value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); } }} placeholder="พิมพ์ข้อความถึงผู้ใช้... (Enter ส่ง)" rows={3} />
+            <div className="ad-dp-compose-row">
+              <span className="spacer" />
+              <button className="btn-sec" onClick={() => sendReply('resolved')} disabled={sending || !draft.trim()}>ส่ง + ปิดเคส</button>
+              <button className="btn-grad" onClick={() => sendReply()} disabled={sending || !draft.trim()}><IcoSend />ส่ง</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Tab: Users ───────────────────────────────────────────────────────────────
+// ─── Payment Detail (Queue) ───────────────────────────────────────────────────
+function PaymentDetail({ payment, token, onBack, onDone }: { payment: PaymentRequest; token: string; onBack: () => void; onDone: () => void }) {
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  async function confirm() {
+    setBusy(true);
+    try { const r = await api.confirmPayment(payment.id, token); setMsg(r.message || 'ยืนยันแล้ว'); setTimeout(onDone, 1200); }
+    catch (e: any) { setMsg(e.message); }
+    setBusy(false);
+  }
+  async function reject() {
+    setBusy(true);
+    try { const r = await api.rejectPayment(payment.id, note, token); setMsg(r.message || 'ปฏิเสธแล้ว'); setTimeout(onDone, 1200); }
+    catch (e: any) { setMsg(e.message); }
+    setBusy(false);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div className="ad-q-dhead">
+        <button className="btn btn-ghost" onClick={onBack} style={{ padding: '4px 8px' }}><IcoBack /></button>
+        <div className="ad-q-dhead-main">
+          <div className="ad-q-dhead-top"><span className="ad-q-kind payment">เติมเหรียญ</span></div>
+          <h2 style={{ fontSize: 16, margin: 0, fontFamily: 'var(--font-disp)' }}>คำขอ #{payment.id}</h2>
+          <div className="ad-q-dhead-meta">{fmtDate(payment.created_at)}</div>
+        </div>
+      </div>
+      <div className="ad-q-body" style={{ flex: 1, overflow: 'auto' }}>
+        {msg && <div style={{ padding: '10px 14px', borderRadius: 6, fontSize: 13, background: 'color-mix(in srgb,var(--pos) 10%,transparent)', color: 'var(--pos)' }}>{msg}</div>}
+        <div className="ad-dp-sec">
+          <h4>รายละเอียดคำขอ</h4>
+          <div className="ad-dp-kv">
+            <div><span className="k">ผู้ใช้</span><b className="v">{payment.user_name || `User #${payment.user_id}`}</b></div>
+            <div><span className="k">อีเมล</span><b className="v">{payment.user_email || '—'}</b></div>
+            <div><span className="k">แพ็กเกจ</span><b className="v">{payment.package_key}</b></div>
+            <div><span className="k">เหรียญ</span><b className="v mono">{fmt(payment.coins)} เหรียญ</b></div>
+            <div><span className="k">จำนวนเงิน</span><b className="v">{fmtMoney(payment.amount)}</b></div>
+            {payment.sender_name && <div><span className="k">ชื่อผู้โอน</span><b className="v">{payment.sender_name}</b></div>}
+          </div>
+        </div>
+        {payment.slip_url && (
+          <a href={payment.slip_url} target="_blank" rel="noreferrer" className="btn btn-ghost" style={{ display: 'inline-flex' }}>ดูสลิป →</a>
+        )}
+        <div className="ad-dp-sec">
+          <h4>ตัดสินใจ</h4>
+          <input value={note} onChange={e => setNote(e.target.value)} placeholder="หมายเหตุ (ถ้าปฏิเสธ)..." style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', marginBottom: 10 }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn-grad" onClick={confirm} disabled={busy} style={{ flex: 1 }}>ยืนยัน ✓</button>
+            <button className="btn-sec danger" onClick={reject} disabled={busy}>ปฏิเสธ ✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Overview Tab ─────────────────────────────────────────────────────────────
+function OverviewTab({ token }: { token: string }) {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [err, setErr] = useState('');
+  useEffect(() => { adminFetch('/api/admin/stats', token).then(setStats).catch(e => setErr(e.message)); }, [token]);
+  if (err) return <div style={{ color: 'var(--neg)', padding: 20 }}>ไม่สามารถโหลดข้อมูลได้: {err}</div>;
+  if (!stats) return <div style={{ padding: 20, color: 'var(--ink-3)' }}>กำลังโหลด...</div>;
+  return (
+    <div>
+      <div className="ad-home-hero">
+        {[
+          { l: 'ผู้ใช้', v: fmt(stats.users), d: '' },
+          { l: 'สินค้าทั้งหมด', v: fmt(stats.products), d: '' },
+          { l: 'ขายอยู่', v: fmt(stats.available), d: 'pos' },
+          { l: 'รายได้รวม', v: fmtMoney(stats.revenue), d: 'pos' },
+        ].map(s => (
+          <div key={s.l} className="ad-home-stat">
+            <div className="ad-home-stat-l">{s.l}</div>
+            <div className="ad-home-stat-v">{s.v}</div>
+            {s.d && <div className={`ad-home-stat-d ${s.d}`}>{s.d === 'pos' ? '↑' : '↓'}</div>}
+          </div>
+        ))}
+      </div>
+      <div className="ad-home-grid">
+        <div className="ad-panel">
+          <div className="ad-panel-head"><h3>สัดส่วนสินค้า</h3></div>
+          <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[{ l: 'ขายอยู่', v: stats.available, color: 'var(--pos)' }, { l: 'ขายแล้ว', v: stats.sold, color: 'var(--warn)' }, { l: 'อื่นๆ', v: stats.products - stats.available - stats.sold, color: 'var(--ink-3)' }].map(r => (
+              <div key={r.l}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}><span style={{ color: 'var(--ink-2)' }}>{r.l}</span><b style={{ color: 'var(--ink)' }}>{r.v.toLocaleString()}</b></div>
+                <div style={{ height: 6, background: 'var(--surface-2)', borderRadius: 99, overflow: 'hidden' }}><div style={{ height: '100%', width: `${stats.products > 0 ? Math.round((r.v / stats.products) * 100) : 0}%`, background: r.color, borderRadius: 99 }} /></div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="ad-panel">
+          <div className="ad-panel-head"><h3>สรุป</h3></div>
+          <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
+            {[['คำสั่งซื้อ', fmt(stats.orders)], ['ขายแล้ว', fmt(stats.sold)], ['รายได้', fmtMoney(stats.revenue)]].map(([l, v]) => (
+              <div key={l} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: 8 }}>
+                <span style={{ color: 'var(--ink-2)' }}>{l}</span><b style={{ fontFamily: 'var(--font-mono)' }}>{v}</b>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Users Tab ────────────────────────────────────────────────────────────────
 function UsersTab({ token }: { token: string }) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [search, setSearch] = useState('');
@@ -202,112 +408,53 @@ function UsersTab({ token }: { token: string }) {
 
   const load = useCallback(async (q?: string) => {
     setLoading(true);
-    try {
-      const path = q ? `/api/admin/users?q=${encodeURIComponent(q)}` : '/api/admin/users';
-      const data = await adminFetch(path, token);
-      setUsers(data);
-    } catch (e: any) { setMsg(e.message); }
+    try { const path = q ? `/api/admin/users?q=${encodeURIComponent(q)}` : '/api/admin/users'; setUsers(await adminFetch(path, token)); }
+    catch (e: any) { setMsg(e.message); }
     setLoading(false);
   }, [token]);
 
   useEffect(() => { load(); }, [load]);
-
-  async function ban(id: number) {
-    try {
-      const r = await adminFetch(`/api/admin/users/${id}/ban`, token, { method: 'PATCH' });
-      setMsg(r.message);
-      load(search || undefined);
-    } catch (e: any) { setMsg(e.message); }
-  }
-
-  async function toggleAdmin(id: number) {
-    try {
-      const r = await adminFetch(`/api/admin/users/${id}/toggle-admin`, token, { method: 'PATCH' });
-      setMsg(r.message);
-      load(search || undefined);
-    } catch (e: any) { setMsg(e.message); }
-  }
+  async function ban(id: number) { try { const r = await adminFetch(`/api/admin/users/${id}/ban`, token, { method: 'PATCH' }); setMsg(r.message); load(search || undefined); } catch (e: any) { setMsg(e.message); } }
+  async function toggleAdmin(id: number) { try { const r = await adminFetch(`/api/admin/users/${id}/toggle-admin`, token, { method: 'PATCH' }); setMsg(r.message); load(search || undefined); } catch (e: any) { setMsg(e.message); } }
 
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>ผู้ใช้ทั้งหมด</h2>
-      {msg && (
-        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#15803d' }}>
-          {msg} <button onClick={() => setMsg('')} style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-        <input
-          placeholder="ค้นหาชื่อหรืออีเมล..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && load(search || undefined)}
-          style={{ flex: 1, maxWidth: 320, padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
-        />
-        <button onClick={() => load(search || undefined)}
-          style={{ padding: '8px 16px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'inherit' }}>
-          ค้นหา
-        </button>
-        <button onClick={() => { setSearch(''); load(); }}
-          style={{ padding: '8px 14px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
-          รีเซ็ต
-        </button>
+      <div className="ad-flt-row">
+        <div className="ad-flt-inp"><IcoSearch /><input placeholder="ค้นหาชื่อหรืออีเมล..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && load(search || undefined)} /></div>
+        <button className="btn btn-primary" onClick={() => load(search || undefined)}>ค้นหา</button>
+        <button className="btn" onClick={() => { setSearch(''); load(); }}>รีเซ็ต</button>
+        {msg && <span style={{ fontSize: 12, color: 'var(--pos)', marginLeft: 8 }}>{msg} <button onClick={() => setMsg('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>✕</button></span>}
       </div>
-      <div style={card}>
-        {loading ? (
-          <div style={{ padding: 20, color: '#94a3b8', textAlign: 'center' }}>กำลังโหลด...</div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={tbl}>
-              <thead>
-                <tr>
-                  <th style={th}>ID</th>
-                  <th style={th}>ชื่อ</th>
-                  <th style={th}>อีเมล</th>
-                  <th style={th}>สิทธิ์</th>
-                  <th style={th}>สถานะ</th>
-                  <th style={th}>วันที่สมัคร</th>
-                  <th style={th}>การกระทำ</th>
+      <div className="ad-tbl-wrap">
+        {loading ? <div style={{ padding: 20, textAlign: 'center', color: 'var(--ink-3)' }}>กำลังโหลด...</div> : (
+          <table className="ad-tbl">
+            <thead><tr>
+              <th>ผู้ใช้</th><th>อีเมล</th><th>สิทธิ์</th><th>สถานะ</th><th>วันที่สมัคร</th><th>การกระทำ</th>
+            </tr></thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u.id}>
+                  <td><div className="ad-user-cell"><div className="ad-user-ava">{u.name?.[0] || '?'}</div><div><div style={{ fontWeight: 500 }}>{u.name}</div><div className="ad-mono" style={{ fontSize: 11, color: 'var(--ink-3)' }}>#{u.id}</div></div></div></td>
+                  <td><span style={{ fontSize: 12, color: 'var(--ink-2)' }}>{u.email}</span></td>
+                  <td><StatusTag status={u.is_admin ? 'admin' : 'user'} /></td>
+                  <td><StatusTag status={u.is_banned ? 'suspended' : 'active'} /></td>
+                  <td><span className="ad-mono" style={{ fontSize: 11, color: 'var(--ink-3)' }}>{fmtDate(u.created_at)}</span></td>
+                  <td><div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                    <button className={`btn-sec ${u.is_banned ? '' : 'danger'}`} onClick={() => ban(u.id)} style={{ fontSize: 11, padding: '4px 10px' }}>{u.is_banned ? 'ปลดแบน' : 'แบน'}</button>
+                    <button className="btn-sec" onClick={() => toggleAdmin(u.id)} style={{ fontSize: 11, padding: '4px 10px' }}>{u.is_admin ? 'ถอด Admin' : 'ให้ Admin'}</button>
+                  </div></td>
                 </tr>
-              </thead>
-              <tbody>
-                {users.map(u => (
-                  <tr key={u.id} style={{ transition: 'background .1s' }}
-                    onMouseEnter={e => ((e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc')}
-                    onMouseLeave={e => ((e.currentTarget as HTMLTableRowElement).style.background = '')}>
-                    <td style={td}><span style={{ color: '#94a3b8', fontSize: 11 }}>#{u.id}</span></td>
-                    <td style={td}><strong>{u.name}</strong></td>
-                    <td style={td}><span style={{ color: '#475569' }}>{u.email}</span></td>
-                    <td style={td}>
-                      {u.is_admin ? <Badge label="Admin" color="#7c3aed" /> : <Badge label="User" color="#64748b" />}
-                    </td>
-                    <td style={td}>
-                      {u.is_banned ? <Badge label="Banned" color="#dc2626" /> : <Badge label="Active" color="#16a34a" />}
-                    </td>
-                    <td style={td}><span style={{ fontSize: 12, color: '#94a3b8' }}>{new Date(u.created_at).toLocaleDateString('th-TH')}</span></td>
-                    <td style={{ ...td, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      <ActionBtn onClick={() => ban(u.id)} variant={u.is_banned ? 'success' : 'danger'}>
-                        {u.is_banned ? 'ปลดแบน' : 'แบน'}
-                      </ActionBtn>
-                      <ActionBtn onClick={() => toggleAdmin(u.id)} variant="warning">
-                        {u.is_admin ? 'ถอด Admin' : 'ให้ Admin'}
-                      </ActionBtn>
-                    </td>
-                  </tr>
-                ))}
-                {users.length === 0 && (
-                  <tr><td colSpan={7} style={{ ...td, textAlign: 'center', color: '#94a3b8', padding: 32 }}>ไม่พบผู้ใช้</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))}
+              {users.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>ไม่พบผู้ใช้</td></tr>}
+            </tbody>
+          </table>
         )}
       </div>
     </div>
   );
 }
 
-// ─── Tab: Products ────────────────────────────────────────────────────────────
+// ─── Products Tab ─────────────────────────────────────────────────────────────
 function ProductsTab({ token }: { token: string }) {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [search, setSearch] = useState('');
@@ -319,11 +466,8 @@ function ProductsTab({ token }: { token: string }) {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (q) params.set('q', q);
-      if (status) params.set('status', status);
-      const qs = params.toString() ? '?' + params.toString() : '';
-      const data = await adminFetch(`/api/admin/products${qs}`, token);
-      setProducts(data);
+      if (q) params.set('q', q); if (status) params.set('status', status);
+      setProducts(await adminFetch(`/api/admin/products${params.toString() ? '?' + params.toString() : ''}`, token));
     } catch (e: any) { setMsg(e.message); }
     setLoading(false);
   }, [token]);
@@ -331,280 +475,124 @@ function ProductsTab({ token }: { token: string }) {
   useEffect(() => { load(); }, [load]);
 
   async function del(id: number, title: string) {
-    if (!confirm(`ลบสินค้า "${title}" จริงหรือ?`)) return;
-    try {
-      const r = await adminFetch(`/api/admin/products/${id}`, token, { method: 'DELETE' });
-      setMsg(r.message);
-      load(search || undefined, statusFilter || undefined);
-    } catch (e: any) { setMsg(e.message); }
+    if (!confirm(`ลบสินค้า "${title}"?`)) return;
+    try { const r = await adminFetch(`/api/admin/products/${id}`, token, { method: 'DELETE' }); setMsg(r.message); load(search || undefined, statusFilter || undefined); }
+    catch (e: any) { setMsg(e.message); }
   }
-
-  const statusColor: Record<string, string> = {
-    available: '#16a34a',
-    sold: '#64748b',
-    reserved: '#d97706',
-    draft: '#94a3b8',
-  };
 
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>สินค้าทั้งหมด</h2>
-      {msg && (
-        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#15803d' }}>
-          {msg} <button onClick={() => setMsg('')} style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+      <div className="ad-flt-row">
+        <div className="ad-flt-inp"><IcoSearch /><input placeholder="ค้นหาสินค้า / ผู้ขาย..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && load(search || undefined, statusFilter || undefined)} /></div>
+        <div className="ad-flt-grp">
+          {['', 'available', 'sold', 'draft'].map(s => (
+            <button key={s} className={statusFilter === s ? 'on' : ''} onClick={() => { setStatusFilter(s); load(search || undefined, s || undefined); }}>{s || 'ทั้งหมด'}</button>
+          ))}
         </div>
-      )}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-        <input
-          placeholder="ค้นหาชื่อสินค้า / ชื่อผู้ขาย..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && load(search || undefined, statusFilter || undefined)}
-          style={{ flex: 1, minWidth: 220, maxWidth: 320, padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
-        />
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); load(search || undefined, e.target.value || undefined); }}
-          style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, outline: 'none', background: '#fff', fontFamily: 'inherit', color: '#1e293b' }}>
-          <option value="">ทุกสถานะ</option>
-          <option value="available">Available</option>
-          <option value="sold">Sold</option>
-          <option value="reserved">Reserved</option>
-          <option value="draft">Draft</option>
-        </select>
-        <button onClick={() => load(search || undefined, statusFilter || undefined)}
-          style={{ padding: '8px 16px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'inherit' }}>
-          ค้นหา
-        </button>
-        <button onClick={() => { setSearch(''); setStatusFilter(''); load(); }}
-          style={{ padding: '8px 14px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
-          รีเซ็ต
-        </button>
+        {msg && <span style={{ fontSize: 12, color: 'var(--pos)' }}>{msg} <button onClick={() => setMsg('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>✕</button></span>}
       </div>
-      <div style={card}>
-        {loading ? (
-          <div style={{ padding: 20, color: '#94a3b8', textAlign: 'center' }}>กำลังโหลด...</div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={tbl}>
-              <thead>
-                <tr>
-                  <th style={th}>ID</th>
-                  <th style={th}>ชื่อสินค้า</th>
-                  <th style={th}>หมวด</th>
-                  <th style={th}>ราคา</th>
-                  <th style={th}>ผู้ขาย</th>
-                  <th style={th}>สถานะ</th>
-                  <th style={th}>วันที่ลง</th>
-                  <th style={th}>การกระทำ</th>
+      <div className="ad-tbl-wrap">
+        {loading ? <div style={{ padding: 20, textAlign: 'center', color: 'var(--ink-3)' }}>กำลังโหลด...</div> : (
+          <table className="ad-tbl">
+            <thead><tr><th>สินค้า</th><th>หมวด</th><th>ราคา</th><th>ผู้ขาย</th><th>สถานะ</th><th>วันที่ลง</th><th></th></tr></thead>
+            <tbody>
+              {products.map(p => (
+                <tr key={p.id}>
+                  <td><span style={{ fontWeight: 500, maxWidth: 220, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</span></td>
+                  <td><span style={{ fontSize: 12, color: 'var(--ink-2)' }}>{p.category}</span></td>
+                  <td><span className="ad-mono">{fmtMoney(p.price)}</span></td>
+                  <td><span style={{ fontSize: 12 }}>{p.seller_name}</span></td>
+                  <td><StatusTag status={p.status} /></td>
+                  <td><span className="ad-mono" style={{ fontSize: 11, color: 'var(--ink-3)' }}>{fmtDate(p.created_at)}</span></td>
+                  <td><button className="btn-sec danger" onClick={() => del(p.id, p.title)} style={{ fontSize: 11, padding: '4px 10px' }}>ลบ</button></td>
                 </tr>
-              </thead>
-              <tbody>
-                {products.map(p => (
-                  <tr key={p.id}
-                    onMouseEnter={e => ((e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc')}
-                    onMouseLeave={e => ((e.currentTarget as HTMLTableRowElement).style.background = '')}>
-                    <td style={td}><span style={{ color: '#94a3b8', fontSize: 11 }}>#{p.id}</span></td>
-                    <td style={td}><strong style={{ maxWidth: 240, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</strong></td>
-                    <td style={td}><span style={{ fontSize: 12, color: '#475569' }}>{p.category}</span></td>
-                    <td style={td}><strong style={{ color: '#0f172a' }}>฿{p.price.toLocaleString()}</strong></td>
-                    <td style={td}><span style={{ fontSize: 12 }}>{p.seller_name}</span></td>
-                    <td style={td}><Badge label={p.status} color={statusColor[p.status] || '#64748b'} /></td>
-                    <td style={td}><span style={{ fontSize: 12, color: '#94a3b8' }}>{new Date(p.created_at).toLocaleDateString('th-TH')}</span></td>
-                    <td style={td}>
-                      <ActionBtn onClick={() => del(p.id, p.title)} variant="danger">ลบ</ActionBtn>
-                    </td>
-                  </tr>
-                ))}
-                {products.length === 0 && (
-                  <tr><td colSpan={8} style={{ ...td, textAlign: 'center', color: '#94a3b8', padding: 32 }}>ไม่พบสินค้า</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))}
+              {products.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>ไม่พบสินค้า</td></tr>}
+            </tbody>
+          </table>
         )}
       </div>
     </div>
   );
 }
 
-// ─── Tab: Premium ─────────────────────────────────────────────────────────────
+// ─── Premium Tab ──────────────────────────────────────────────────────────────
 function PremiumTab({ token }: { token: string }) {
   const [stats, setStats] = useState<any>(null);
   const [err, setErr] = useState('');
+  useEffect(() => { api.getCoinAdminStats(token).then(setStats).catch((e: any) => setErr(e.message)); }, [token]);
+  if (err) return <div style={{ color: 'var(--neg)', padding: 20 }}>{err}</div>;
+  if (!stats) return <div style={{ padding: 20, color: 'var(--ink-3)' }}>กำลังโหลด...</div>;
 
-  useEffect(() => {
-    api.getCoinAdminStats(token)
-      .then(setStats)
-      .catch((e: any) => setErr(e.message));
-  }, [token]);
-
-  if (err) return <div style={{ color: '#dc2626', padding: 20 }}>ไม่สามารถโหลดข้อมูลได้: {err}</div>;
-  if (!stats) return <div style={{ padding: 20, color: '#94a3b8' }}>กำลังโหลด...</div>;
-
-  const maxMonthly = Math.max(...(stats.monthly_revenue || []).map((m: any) => m.revenue || 0), 1);
   const totalRevenue = stats.revenue?.total || 0;
-  const totalCoinsIssued = stats.coins?.issued || 0;
-  const totalCoinsOutstanding = stats.coins?.outstanding || 0;
-  const pendingCount = stats.pending?.count || 0;
+  const maxMonthly = Math.max(...(stats.monthly_revenue || []).map((m: any) => m.revenue || 0), 1);
 
-  const FEATURE_LABELS: Record<string, string> = {
-    auto_relist: '🔄 ลงประกาศอัตโนมัติ',
-    featured: '⭐ ปักหมุดสินค้า',
-    price_alert: '🔔 แจ้งเตือนราคา',
-    analytics_pro: '📊 Analytics Pro',
-    priority_support: '💬 Priority Support',
-  };
+  const ALL_FEATURES = [
+    { key: 'featured', label: 'สินค้าเด่น (Featured)', color: 'var(--warn)' },
+    { key: 'auto_relist', label: 'ดันสินค้าขึ้นบนสุด', color: 'var(--accent)' },
+    { key: 'price_alert', label: 'แจ้งเตือนราคา', color: 'var(--pos)' },
+    { key: 'analytics_pro', label: 'Analytics Pro', color: '#8b5cf6' },
+    { key: 'priority_support', label: 'Priority Support', color: '#ef4444' },
+  ];
+  const usageMap: Record<string, any> = {};
+  (stats.feature_usage || []).forEach((f: any) => { usageMap[f.feature_key] = f; });
 
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', marginBottom: 20 }}>Premium & เหรียญ</h2>
-
-      {/* KPI row */}
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
-        <KpiCard label="รายได้รวม (฿)" value={'฿' + totalRevenue.toLocaleString()} color="#0f172a" />
-        <KpiCard label="รอยืนยัน" value={pendingCount} color="#d97706" />
-        <KpiCard label="เหรียญแจก" value={totalCoinsIssued.toLocaleString()} color="#7c3aed" />
-        <KpiCard label="เหรียญคงค้าง" value={totalCoinsOutstanding.toLocaleString()} color="#2563eb" />
+      <div className="ad-home-hero" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+        {[
+          { l: 'รายได้รวม', v: fmtMoney(totalRevenue) },
+          { l: 'รอยืนยัน', v: String(stats.pending?.count || 0) },
+          { l: 'เหรียญแจก', v: fmt(stats.coins?.issued || 0) },
+          { l: 'เหรียญคงค้าง', v: fmt(stats.coins?.outstanding || 0) },
+        ].map(s => (
+          <div key={s.l} className="ad-home-stat">
+            <div className="ad-home-stat-l">{s.l}</div>
+            <div className="ad-home-stat-v">{s.v}</div>
+          </div>
+        ))}
       </div>
 
-      {/* Revenue Sources Breakdown — per feature */}
-      <div style={card}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>แหล่งรายได้</h3>
-        <p style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>รายได้ประมาณของแต่ละฟีเจอร์ คำนวณจากเหรียญที่ถูกใช้ × มูลค่าเฉลี่ยต่อเหรียญ</p>
-
-        {/* Top-level source: coin purchases */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <span style={{ fontSize: 18 }}>🪙</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>ขายเหรียญ Premium</span>
-            <span style={{ marginLeft: 'auto', fontSize: 15, fontWeight: 700, color: '#f59e0b' }}>
-              ฿{totalRevenue.toLocaleString()}
-            </span>
-          </div>
-
-          {/* Per-feature breakdown — always show all 5 features */}
-          {(() => {
-            const ALL_FEATURES = [
-              { key: 'featured',         label: '⭐ สินค้าเด่น (Featured)',      color: '#f59e0b', coins: 80 },
-              { key: 'auto_relist',      label: '🚀 ดันสินค้าขึ้นบนสุด',         color: '#3b82f6', coins: 30 },
-              { key: 'price_alert',      label: '🔔 แจ้งเตือนตั้งราคา',          color: '#10b981', coins: 25 },
-              { key: 'auto_relist_30',   label: '🔄 ลงประกาศอัตโนมัติ',          color: '#6366f1', coins: 20 },
-              { key: 'analytics_pro',    label: '📊 Analytics Pro',              color: '#8b5cf6', coins: 50 },
-              { key: 'priority_support', label: '💬 Priority Support',           color: '#ef4444', coins: 15 },
-            ];
-            const usageMap: Record<string, any> = {};
-            (stats.feature_usage || []).forEach((f: any) => { usageMap[f.feature_key] = f; });
-            // merge: known features first, then any unknown keys from DB
-            const knownKeys = new Set(ALL_FEATURES.map(f => f.key));
-            const dbOnly = (stats.feature_usage || []).filter((f: any) => !knownKeys.has(f.feature_key));
-            const rows = [
-              ...ALL_FEATURES.map(f => ({
-                feature_key: f.key,
-                label: f.label,
-                color: f.color,
-                total: usageMap[f.key]?.total || 0,
-                coins_spent: usageMap[f.key]?.coins_spent || 0,
-                estimated_baht: usageMap[f.key]?.estimated_baht || 0,
-              })),
-              ...dbOnly.map((f: any) => ({
-                feature_key: f.feature_key,
-                label: FEATURE_LABELS[f.feature_key] || f.feature_key,
-                color: '#94a3b8',
-                total: f.total || 0,
-                coins_spent: f.coins_spent || 0,
-                estimated_baht: f.estimated_baht || 0,
-              })),
-            ];
-            const maxBaht = Math.max(...rows.map(r => r.estimated_baht), 1);
+      <div className="ad-panel" style={{ marginBottom: 14 }}>
+        <div className="ad-panel-head"><h3>แหล่งรายได้ตามฟีเจอร์</h3></div>
+        <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {ALL_FEATURES.map(f => {
+            const u = usageMap[f.key]; const baht = u?.estimated_baht || 0; const pct = totalRevenue > 0 ? Math.round((baht / totalRevenue) * 100) : 0;
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingLeft: 26, borderLeft: '2px solid #f1f5f9' }}>
-                {rows.map(f => {
-                  const pct = totalRevenue > 0 ? Math.round((f.estimated_baht / totalRevenue) * 100) : 0;
-                  const barPct = Math.round((f.estimated_baht / maxBaht) * 100);
-                  return (
-                    <div key={f.feature_key}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5, fontSize: 13 }}>
-                        <span style={{ color: '#334155', fontWeight: 500 }}>{f.label}</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ fontSize: 11, color: '#94a3b8' }}>
-                            {f.total} ครั้ง · {f.coins_spent.toLocaleString()} 🪙
-                          </span>
-                          <strong style={{ color: f.estimated_baht > 0 ? '#15803d' : '#94a3b8', minWidth: 80, textAlign: 'right' }}>
-                            ฿{f.estimated_baht.toLocaleString()}
-                            {totalRevenue > 0 && <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 4 }}>({pct}%)</span>}
-                          </strong>
-                        </span>
-                      </div>
-                      <div style={{ height: 6, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${barPct || (f.total > 0 ? 2 : 0)}%`, background: f.color, borderRadius: 99, transition: 'width .3s', opacity: f.estimated_baht > 0 ? 1 : 0.3 }} />
-                      </div>
-                    </div>
-                  );
-                })}
+              <div key={f.key}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
+                  <span style={{ color: 'var(--ink-2)' }}>{f.label}</span>
+                  <span style={{ display: 'flex', gap: 10 }}>
+                    <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{u?.total || 0} ครั้ง</span>
+                    <b style={{ color: baht > 0 ? 'var(--pos)' : 'var(--ink-3)', minWidth: 70, textAlign: 'right' }}>{fmtMoney(baht)} ({pct}%)</b>
+                  </span>
+                </div>
+                <div style={{ height: 5, background: 'var(--surface-2)', borderRadius: 99, overflow: 'hidden' }}><div style={{ height: '100%', width: `${totalRevenue > 0 ? Math.round((baht / totalRevenue) * 100) : 0}%`, background: f.color, borderRadius: 99 }} /></div>
               </div>
             );
-          })()}
-        </div>
-
-        {/* Future revenue streams */}
-        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 18 }}>💸</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>ค่าธรรมเนียมการขาย (3%)</span>
-            <span style={{ marginLeft: 'auto', fontSize: 13, color: '#94a3b8' }}>฿0</span>
-            <span style={{ fontSize: 11, background: '#f1f5f9', color: '#94a3b8', padding: '2px 8px', borderRadius: 99 }}>เร็วๆ นี้</span>
-          </div>
+          })}
         </div>
       </div>
 
-      {/* Monthly Revenue Chart */}
-      {stats.monthly_revenue && stats.monthly_revenue.length > 0 && (
-        <div style={card}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>รายได้รายเดือน</h3>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 120 }}>
+      {stats.monthly_revenue?.length > 0 && (
+        <div className="ad-panel">
+          <div className="ad-panel-head"><h3>รายได้รายเดือน</h3></div>
+          <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-end', gap: 6, height: 120 }}>
             {stats.monthly_revenue.map((m: any) => (
               <div key={m.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <div style={{ fontSize: 10, color: '#475569', fontWeight: 600 }}>฿{(m.revenue || 0).toLocaleString()}</div>
-                <div style={{
-                  width: '100%', background: '#f59e0b', borderRadius: '4px 4px 0 0',
-                  height: Math.max(4, Math.round(((m.revenue || 0) / maxMonthly) * 80)),
-                }} />
-                <div style={{ fontSize: 10, color: '#94a3b8', whiteSpace: 'nowrap' }}>{m.month}</div>
+                <span style={{ fontSize: 9, color: 'var(--ink-3)' }}>฿{(m.revenue || 0).toLocaleString()}</span>
+                <div style={{ width: '100%', background: 'var(--accent)', borderRadius: '3px 3px 0 0', height: Math.max(4, Math.round(((m.revenue || 0) / maxMonthly) * 70)), opacity: .8 }} />
+                <span style={{ fontSize: 9, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{m.month}</span>
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-
-      {/* Revenue by package */}
-      {stats.revenue_by_package && stats.revenue_by_package.length > 0 && (
-        <div style={card}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>รายได้ตามแพ็กเกจ</h3>
-          <table style={tbl}>
-            <thead>
-              <tr>
-                <th style={th}>แพ็กเกจ</th>
-                <th style={{ ...th, textAlign: 'center' }}>จำนวนคำขอ</th>
-                <th style={{ ...th, textAlign: 'right' }}>รายได้รวม</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.revenue_by_package.map((pkg: any) => (
-                <tr key={pkg.package_key}>
-                  <td style={td}><strong>{pkg.package_key}</strong></td>
-                  <td style={{ ...td, textAlign: 'center' }}>{pkg.count}</td>
-                  <td style={{ ...td, textAlign: 'right' }}><strong style={{ color: '#0f172a' }}>฿{(pkg.revenue || 0).toLocaleString()}</strong></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       )}
     </div>
   );
 }
 
-// ─── Tab: Payments ────────────────────────────────────────────────────────────
+// ─── Payments Tab ─────────────────────────────────────────────────────────────
 function PaymentsTab({ token }: { token: string }) {
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
   const [filter, setFilter] = useState<'pending' | 'confirmed' | 'rejected'>('pending');
@@ -614,117 +602,142 @@ function PaymentsTab({ token }: { token: string }) {
 
   const load = useCallback(async (status: string) => {
     setLoading(true);
-    try {
-      const data = await api.getPaymentRequests(status, token);
-      setRequests(data);
-    } catch (e: any) { setMsg(e.message); }
+    try { setRequests(await api.getPaymentRequests(status, token)); }
+    catch (e: any) { setMsg(e.message); }
     setLoading(false);
   }, [token]);
 
   useEffect(() => { load(filter); }, [load, filter]);
 
-  async function confirm(id: number) {
-    try {
-      const r = await api.confirmPayment(id, token);
-      setMsg(r.message || 'ยืนยันแล้ว');
-      load(filter);
-    } catch (e: any) { setMsg(e.message); }
-  }
-
-  async function reject(id: number) {
-    const note = rejectNote[id] || '';
-    try {
-      const r = await api.rejectPayment(id, note, token);
-      setMsg(r.message || 'ปฏิเสธแล้ว');
-      setRejectNote(prev => { const n = { ...prev }; delete n[id]; return n; });
-      load(filter);
-    } catch (e: any) { setMsg(e.message); }
-  }
-
-  const filterBtns: Array<{ key: 'pending' | 'confirmed' | 'rejected'; label: string; color: string }> = [
-    { key: 'pending',   label: 'รอยืนยัน',  color: '#d97706' },
-    { key: 'confirmed', label: 'ยืนยันแล้ว', color: '#16a34a' },
-    { key: 'rejected',  label: 'ปฏิเสธแล้ว', color: '#dc2626' },
-  ];
+  async function confirm(id: number) { try { const r = await api.confirmPayment(id, token); setMsg(r.message || 'ยืนยันแล้ว'); load(filter); } catch (e: any) { setMsg(e.message); } }
+  async function reject(id: number) { try { const r = await api.rejectPayment(id, rejectNote[id] || '', token); setMsg(r.message || 'ปฏิเสธแล้ว'); load(filter); } catch (e: any) { setMsg(e.message); } }
 
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>คำขอเติมเหรียญ</h2>
-      {msg && (
-        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#15803d' }}>
-          {msg} <button onClick={() => setMsg('')} style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+      <div className="ad-flt-row">
+        <div className="ad-flt-grp">
+          {(['pending', 'confirmed', 'rejected'] as const).map(k => (
+            <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>{k === 'pending' ? 'รอยืนยัน' : k === 'confirmed' ? 'ยืนยันแล้ว' : 'ปฏิเสธแล้ว'}</button>
+          ))}
         </div>
-      )}
-
-      {/* Filter tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {filterBtns.map(btn => (
-          <button key={btn.key} onClick={() => setFilter(btn.key)}
-            style={{
-              padding: '8px 16px', border: 'none', borderRadius: 8, cursor: 'pointer',
-              fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
-              background: filter === btn.key ? btn.color : '#f1f5f9',
-              color: filter === btn.key ? '#fff' : '#475569',
-            }}>
-            {btn.label}
-          </button>
-        ))}
+        {msg && <span style={{ fontSize: 12, color: 'var(--pos)' }}>{msg} <button onClick={() => setMsg('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>✕</button></span>}
       </div>
-
-      <div style={card}>
-        {loading ? (
-          <div style={{ padding: 20, color: '#94a3b8', textAlign: 'center' }}>กำลังโหลด...</div>
-        ) : requests.length === 0 ? (
-          <div style={{ padding: 32, color: '#94a3b8', textAlign: 'center' }}>ไม่มีคำขอ</div>
+      <div className="ad-tbl-wrap">
+        {loading ? <div style={{ padding: 20, textAlign: 'center', color: 'var(--ink-3)' }}>กำลังโหลด...</div> : requests.length === 0 ? (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>ไม่มีคำขอ</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {requests.map(req => (
-              <div key={req.id} style={{
-                border: '1px solid #e2e8f0', borderRadius: 10, padding: '16px 20px',
-                background: '#fafafa', display: 'flex', flexDirection: 'column', gap: 10,
-              }}>
+              <div key={req.id} style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 8, background: 'var(--surface)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
-                      {req.user_name || `User #${req.user_id}`}
-                      {req.user_email && <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 8 }}>{req.user_email}</span>}
-                    </div>
-                    <div style={{ fontSize: 12, color: '#475569', marginTop: 2 }}>
-                      แพ็กเกจ: <strong>{req.package_key}</strong> · {req.coins} เหรียญ · <strong style={{ color: '#0f172a' }}>฿{req.amount.toLocaleString()}</strong>
-                    </div>
-                    {req.sender_name && <div style={{ fontSize: 12, color: '#475569' }}>ชื่อผู้โอน: <strong>{req.sender_name}</strong></div>}
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{new Date(req.created_at).toLocaleString('th-TH')}</div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{req.user_name || `User #${req.user_id}`} <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 400 }}>{req.user_email}</span></div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 2 }}>แพ็กเกจ: <b>{req.package_key}</b> · {req.coins} เหรียญ · <b>{fmtMoney(req.amount)}</b></div>
+                    {req.sender_name && <div style={{ fontSize: 12, color: 'var(--ink-2)' }}>ชื่อผู้โอน: <b>{req.sender_name}</b></div>}
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{fmtDate(req.created_at)}</div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                    {req.slip_url && (
-                      <a href={req.slip_url} target="_blank" rel="noreferrer"
-                        style={{ padding: '6px 12px', background: '#eff6ff', color: '#2563eb', borderRadius: 6, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
-                        ดูสลิป
-                      </a>
-                    )}
-                    <Badge
-                      label={req.status === 'pending' ? 'รอยืนยัน' : req.status === 'confirmed' ? 'ยืนยันแล้ว' : 'ปฏิเสธแล้ว'}
-                      color={req.status === 'pending' ? '#d97706' : req.status === 'confirmed' ? '#16a34a' : '#dc2626'}
-                    />
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                    {req.slip_url && <a href={req.slip_url} target="_blank" rel="noreferrer" className="btn-sec" style={{ fontSize: 11, padding: '4px 10px', textDecoration: 'none' }}>ดูสลิป</a>}
+                    <StatusTag status={req.status} />
                   </div>
                 </div>
-
                 {filter === 'pending' && (
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <ActionBtn onClick={() => confirm(req.id)} variant="success">ยืนยัน ✓</ActionBtn>
-                    <input
-                      placeholder="หมายเหตุปฏิเสธ..."
-                      value={rejectNote[req.id] || ''}
-                      onChange={e => setRejectNote(prev => ({ ...prev, [req.id]: e.target.value }))}
-                      style={{ flex: 1, minWidth: 160, padding: '4px 10px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12, outline: 'none', fontFamily: 'inherit' }}
-                    />
-                    <ActionBtn onClick={() => reject(req.id)} variant="danger">ปฏิเสธ ✕</ActionBtn>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button className="btn-grad" onClick={() => confirm(req.id)} style={{ fontSize: 12, padding: '5px 14px' }}>ยืนยัน ✓</button>
+                    <input placeholder="หมายเหตุปฏิเสธ..." value={rejectNote[req.id] || ''} onChange={e => setRejectNote(prev => ({ ...prev, [req.id]: e.target.value }))} style={{ flex: 1, minWidth: 150, padding: '4px 10px', border: '1px solid var(--line)', borderRadius: 5, fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+                    <button className="btn-sec danger" onClick={() => reject(req.id)} style={{ fontSize: 12, padding: '5px 12px' }}>ปฏิเสธ ✕</button>
                   </div>
                 )}
+                {req.admin_note && <div style={{ fontSize: 12, color: 'var(--neg)', background: 'color-mix(in srgb,var(--neg) 8%,transparent)', padding: '6px 10px', borderRadius: 5 }}>หมายเหตุ: {req.admin_note}</div>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
-                {req.admin_note && (
-                  <div style={{ fontSize: 12, color: '#dc2626', background: '#fff5f5', padding: '6px 10px', borderRadius: 6 }}>
-                    หมายเหตุ: {req.admin_note}
+// ─── Complaints Tab ───────────────────────────────────────────────────────────
+function ComplaintsTableTab({ token }: { token: string }) {
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [filter, setFilter] = useState('pending');
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [messages, setMessages] = useState<Record<number, any[]>>({});
+  const [draft, setDraft] = useState<Record<number, string>>({});
+  const [sending, setSending] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    setLoading(true);
+    api.getComplaints(filter, token).then(setComplaints).catch(() => {}).finally(() => setLoading(false));
+  }, [filter, token]);
+
+  const toggleExpand = async (id: number) => {
+    if (expandedId === id) { setExpandedId(null); return; }
+    setExpandedId(id);
+    if (!messages[id]) {
+      const msgs = await api.getComplaintMessages(id, token).catch(() => []);
+      setMessages(prev => ({ ...prev, [id]: msgs }));
+    }
+  };
+
+  const sendReply = async (id: number, newStatus?: string) => {
+    const text = draft[id]?.trim();
+    if (!text) return;
+    setSending(prev => ({ ...prev, [id]: true }));
+    try {
+      const m = await api.sendComplaintMessage(id, text, token);
+      setMessages(prev => ({ ...prev, [id]: [...(prev[id] || []), m] }));
+      setDraft(prev => ({ ...prev, [id]: '' }));
+      if (newStatus) { await api.updateComplaintStatus(id, newStatus, token); setComplaints(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c)); }
+    } catch {}
+    setSending(prev => ({ ...prev, [id]: false }));
+  };
+
+  return (
+    <div>
+      <div className="ad-flt-row">
+        <div className="ad-flt-grp">
+          {[{ k: 'pending', l: 'รอดำเนินการ' }, { k: 'reviewing', l: 'กำลังตรวจสอบ' }, { k: 'resolved', l: 'แก้ไขแล้ว' }, { k: 'rejected', l: 'ปฏิเสธ' }, { k: '', l: 'ทั้งหมด' }].map(f => (
+            <button key={f.k} className={filter === f.k ? 'on' : ''} onClick={() => setFilter(f.k)}>{f.l}</button>
+          ))}
+        </div>
+      </div>
+      <div className="ad-tbl-wrap">
+        {loading ? <div style={{ padding: 20, textAlign: 'center', color: 'var(--ink-3)' }}>กำลังโหลด...</div> : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {complaints.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>ไม่มีเรื่องร้องเรียน</div>}
+            {complaints.map(c => (
+              <div key={c.id} style={{ borderBottom: '1px solid var(--line)', borderLeft: `3px solid ${c.status === 'pending' ? 'var(--warn)' : c.status === 'reviewing' ? 'var(--accent)' : c.status === 'resolved' ? 'var(--pos)' : 'var(--neg)'}`, padding: '12px 18px', background: 'var(--surface)' }}>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 6 }}>
+                  <StatusTag status={c.status} />
+                  <span style={{ fontSize: 12, color: 'var(--ink-2)', fontWeight: 500 }}>{c.type}</span>
+                  <span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>#{c.id} · {fmtDate(c.created_at)}</span>
+                  {c.user_name && <span style={{ fontSize: 12, color: 'var(--ink-2)' }}>— {c.user_name}</span>}
+                  <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                    {c.status === 'pending' && <button className="btn-sec" onClick={() => api.updateComplaintStatus(c.id, 'reviewing', token).then(() => setComplaints(prev => prev.map(x => x.id === c.id ? { ...x, status: 'reviewing' } : x)))} style={{ fontSize: 11, padding: '3px 9px' }}>ตรวจสอบ</button>}
+                    {(c.status === 'pending' || c.status === 'reviewing') && <>
+                      <button className="btn-grad" onClick={() => api.updateComplaintStatus(c.id, 'resolved', token).then(() => setComplaints(prev => prev.map(x => x.id === c.id ? { ...x, status: 'resolved' } : x)))} style={{ fontSize: 11, padding: '3px 10px' }}>ปิดเคส</button>
+                      <button className="btn-sec danger" onClick={() => api.updateComplaintStatus(c.id, 'rejected', token).then(() => setComplaints(prev => prev.map(x => x.id === c.id ? { ...x, status: 'rejected' } : x)))} style={{ fontSize: 11, padding: '3px 9px' }}>ปฏิเสธ</button>
+                    </>}
+                    <button className="btn-sec" onClick={() => toggleExpand(c.id)} style={{ fontSize: 11, padding: '3px 9px' }}>{expandedId === c.id ? 'ซ่อน' : 'แชท'}</button>
+                  </div>
+                </div>
+                <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: 0, lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: expandedId === c.id ? 'pre-wrap' : 'nowrap' }}>{c.detail}</p>
+                {expandedId === c.id && (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10, maxHeight: 200, overflow: 'auto' }}>
+                      {(messages[c.id] || []).map((m: any) => (
+                        <div key={m.id} style={{ display: 'flex', justifyContent: m.sender_type === 'admin' ? 'flex-end' : 'flex-start' }}>
+                          <div style={{ maxWidth: '75%', padding: '6px 10px', borderRadius: 8, fontSize: 13, background: m.sender_type === 'admin' ? 'var(--ink)' : 'var(--surface-2)', color: m.sender_type === 'admin' ? 'var(--bg)' : 'var(--ink)', lineHeight: 1.5 }}>{m.content}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <textarea value={draft[c.id] || ''} onChange={e => setDraft(prev => ({ ...prev, [c.id]: e.target.value }))} placeholder="พิมพ์ข้อความ... (Enter ส่ง)" rows={2} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(c.id); } }} style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', outline: 'none' }} />
+                      <button className="btn-grad" onClick={() => sendReply(c.id)} disabled={sending[c.id] || !draft[c.id]?.trim()} style={{ fontSize: 12, padding: '6px 12px', alignSelf: 'flex-end' }}><IcoSend /></button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -736,301 +749,119 @@ function PaymentsTab({ token }: { token: string }) {
   );
 }
 
-// ─── Tab: Complaints ──────────────────────────────────────────────────────────
-function ComplaintsTab({ token }: { token: string }) {
-  const [complaints, setComplaints] = useState<any[]>([]);
-  const [filter, setFilter] = useState('pending');
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState('');
-  const [replyDraft, setReplyDraft] = useState<Record<number, string>>({});
-  const [replySending, setReplySending] = useState<Record<number, boolean>>({});
-  const [messages, setMessages] = useState<Record<number, any[]>>({});
-  const [msgsLoading, setMsgsLoading] = useState<Record<number, boolean>>({});
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const expandedIdRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    setLoading(true);
-    api.getComplaints(filter, token)
-      .then(setComplaints)
-      .catch(e => setErr(e.message))
-      .finally(() => setLoading(false));
-  }, [filter, token]);
-
-  // Keep ref in sync so the polling interval can read the latest expandedId
-  useEffect(() => { expandedIdRef.current = expandedId; }, [expandedId]);
-
-  // Auto-poll messages every 8s when a chat thread is open
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      const id = expandedIdRef.current;
-      if (id === null) return;
-      try {
-        const msgs = await api.getComplaintMessages(id, token);
-        setMessages(prev => {
-          const existing = prev[id] || [];
-          // Only update if there are actually new messages (avoid unnecessary re-renders)
-          if (msgs.length === existing.length) return prev;
-          return { ...prev, [id]: msgs };
-        });
-      } catch {}
-    }, 8000);
-    return () => clearInterval(interval);
-  }, [token]);
-
-  const updateStatus = async (id: number, status: string) => {
-    try {
-      await api.updateComplaintStatus(id, status, token);
-      setComplaints(prev => prev.map(c => c.id === id ? { ...c, status } : c));
-    } catch (e: any) { alert(e.message); }
-  };
-
-  const loadMessages = async (id: number) => {
-    setMsgsLoading(prev => ({ ...prev, [id]: true }));
-    try {
-      const msgs = await api.getComplaintMessages(id, token);
-      setMessages(prev => ({ ...prev, [id]: msgs }));
-    } catch {}
-    finally { setMsgsLoading(prev => ({ ...prev, [id]: false })); }
-  };
-
-  const toggleExpand = (id: number) => {
-    if (expandedId === id) { setExpandedId(null); return; }
-    setExpandedId(id);
-    loadMessages(id); // always reload to catch new user messages
-  };
-
-  const sendReply = async (id: number, newStatus?: string) => {
-    const reply = replyDraft[id]?.trim();
-    if (!reply) return;
-    setReplySending(prev => ({ ...prev, [id]: true }));
-    try {
-      const msg = await api.sendComplaintMessage(id, reply, token);
-      // update messages list
-      setMessages(prev => ({ ...prev, [id]: [...(prev[id] || []), msg] }));
-      // update status if needed
-      if (newStatus) {
-        await api.updateComplaintStatus(id, newStatus, token);
-        setComplaints(prev => prev.map(c => c.id === id ? { ...c, status: newStatus, admin_reply: reply } : c));
-      } else {
-        setComplaints(prev => prev.map(c => c.id === id ? { ...c, admin_reply: reply } : c));
-      }
-      setReplyDraft(prev => ({ ...prev, [id]: '' })); // clear ONLY the input, sent msg shows in list
-    } catch (e: any) { alert(e.message); }
-    finally { setReplySending(prev => ({ ...prev, [id]: false })); }
-  };
-
-  const typeLabel: Record<string, string> = {
-    fraud: '🚨 ถูกโกง', product: '📦 สินค้า', user: '👤 ผู้ใช้', payment: '💳 การชำระ', other: '📝 อื่นๆ',
-  };
-  const statusColor: Record<string, string> = {
-    pending: '#d97706', reviewing: '#2563eb', resolved: '#16a34a', rejected: '#dc2626',
-  };
-  const statusLabel: Record<string, string> = {
-    pending: 'รอดำเนินการ', reviewing: 'กำลังตรวจสอบ', resolved: 'แก้ไขแล้ว', rejected: 'ปฏิเสธ',
-  };
-
-  return (
-    <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>🚨 ร้องเรียน</h2>
-      <p style={{ color: '#64748b', marginBottom: 24, fontSize: 14 }}>จัดการเรื่องร้องเรียนจากผู้ใช้</p>
-
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        {[
-          { key: 'pending', label: '⏳ รอดำเนินการ' },
-          { key: 'reviewing', label: '🔍 กำลังตรวจสอบ' },
-          { key: 'resolved', label: '✅ แก้ไขแล้ว' },
-          { key: 'rejected', label: '❌ ปฏิเสธ' },
-          { key: '', label: '📋 ทั้งหมด' },
-        ].map(f => (
-          <button key={f.key} onClick={() => setFilter(f.key)}
-            style={{ padding: '7px 16px', border: 'none', borderRadius: 999, cursor: 'pointer',
-              fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
-              background: filter === f.key ? '#0f172a' : '#e2e8f0',
-              color: filter === f.key ? '#f59e0b' : '#475569' }}>
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {err && <div style={{ color: '#dc2626', marginBottom: 16 }}>{err}</div>}
-
-      {loading ? (
-        <div style={{ color: '#64748b', padding: 40, textAlign: 'center' }}>กำลังโหลด...</div>
-      ) : complaints.length === 0 ? (
-        <div style={{ ...card, textAlign: 'center', color: '#64748b', padding: 48 }}>ไม่มีเรื่องร้องเรียน</div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {complaints.map(c => (
-            <div key={c.id} style={{ ...card, borderLeft: `4px solid ${statusColor[c.status] || '#e2e8f0'}` }}>
-              {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <Badge label={typeLabel[c.type] || c.type} color="#6366f1" />
-                  <Badge label={statusLabel[c.status] || c.status} color={statusColor[c.status] || '#64748b'} />
-                  <span style={{ fontSize: 11, color: '#94a3b8' }}>#{c.id} · {new Date(c.created_at).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-                {c.user_name && <span style={{ fontSize: 12, color: '#475569' }}>👤 {c.user_name} ({c.user_email})</span>}
-              </div>
-
-              {/* Detail */}
-              <p style={{ fontSize: 14, color: '#1e293b', marginBottom: 8, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{c.detail}</p>
-              {c.contact && <div style={{ fontSize: 12, color: '#475569', marginBottom: 12 }}>📞 ช่องทางติดต่อ: <strong>{c.contact}</strong></div>}
-
-              {/* Status buttons */}
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-                {c.status === 'pending' && <>
-                  <ActionBtn onClick={() => updateStatus(c.id, 'reviewing')} variant="default">🔍 ตรวจสอบ</ActionBtn>
-                  <ActionBtn onClick={() => updateStatus(c.id, 'resolved')} variant="success">✅ ปิดเรื่อง</ActionBtn>
-                  <ActionBtn onClick={() => updateStatus(c.id, 'rejected')} variant="danger">❌ ปฏิเสธ</ActionBtn>
-                </>}
-                {c.status === 'reviewing' && <>
-                  <ActionBtn onClick={() => updateStatus(c.id, 'resolved')} variant="success">✅ ปิดเรื่อง</ActionBtn>
-                  <ActionBtn onClick={() => updateStatus(c.id, 'rejected')} variant="danger">❌ ปฏิเสธ</ActionBtn>
-                </>}
-                {c.user_id && (
-                  <ActionBtn onClick={() => toggleExpand(c.id)} variant="default">
-                    💬 {expandedId === c.id ? 'ซ่อน' : `แชท${c.admin_reply ? ' (ตอบแล้ว)' : ''}`}
-                  </ActionBtn>
-                )}
-              </div>
-
-              {/* Chat thread (expandable) */}
-              {expandedId === c.id && c.user_id && (
-                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 12 }}>
-                  {/* Messages header with refresh */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>💬 ประวัติการสนทนา</span>
-                    <button onClick={() => loadMessages(c.id)} disabled={msgsLoading[c.id]}
-                      style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 6, padding: '3px 8px', fontSize: 11, color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>
-                      {msgsLoading[c.id] ? '⏳' : '🔄 รีเฟรช'}
-                    </button>
-                  </div>
-                  {/* Messages */}
-                  {msgsLoading[c.id] ? (
-                    <div style={{ color: '#94a3b8', fontSize: 13, padding: '8px 0' }}>กำลังโหลด...</div>
-                  ) : (
-                    <div style={{ maxHeight: 240, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
-                      {(messages[c.id] || []).length === 0 && (
-                        <div style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: '12px 0' }}>ยังไม่มีข้อความ</div>
-                      )}
-                      {(messages[c.id] || []).map((m: any) => (
-                        <div key={m.id} style={{ display: 'flex', justifyContent: m.sender_type === 'admin' ? 'flex-end' : 'flex-start' }}>
-                          <div style={{ maxWidth: '80%', padding: '8px 12px', borderRadius: m.sender_type === 'admin' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
-                            background: m.sender_type === 'admin' ? '#0f172a' : '#f1f5f9', color: m.sender_type === 'admin' ? '#f59e0b' : '#1e293b', fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                            {m.content}
-                            <div style={{ fontSize: 10, opacity: .6, marginTop: 3, textAlign: 'right' }}>
-                              {new Date(m.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {/* Input */}
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <textarea
-                      value={replyDraft[c.id] || ''}
-                      onChange={e => setReplyDraft(prev => ({ ...prev, [c.id]: e.target.value }))}
-                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(c.id); } }}
-                      placeholder="พิมพ์ข้อความ... (Enter ส่ง)"
-                      rows={2}
-                      style={{ flex: 1, padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', outline: 'none', background: '#f8fafc' }}
-                    />
-                    <button onClick={() => sendReply(c.id)} disabled={replySending[c.id] || !(replyDraft[c.id]?.trim())}
-                      style={{ padding: '7px 14px', background: '#0f172a', color: '#f59e0b', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: replySending[c.id] ? .6 : 1, whiteSpace: 'nowrap', alignSelf: 'flex-end' }}>
-                      {replySending[c.id] ? '...' : '📨 ส่ง'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const token = (session as any)?.token as string;
   const isAdmin = !!(session?.user as any)?.is_admin;
-  const [tab, setTab] = useState('overview');
+  const userName = session?.user?.name || 'Admin';
+  const [tab, setTab] = useState('queue');
+  const [cmdkOpen, setCmdkOpen] = useState(false);
 
-  if (status === 'loading') return (
-    <div style={{ padding: 40, fontFamily: 'inherit', color: '#475569' }}>กำลังโหลด...</div>
-  );
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setCmdkOpen(true); }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
 
+  if (status === 'loading') return <div style={{ height: '100vh', display: 'grid', placeItems: 'center', color: 'var(--ink-3)' }}>กำลังโหลด...</div>;
   if (!session?.user || !isAdmin) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: 12, fontFamily: 'system-ui, sans-serif', background: '#f8fafc' }}>
-      <div style={{ fontSize: 48 }}>🔒</div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: '#0f172a' }}>ไม่มีสิทธิ์เข้าถึง</div>
-      <div style={{ fontSize: 14, color: '#64748b' }}>หน้านี้สำหรับผู้ดูแลระบบเท่านั้น</div>
-      <a href="/" style={{ color: '#2563eb', fontSize: 14, textDecoration: 'none' }}>← กลับหน้าแรก</a>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: 12 }}>
+      <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--ink)' }}>ไม่มีสิทธิ์เข้าถึง</div>
+      <div style={{ fontSize: 14, color: 'var(--ink-3)' }}>หน้านี้สำหรับผู้ดูแลระบบเท่านั้น</div>
+      <a href="/" style={{ color: 'var(--accent)', fontSize: 14 }}>← กลับหน้าแรก</a>
     </div>
   );
 
-  const navTabs = [
-    { key: 'overview',  label: '📊 ภาพรวม' },
-    { key: 'users',     label: '👥 ผู้ใช้' },
-    { key: 'products',  label: '📦 สินค้า' },
-    { key: 'premium',   label: '🪙 Premium' },
-    { key: 'payments',  label: '💳 คำขอเติมเหรียญ' },
-    { key: 'complaints', label: '🚨 ร้องเรียน' },
+  const navItems = [
+    { key: 'queue',      label: 'คิวงาน',           icon: <IcoQueue /> },
+    { key: 'users',      label: 'ผู้ใช้',            icon: <IcoUsers /> },
+    { key: 'products',   label: 'ประกาศ',            icon: <IcoBox /> },
+    { key: 'premium',    label: 'Premium & เหรียญ',  icon: <IcoCoin /> },
+    { key: 'payments',   label: 'คำขอเติมเหรียญ',    icon: <IcoCard /> },
+    { key: 'complaints', label: 'ร้องเรียน',          icon: <IcoAlert /> },
+    { key: 'overview',   label: 'ภาพรวม',            icon: <IcoChart /> },
   ];
 
+  const tabLabels: Record<string, string> = { queue: 'คิวงาน', users: 'ผู้ใช้', products: 'ประกาศสินค้า', premium: 'Premium & เหรียญ', payments: 'คำขอเติมเหรียญ', complaints: 'ร้องเรียน', overview: 'ภาพรวม' };
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif', background: '#f8fafc' }}>
-      {/* Sidebar */}
-
-      <aside style={{
-        width: 220, background: '#0f172a', color: '#fff',
-        display: 'flex', flexDirection: 'column', flexShrink: 0,
-        position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
-      }}>
-        <div style={{ padding: '24px 20px 16px', borderBottom: '1px solid #1e293b' }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#f59e0b', letterSpacing: '-.02em' }}>
-            🛡️ Admin Panel
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="ad">
+        {/* Sidebar */}
+        <aside className="ad-side">
+          <div className="ad-brand">
+            <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--accent)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', letterSpacing: '-.01em' }}>Admin</div>
+            </div>
+            <span className="ad-brand-sub">OPS</span>
           </div>
-          <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>Ploikhong Marketplace</div>
-        </div>
 
-        <nav style={{ padding: '12px 8px', flex: 1 }}>
-          {navTabs.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              style={{
-                display: 'block', width: '100%', textAlign: 'left',
-                padding: '10px 12px', border: 'none', cursor: 'pointer',
-                borderRadius: 8, marginBottom: 2, fontSize: 13, fontWeight: 600,
-                fontFamily: 'inherit',
-                background: tab === t.key ? '#1e293b' : 'none',
-                color: tab === t.key ? '#f59e0b' : '#94a3b8',
-                borderLeft: tab === t.key ? '3px solid #f59e0b' : '3px solid transparent',
-                transition: 'all .15s',
-              }}
-              onMouseEnter={e => { if (tab !== t.key) (e.currentTarget as HTMLButtonElement).style.background = '#1e293b'; }}
-              onMouseLeave={e => { if (tab !== t.key) (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}>
-              {t.label}
+          <div className="ad-side-label">เมนู</div>
+
+          <nav className="ad-nav">
+            {navItems.map(item => (
+              <button key={item.key} className={tab === item.key ? 'on' : ''} onClick={() => setTab(item.key)}>
+                <span className="ad-ic">{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          <a href="/" className="ad-close">
+            <IcoBack />
+            กลับเว็บหลัก
+          </a>
+
+          <div className="ad-admin-card">
+            <div className="ad-admin-ava">{userName[0]?.toUpperCase()}</div>
+            <div>
+              <div className="ad-admin-name">{userName}</div>
+              <div className="ad-admin-role">ADMIN</div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main */}
+        <div className="ad-main">
+          <div className="ad-topbar">
+            <div className="ad-topbar-title">
+              <h1>{tabLabels[tab]}</h1>
+              <div className="ad-breadcrumb">Admin → {tabLabels[tab]}</div>
+            </div>
+            <button className="ad-cmdk" onClick={() => setCmdkOpen(true)}>
+              <IcoSearch />
+              ค้นหาหรือไปที่...
+              <kbd>⌘K</kbd>
             </button>
-          ))}
-        </nav>
+            <div className="ad-metric-chips">
+              <div className="ad-chip live"><span className="dot" /><span>Live</span></div>
+            </div>
+          </div>
 
-        <div style={{ padding: '16px 20px', borderTop: '1px solid #1e293b' }}>
-          <a href="/" style={{ fontSize: 12, color: '#475569', textDecoration: 'none' }}>← กลับเว็บหลัก</a>
+          <div className={`ad-content${tab === 'queue' ? ' no-pad' : ''}`}>
+            {tab === 'queue'      && <QueueView       token={token} />}
+            {tab === 'users'      && <UsersTab         token={token} />}
+            {tab === 'products'   && <ProductsTab      token={token} />}
+            {tab === 'premium'    && <PremiumTab       token={token} />}
+            {tab === 'payments'   && <PaymentsTab      token={token} />}
+            {tab === 'complaints' && <ComplaintsTableTab token={token} />}
+            {tab === 'overview'   && <OverviewTab      token={token} />}
+          </div>
         </div>
-      </aside>
+      </div>
 
-      {/* Main content */}
-      <main style={{ flex: 1, padding: '32px 40px', overflowY: 'auto', minWidth: 0 }}>
-        {tab === 'overview'  && <OverviewTab  token={token} />}
-        {tab === 'users'     && <UsersTab     token={token} />}
-        {tab === 'products'  && <ProductsTab  token={token} />}
-        {tab === 'premium'   && <PremiumTab   token={token} />}
-        {tab === 'payments'   && <PaymentsTab   token={token} />}
-        {tab === 'complaints' && <ComplaintsTab token={token} />}
-      </main>
+      {cmdkOpen && (
+        <CommandPalette
+          onClose={() => setCmdkOpen(false)}
+          onNavigate={key => { setTab(key); setCmdkOpen(false); }}
+        />
+      )}
     </div>
   );
 }

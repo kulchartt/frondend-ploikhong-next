@@ -25,47 +25,45 @@ interface Message {
 }
 
 const TYPE_LABEL: Record<string, string> = {
-  fraud: '🚨 ถูกโกง', product: '📦 สินค้า', user: '👤 ผู้ใช้', payment: '💳 การชำระ', other: '📝 อื่นๆ',
+  fraud: 'ถูกโกง / หลอกลวง', product: 'สินค้าไม่ตรงปก', user: 'พฤติกรรมไม่เหมาะสม', payment: 'ปัญหาการชำระเงิน', other: 'อื่นๆ',
 };
 
 const TYPE_OPTIONS = [
-  { value: 'fraud',   label: '🚨 ถูกโกง / หลอกลวง' },
-  { value: 'product', label: '📦 สินค้าไม่ตรงปก' },
-  { value: 'user',    label: '👤 พฤติกรรมไม่เหมาะสม' },
-  { value: 'payment', label: '💳 ปัญหาการชำระเงิน' },
-  { value: 'other',   label: '📝 อื่นๆ' },
+  { value: 'fraud',   label: 'ถูกโกง / หลอกลวง' },
+  { value: 'product', label: 'สินค้าไม่ตรงปก' },
+  { value: 'user',    label: 'พฤติกรรมไม่เหมาะสม' },
+  { value: 'payment', label: 'ปัญหาการชำระเงิน' },
+  { value: 'other',   label: 'อื่นๆ' },
 ];
 
-const STATUS: Record<string, { label: string; color: string; bg: string; icon: string }> = {
-  pending:   { label: 'รอดำเนินการ',   color: '#d97706', bg: '#fef3c7', icon: '⏳' },
-  reviewing: { label: 'กำลังตรวจสอบ', color: '#2563eb', bg: '#eff6ff', icon: '🔍' },
-  resolved:  { label: 'แก้ไขแล้ว',     color: '#16a34a', bg: '#f0fdf4', icon: '✅' },
-  rejected:  { label: 'ปฏิเสธ',        color: '#dc2626', bg: '#fff5f5', icon: '❌' },
+const STATUS_META: Record<string, { label: string; color: string; dot: string; step: number }> = {
+  pending:   { label: 'รอตรวจสอบ',     color: '#d97706', dot: '#f59e0b', step: 1 },
+  reviewing: { label: 'กำลังตรวจสอบ', color: '#2563eb', dot: '#3b82f6', step: 2 },
+  resolved:  { label: 'ปิดเคสแล้ว',   color: '#16a34a', dot: '#22c55e', step: 3 },
+  rejected:  { label: 'ปฏิเสธ',       color: '#dc2626', dot: '#ef4444', step: 3 },
 };
 
-// ─── Icons ───────────────────────────────────────────────────────────────────
-function IconBack() {
-  return <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>;
-}
-function IconPlus() {
-  return <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1={12} y1={5} x2={12} y2={19}/><line x1={5} y1={12} x2={19} y2={12}/></svg>;
-}
-function IconAlert() {
-  return <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1={12} y1={9} x2={12} y2={13}/><line x1={12} y1={17} x2={12.01} y2={17}/></svg>;
-}
-function IconSend() {
-  return <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1={22} y1={2} x2={11} y2={13}/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
-}
-function IconClose() {
-  return <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><line x1={6} y1={6} x2={18} y2={18}/><line x1={18} y1={6} x2={6} y2={18}/></svg>;
-}
+const PROGRESS_STEPS = ['ส่งเรื่อง', 'รอตรวจสอบ', 'กำลังตรวจสอบ', 'ปิดเคส'];
+
+function fmtDate(d: string) { return new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }); }
+function fmtTime(d: string) { return new Date(d).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }); }
+function fmtDt(d: string) { return fmtDate(d) + ' ' + fmtTime(d); }
+
+// ─── SVG Icons ────────────────────────────────────────────────────────────────
+function IcoBack() { return <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="15 18 9 12 15 6"/></svg>; }
+function IcoPlus() { return <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1={12} y1={5} x2={12} y2={19}/><line x1={5} y1={12} x2={19} y2={12}/></svg>; }
+function IcoSearch() { return <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx={11} cy={11} r={8}/><line x1={21} y1={21} x2={16.65} y2={16.65}/></svg>; }
+function IcoSend() { return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1={22} y1={2} x2={11} y2={13}/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>; }
+function IcoClose() { return <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1={6} y1={6} x2={18} y2={18}/><line x1={18} y1={6} x2={6} y2={18}/></svg>; }
+function IcoAlert() { return <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1={12} y1={9} x2={12} y2={13}/><line x1={12} y1={17} x2={12.01} y2={17}/></svg>; }
+function IcoHelp() { return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx={12} cy={12} r={10}/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1={12} y1={17} x2={12.01} y2={17}/></svg>; }
 
 // ─── New Complaint Modal ──────────────────────────────────────────────────────
 function NewComplaintModal({ onClose, onSent }: { onClose: () => void; onSent: () => void }) {
   const { data: session } = useSession();
+  const [step, setStep] = useState(0); // 0=type, 1=detail, 2=done
   const [form, setForm] = useState({ type: 'fraud', detail: '', contact: '' });
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -77,55 +75,54 @@ function NewComplaintModal({ onClose, onSent }: { onClose: () => void; onSent: (
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, user_id: (session as any)?.userId || null }),
       });
-      setSent(true);
-      setTimeout(() => { onSent(); onClose(); }, 1500);
-    } catch { setSent(true); }
+      setStep(2);
+      setTimeout(() => { onSent(); onClose(); }, 1800);
+    } catch { setStep(2); }
     finally { setLoading(false); }
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ background: 'var(--surface)', borderRadius: 16, width: '100%', maxWidth: 480, boxShadow: '0 24px 64px rgba(0,0,0,.2)', overflow: 'hidden' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: '1px solid var(--line)' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'fadeIn .15s ease' }}>
+      <div style={{ background: 'var(--bg)', borderRadius: 16, width: '100%', maxWidth: 480, boxShadow: '0 30px 80px rgba(0,0,0,.3)', overflow: 'hidden', animation: 'slideUp .22s cubic-bezier(.2,.8,.2,1)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#fee2e2', display: 'grid', placeItems: 'center', color: '#dc2626' }}><IconAlert /></div>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'color-mix(in srgb,var(--neg) 12%,transparent)', display: 'grid', placeItems: 'center', color: 'var(--neg)' }}><IcoAlert /></div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>ส่งเรื่องร้องเรียน</div>
               <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>ทีมงานจะดำเนินการภายใน 24 ชั่วโมง</div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', padding: 4 }}><IconClose /></button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', padding: 4 }}><IcoClose /></button>
         </div>
-        {sent ? (
-          <div style={{ padding: 48, textAlign: 'center' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-            <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--ink)', marginBottom: 6 }}>รับเรื่องแล้ว!</div>
-            <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>ทีมงานจะตรวจสอบภายใน 24 ชั่วโมง</div>
+
+        {step === 2 ? (
+          <div style={{ padding: 48, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <div className="co-check-ic"><svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--ink)' }}>รับเรื่องแล้ว!</div>
+            <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6 }}>ทีมงานจะตรวจสอบและติดต่อกลับภายใน 24 ชั่วโมง</div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 6 }}>ประเภทปัญหา</label>
               <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
-                style={{ width: '100%', padding: '10px 12px', border: '1.5px solid var(--line)', borderRadius: 8, fontSize: 14, background: 'var(--surface)', color: 'var(--ink)', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
+                style={{ width: '100%', padding: '10px 12px', border: '1.5px solid var(--line)', borderRadius: 8, fontSize: 14, background: 'var(--surface)', color: 'var(--ink)', outline: 'none', fontFamily: 'inherit' }}>
                 {TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 6 }}>รายละเอียด <span style={{ color: 'var(--neg)' }}>*</span></label>
-              <textarea value={form.detail} onChange={e => setForm(f => ({ ...f, detail: e.target.value }))}
-                required rows={4} placeholder="อธิบายปัญหาที่พบให้ละเอียด..."
+              <textarea value={form.detail} onChange={e => setForm(f => ({ ...f, detail: e.target.value }))} required rows={4} placeholder="อธิบายปัญหาที่พบให้ละเอียด..."
                 style={{ width: '100%', padding: '10px 12px', border: '1.5px solid var(--line)', borderRadius: 8, fontSize: 14, background: 'var(--surface)', color: 'var(--ink)', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }} />
             </div>
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 6 }}>ช่องทางติดต่อกลับ <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>(ไม่บังคับ)</span></label>
-              <input value={form.contact} onChange={e => setForm(f => ({ ...f, contact: e.target.value }))}
-                placeholder="เบอร์โทร / LINE ID / อีเมล"
+              <input value={form.contact} onChange={e => setForm(f => ({ ...f, contact: e.target.value }))} placeholder="เบอร์โทร / LINE ID / อีเมล"
                 style={{ width: '100%', padding: '10px 12px', border: '1.5px solid var(--line)', borderRadius: 8, fontSize: 14, background: 'var(--surface)', color: 'var(--ink)', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
             </div>
             <button type="submit" disabled={loading || !form.detail.trim()}
-              style={{ padding: '12px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: loading ? 'not-allowed' : 'pointer', opacity: (loading || !form.detail.trim()) ? .6 : 1, fontFamily: 'inherit' }}>
-              {loading ? 'กำลังส่ง…' : '📨 ส่งเรื่องร้องเรียน'}
+              style={{ padding: 12, background: 'var(--accent)', color: 'var(--accent-ink)', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: (loading || !form.detail.trim()) ? 'not-allowed' : 'pointer', opacity: (loading || !form.detail.trim()) ? .6 : 1, fontFamily: 'inherit' }}>
+              {loading ? 'กำลังส่ง...' : 'ส่งเรื่องร้องเรียน'}
             </button>
           </form>
         )}
@@ -134,24 +131,50 @@ function NewComplaintModal({ onClose, onSent }: { onClose: () => void; onSent: (
   );
 }
 
-// ─── Chat Panel ───────────────────────────────────────────────────────────────
-function ChatPanel({ complaint, token }: { complaint: Complaint; token: string }) {
+// ─── Progress Tracker ─────────────────────────────────────────────────────────
+function ProgressTracker({ status }: { status: string }) {
+  const activeStep = status === 'pending' ? 1 : status === 'reviewing' ? 2 : 3;
+  const isResolved = status === 'resolved' || status === 'rejected';
+
+  return (
+    <div className="cx-progress">
+      {PROGRESS_STEPS.map((label, i) => {
+        const done = i < activeStep;
+        const active = i === activeStep;
+        const last = i === PROGRESS_STEPS.length - 1;
+        const stepClass = done ? 'done' : active ? 'active' : '';
+        return (
+          <div key={i} className={`cx-prog-step ${stepClass}`}>
+            <div className="cx-prog-dot">
+              {done ? '✓' : i + 1}
+            </div>
+            <div className="cx-prog-label">{i === 3 && isResolved && status === 'rejected' ? 'ปฏิเสธ' : label}</div>
+            {!last && <div className="cx-prog-line" />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Case Detail (center panel) ───────────────────────────────────────────────
+function CaseDetail({ complaint, token }: { complaint: Complaint; token: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const s = STATUS[complaint.status] || { label: complaint.status, color: '#64748b', bg: '#f1f5f9', icon: '📋' };
+  const s = STATUS_META[complaint.status] || STATUS_META.pending;
 
   useEffect(() => {
     setMessages([]);
     setDraft('');
-    api.getComplaintMessages(complaint.id, token)
-      .then(setMessages)
-      .catch(() => {});
+    api.getComplaintMessages(complaint.id, token).then(setMessages).catch(() => {});
   }, [complaint.id, token]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (bottomRef.current) {
+      bottomRef.current.scrollTop = bottomRef.current.scrollHeight;
+    }
   }, [messages]);
 
   async function handleSend(e: React.FormEvent) {
@@ -163,120 +186,180 @@ function ChatPanel({ complaint, token }: { complaint: Complaint; token: string }
     try {
       const msg = await api.sendComplaintMessage(complaint.id, text, token);
       setMessages(prev => [...prev, msg]);
-    } catch { setDraft(text); } // restore on error
+    } catch { setDraft(text); }
     finally { setSending(false); }
-  }
-
-  function fmt(dateStr: string) {
-    return new Date(dateStr).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
   }
 
   const isResolved = complaint.status === 'resolved' || complaint.status === 'rejected';
 
   return (
-    <>
-      {/* Messages area */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 8px' }}>
-        {/* Status pill */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-          <div style={{ padding: '6px 14px', background: s.bg, borderRadius: 999, fontSize: 12, color: s.color, fontWeight: 600 }}>
-            {s.icon} {s.label}
-          </div>
-        </div>
-
-        {/* Original complaint as first user bubble */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-          <div style={{ maxWidth: '75%' }}>
-            <div style={{ background: '#dc2626', color: '#fff', borderRadius: '16px 16px 4px 16px', padding: '12px 16px', fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-              {complaint.detail}
+    <div className="cx-detail">
+      {/* Hero */}
+      <div className="cx-hero">
+        <div className="cx-hero-head">
+          <div>
+            <div className="cx-hero-meta">
+              <span className="cx-hero-id">#{complaint.id}</span>
+              <span className="cx-hero-dot" />
+              <span className="cx-hero-cat">{TYPE_LABEL[complaint.type] || complaint.type}</span>
+              <span className="cx-hero-dot" />
+              <span style={{ fontSize: 12 }}>{fmtDate(complaint.created_at)}</span>
             </div>
-            {complaint.contact && (
-              <div style={{ background: '#fca5a5', color: '#7f1d1d', borderRadius: '4px 4px 4px 16px', padding: '8px 14px', fontSize: 13, marginTop: 3 }}>
-                📞 {complaint.contact}
-              </div>
-            )}
-            <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4, textAlign: 'right' }}>
-              คุณ · {fmt(complaint.created_at)}
-            </div>
+            <h1 className="cx-hero-title">{TYPE_LABEL[complaint.type] || complaint.type}</h1>
           </div>
-        </div>
-
-        {/* Auto system message */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 16 }}>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: '75%' }}>
-            <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#fee2e2', display: 'grid', placeItems: 'center', flexShrink: 0, fontSize: 14 }}>🛡️</div>
+          <div className="cx-hero-status">
+            <div className="cx-hero-ic" style={{ background: s.dot }}>
+              {complaint.status === 'resolved' ? '✓' : complaint.status === 'rejected' ? '✕' : complaint.status === 'reviewing' ? '🔍' : '⏳'}
+            </div>
             <div>
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '16px 16px 16px 4px', padding: '10px 14px', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>
-                รับเรื่องร้องเรียนของคุณแล้ว ทีมงานจะดำเนินการตรวจสอบภายใน 24 ชั่วโมง
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3, paddingLeft: 4 }}>ทีมงาน PloiKhong · {fmt(complaint.created_at)}</div>
+              <small>สถานะ</small>
+              <b>{s.label}</b>
             </div>
           </div>
         </div>
 
-        {/* Chat messages */}
-        {messages.map(m => {
-          const isAdmin = m.sender_type === 'admin';
-          return (
-            <div key={m.id} style={{ display: 'flex', justifyContent: isAdmin ? 'flex-start' : 'flex-end', marginBottom: 12 }}>
-              {isAdmin ? (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: '75%' }}>
-                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#fee2e2', display: 'grid', placeItems: 'center', flexShrink: 0, fontSize: 14 }}>🛡️</div>
-                  <div>
-                    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '16px 16px 16px 4px', padding: '10px 14px', fontSize: 14, color: 'var(--ink)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                      {m.content}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3, paddingLeft: 4 }}>ทีมงาน PloiKhong · {fmt(m.created_at)}</div>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ maxWidth: '75%' }}>
-                  <div style={{ background: '#dc2626', color: '#fff', borderRadius: '16px 16px 4px 16px', padding: '10px 14px', fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                    {m.content}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3, textAlign: 'right' }}>คุณ · {fmt(m.created_at)}</div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-        <div ref={bottomRef} />
+        <ProgressTracker status={complaint.status} />
+
+        {complaint.status === 'pending' && (
+          <div className="cx-sla" style={{ marginTop: 10 }}>
+            <span style={{ marginRight: 4 }}>⏰</span>
+            <span>ทีมงานจะตรวจสอบภายใน <b>24 ชั่วโมง</b> นับจากที่ส่งเรื่อง</span>
+          </div>
+        )}
+        {complaint.status === 'reviewing' && (
+          <div className="cx-sla" style={{ marginTop: 10 }}>
+            <span style={{ marginRight: 4 }}>🔍</span>
+            <span>ทีมงานกำลังดำเนินการตรวจสอบ สามารถส่งข้อมูลเพิ่มเติมด้านล่างได้</span>
+          </div>
+        )}
+        {isResolved && (
+          <div className="cx-sla" style={{ marginTop: 10, background: complaint.status === 'resolved' ? 'color-mix(in srgb,var(--pos) 8%,transparent)' : 'color-mix(in srgb,var(--neg) 8%,transparent)', borderColor: complaint.status === 'resolved' ? 'color-mix(in srgb,var(--pos) 25%,transparent)' : 'color-mix(in srgb,var(--neg) 25%,transparent)', color: complaint.status === 'resolved' ? '#15803d' : '#991b1b' }}>
+            <span style={{ marginRight: 4 }}>{complaint.status === 'resolved' ? '✅' : '❌'}</span>
+            <span>{complaint.status === 'resolved' ? 'เรื่องนี้ได้รับการแก้ไขเรียบร้อยแล้ว' : 'เรื่องร้องเรียนนี้ถูกปฏิเสธ'}</span>
+          </div>
+        )}
       </div>
 
-      {/* Input bar */}
-      <div style={{ padding: '12px 16px', borderTop: '1px solid var(--line)', background: 'var(--surface)', flexShrink: 0 }}>
-        {isResolved ? (
-          <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--ink-3)', padding: '6px 0' }}>
-            {complaint.status === 'resolved' ? '✅ เรื่องนี้ได้รับการแก้ไขแล้ว' : '❌ เรื่องนี้ถูกปฏิเสธแล้ว'}
+      {/* Detail section */}
+      <div className="cx-sec">
+        <div className="cx-sec-h">รายละเอียดที่แจ้ง</div>
+        <div className="cx-reason">{complaint.detail}</div>
+        {complaint.contact && (
+          <div style={{ marginTop: 10, fontSize: 13, color: 'var(--ink-2)' }}>ช่องทางติดต่อกลับ: <b style={{ color: 'var(--ink)' }}>{complaint.contact}</b></div>
+        )}
+      </div>
+
+      {/* Thread */}
+      <div className="cx-sec">
+        <div className="cx-sec-h">ประวัติการสื่อสาร</div>
+        <div className="cx-thread" ref={bottomRef} style={{ maxHeight: 400, overflowY: 'auto' }}>
+          {/* System message */}
+          <div className="cx-event">
+            <div className="cx-event-dot" />
+            <div className="cx-event-body">
+              <span><b>รับเรื่องแล้ว</b> ทีมงานจะดำเนินการภายใน 24 ชั่วโมง</span>
+              <span className="cx-event-at">{fmtDt(complaint.created_at)}</span>
+            </div>
           </div>
-        ) : (
-          <form onSubmit={handleSend} style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+
+          {/* Messages */}
+          {messages.map(m => {
+            const isAdmin = m.sender_type === 'admin';
+            return (
+              <div key={m.id} className={`cx-msg ${isAdmin ? 'cx-msg-admin' : 'cx-msg-me'}`}>
+                <div className="cx-msg-ava">{isAdmin ? 'A' : 'U'}</div>
+                <div className="cx-msg-body">
+                  <div className="cx-msg-who">
+                    {isAdmin ? 'ทีมงาน PloiKhong' : 'คุณ'}
+                    <span>{fmtDt(m.created_at)}</span>
+                  </div>
+                  <div className="cx-msg-bubble" style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
+                </div>
+              </div>
+            );
+          })}
+          {messages.length === 0 && (
+            <div style={{ fontSize: 13, color: 'var(--ink-3)', fontStyle: 'italic', padding: '8px 0' }}>ยังไม่มีข้อความเพิ่มเติม</div>
+          )}
+        </div>
+      </div>
+
+      {/* Compose bar */}
+      {!isResolved && (
+        <div className="cx-compose-bar">
+          <form onSubmit={handleSend} style={{ display: 'flex', gap: 8, flex: 1 }}>
             <textarea
               value={draft}
               onChange={e => setDraft(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e as any); } }}
-              placeholder="พิมพ์ข้อความเพิ่มเติม... (Enter เพื่อส่ง)"
+              placeholder="ส่งข้อมูลเพิ่มเติมถึงทีมงาน... (Enter เพื่อส่ง)"
               rows={1}
-              style={{ flex: 1, padding: '10px 14px', border: '1.5px solid var(--line)', borderRadius: 22, fontSize: 14, fontFamily: 'inherit', resize: 'none', outline: 'none', background: 'var(--bg)', color: 'var(--ink)', lineHeight: 1.5, maxHeight: 100, overflowY: 'auto' }}
+              className="cx-c-input"
+              style={{ maxHeight: 100 }}
             />
-            <button type="submit" disabled={!draft.trim() || sending}
-              style={{ width: 40, height: 40, borderRadius: '50%', background: draft.trim() ? '#dc2626' : 'var(--line)', color: '#fff', border: 'none', cursor: draft.trim() ? 'pointer' : 'default', display: 'grid', placeItems: 'center', flexShrink: 0, transition: 'background .15s' }}>
-              <IconSend />
+            <button type="submit" disabled={!draft.trim() || sending} className="cx-c-send">
+              <IcoSend /> ส่ง
             </button>
           </form>
-        )}
-      </div>
-    </>
+        </div>
+      )}
+    </div>
   );
 }
 
-const STATUS_FILTERS = [
-  { key: '', label: 'ทั้งหมด' },
-  { key: 'pending', label: '⏳ รอดำเนินการ' },
-  { key: 'reviewing', label: '🔍 กำลังตรวจสอบ' },
-  { key: 'resolved', label: '✅ แก้ไขแล้ว' },
-  { key: 'rejected', label: '❌ ปฏิเสธ' },
-];
+// ─── Case Sidebar ─────────────────────────────────────────────────────────────
+function CaseSidebar({ complaint, onNewComplaint }: { complaint: Complaint; onNewComplaint: () => void }) {
+  const s = STATUS_META[complaint.status] || STATUS_META.pending;
+  return (
+    <div className="cx-side">
+      <div className="cx-sb">
+        {/* Status card */}
+        <div className="cx-sb-card">
+          <span className="cx-sb-label">สถานะเคส</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: s.dot, flexShrink: 0 }} />
+            <b style={{ fontSize: 14, color: 'var(--ink)' }}>{s.label}</b>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>สร้างเมื่อ: {fmtDate(complaint.created_at)}</div>
+          <div style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>ID: #{complaint.id}</div>
+        </div>
+
+        {/* Actions */}
+        <div className="cx-sb-card">
+          <span className="cx-sb-label">การดำเนินการ</span>
+          <div className="cx-actions">
+            <button className="cx-action" onClick={onNewComplaint}>
+              <span><IcoPlus /></span>
+              ส่งเรื่องใหม่
+            </button>
+            <a href="/" className="cx-action" style={{ textDecoration: 'none' }}>
+              <span><IcoBack /></span>
+              กลับหน้าแรก
+            </a>
+          </div>
+        </div>
+
+        {/* Help */}
+        <div className="cx-sb-card">
+          <span className="cx-sb-label">ช่วยเหลือ</span>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              'วิธีรายงานการโกง',
+              'สิทธิ์ผู้ซื้อ',
+              'ขั้นตอนการร้องเรียน',
+              'ติดต่อทีมงาน',
+            ].map(link => (
+              <li key={link} style={{ fontSize: 12.5, color: 'var(--ink-2)', display: 'flex', gap: 8, alignItems: 'center' }}>
+                <IcoHelp />
+                <span style={{ color: 'var(--ink-2)', textDecoration: 'underline', cursor: 'pointer' }}>{link}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ComplaintsPage() {
@@ -288,7 +371,7 @@ export default function ComplaintsPage() {
   const [selected, setSelected] = useState<Complaint | null>(null);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
-  const [showDetail, setShowDetail] = useState(false);
+  const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
   function load() {
@@ -305,128 +388,140 @@ export default function ComplaintsPage() {
 
   useEffect(() => { load(); }, [token]);
 
-  if (status === 'loading') return (
-    <div style={{ height: '100vh', display: 'grid', placeItems: 'center', color: 'var(--ink-3)', fontFamily: 'system-ui, sans-serif' }}>กำลังโหลด...</div>
-  );
+  if (status === 'loading') return <div style={{ height: '100vh', display: 'grid', placeItems: 'center', color: 'var(--ink-3)' }}>กำลังโหลด...</div>;
   if (!session?.user) { if (typeof window !== 'undefined') router.push('/'); return null; }
 
-  const s = selected ? (STATUS[selected.status] || { label: selected.status, color: '#64748b', bg: '#f1f5f9', icon: '📋' }) : null;
-  const filteredComplaints = statusFilter ? complaints.filter(c => c.status === statusFilter) : complaints;
+  const filtered = complaints.filter(c => {
+    if (statusFilter && c.status !== statusFilter) return false;
+    if (search && !c.detail.toLowerCase().includes(search.toLowerCase()) && !c.type.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const statusCounts: Record<string, number> = {};
+  complaints.forEach(c => { statusCounts[c.status] = (statusCounts[c.status] || 0) + 1; });
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-
-      {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px', height: 56, background: 'var(--surface)', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
-        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', display: 'flex', alignItems: 'center', padding: 4 }}>
-          <IconBack />
-        </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fee2e2', display: 'grid', placeItems: 'center', color: '#dc2626', flexShrink: 0 }}><IconAlert /></div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)', lineHeight: 1.2 }}>ร้องเรียนของฉัน</div>
-            <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{complaints.length} เรื่อง</div>
-          </div>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden' }}>
+      {/* Topbar */}
+      <div className="cx-top">
+        <button className="cx-back" onClick={() => router.back()}><IcoBack /></button>
+        <div className="cx-top-crumbs">
+          <span className="cx-crumb-home">หน้าแรก</span>
+          <span className="cx-crumb-sep">/</span>
+          <span>ร้องเรียนของฉัน</span>
         </div>
-        <button onClick={() => setShowNew(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-          <IconPlus /> แจ้งปัญหาใหม่
-        </button>
+        <div className="cx-top-stats">
+          <div className="cx-stat"><b>{complaints.length}</b>เรื่องทั้งหมด</div>
+          <div className="cx-stat-sep" />
+          <div className="cx-stat"><b>{statusCounts.pending || 0}</b>รอดำเนินการ</div>
+        </div>
+        <button className="cx-help"><IcoHelp /> ช่วยเหลือ</button>
+        <button className="cx-new" onClick={() => setShowNew(true)}><IcoPlus /> แจ้งปัญหาใหม่</button>
       </div>
 
-      {/* Body */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-
+      {/* Body: 3 columns */}
+      <div className="cx">
         {/* Left: list */}
-        <div style={{ width: 300, flexShrink: 0, borderRight: '1px solid var(--line)', display: showDetail ? 'none' : 'flex', flexDirection: 'column', background: 'var(--surface)' }}>
-
-          {/* Status filter chips */}
-          {complaints.length > 0 && (
-            <div style={{ padding: '10px 12px 6px', borderBottom: '1px solid var(--line)', display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-              {STATUS_FILTERS.map(f => (
-                <button
-                  key={f.key}
-                  onClick={() => setStatusFilter(f.key)}
-                  style={{
-                    padding: '3px 9px', border: 'none', borderRadius: 999, cursor: 'pointer',
-                    fontSize: 11, fontWeight: 600, fontFamily: 'inherit',
-                    background: statusFilter === f.key ? '#dc2626' : 'var(--surface-2)',
-                    color: statusFilter === f.key ? '#fff' : 'var(--ink-2)',
-                    transition: 'all .15s',
-                  }}>
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {loading ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 14 }}>กำลังโหลด...</div>
-          ) : complaints.length === 0 ? (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 40, textAlign: 'center' }}>
-              <div style={{ fontSize: 48 }}>📭</div>
-              <div style={{ fontWeight: 600, color: 'var(--ink)', fontSize: 15 }}>ยังไม่มีเรื่องร้องเรียน</div>
-              <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6 }}>กดปุ่ม "แจ้งปัญหาใหม่" เพื่อส่งเรื่องร้องเรียน</div>
-              <button onClick={() => setShowNew(true)}
-                style={{ marginTop: 8, padding: '9px 20px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-                + แจ้งปัญหา
+        <div className="cx-list">
+          <div className="cx-search">
+            <IcoSearch />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="ค้นหาเรื่องร้องเรียน..."
+            />
+          </div>
+          <div className="cx-filters">
+            {[
+              { k: '', l: 'ทั้งหมด', n: complaints.length },
+              { k: 'pending', l: 'รอดำเนินการ', n: statusCounts.pending || 0 },
+              { k: 'reviewing', l: 'กำลังตรวจสอบ', n: statusCounts.reviewing || 0 },
+              { k: 'resolved', l: 'แก้ไขแล้ว', n: statusCounts.resolved || 0 },
+              { k: 'rejected', l: 'ปฏิเสธ', n: statusCounts.rejected || 0 },
+            ].map(f => (
+              <button key={f.k} className={`cx-filter${statusFilter === f.k ? ' on' : ''}`} onClick={() => setStatusFilter(f.k)}>
+                {f.l}
+                {f.n > 0 && <span>{f.n}</span>}
               </button>
-            </div>
-          ) : filteredComplaints.length === 0 ? (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 32, textAlign: 'center' }}>
-              <div style={{ fontSize: 32 }}>🔍</div>
-              <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>ไม่มีเรื่องร้องเรียนในหมวดนี้</div>
-            </div>
-          ) : (
-            <div style={{ overflowY: 'auto', flex: 1 }}>
-              {filteredComplaints.map(c => {
-                const st = STATUS[c.status] || { label: c.status, color: '#64748b', bg: '#f1f5f9', icon: '📋' };
-                const isActive = selected?.id === c.id;
-                return (
-                  <div key={c.id} onClick={() => { setSelected(c); setShowDetail(true); }}
-                    style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)', cursor: 'pointer', background: isActive ? 'var(--surface-2)' : 'transparent', borderLeft: isActive ? '3px solid #dc2626' : '3px solid transparent', transition: 'background .1s' }}
-                    onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'var(--bg)'; }}
-                    onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{TYPE_LABEL[c.type] || c.type}</span>
-                      <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, background: st.bg, color: st.color, fontWeight: 600 }}>{st.icon} {st.label}</span>
-                    </div>
-                    <div style={{ fontSize: 13, color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3 }}>{c.detail}</div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>#{c.id} · {new Date(c.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+            ))}
+          </div>
+          <div className="cx-items">
+            {loading && <div className="cx-empty">กำลังโหลด...</div>}
+            {!loading && filtered.length === 0 && (
+              <div className="cx-empty">
+                {complaints.length === 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: 20 }}>
+                    <IcoAlert />
+                    <div style={{ fontWeight: 600, color: 'var(--ink)' }}>ยังไม่มีเรื่องร้องเรียน</div>
+                    <div style={{ fontSize: 12, lineHeight: 1.6 }}>กด "แจ้งปัญหาใหม่" เพื่อส่งเรื่อง</div>
+                    <button onClick={() => setShowNew(true)} className="btn btn-primary" style={{ marginTop: 4, fontSize: 13 }}>แจ้งปัญหา</button>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                ) : 'ไม่มีเรื่องในหมวดนี้'}
+              </div>
+            )}
+            {filtered.map(c => {
+              const s = STATUS_META[c.status] || STATUS_META.pending;
+              const isActive = selected?.id === c.id;
+              return (
+                <button key={c.id} className={`cx-item${isActive ? ' on' : ''}`} onClick={() => setSelected(c)}>
+                  <div className="cx-item-row1">
+                    <span className="cx-item-id">#{c.id}</span>
+                    <div className="cx-item-dot" style={{ background: s.dot }} />
+                    <span className="cx-item-status">{s.label}</span>
+                  </div>
+                  <div className="cx-item-subj">{TYPE_LABEL[c.type] || c.type}</div>
+                  <div className="cx-item-last">{c.detail}</div>
+                  <div className="cx-item-foot">
+                    <span>{fmtDate(c.created_at)}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Right: chat */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Center: detail */}
+        <div className="cx-main">
           {!selected ? (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--ink-3)' }}>
-              <div style={{ fontSize: 48 }}>🚨</div>
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--ink-3)', padding: 40, textAlign: 'center' }}>
+              <IcoAlert />
               <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--ink)' }}>เลือกเรื่องร้องเรียน</div>
               <div style={{ fontSize: 13 }}>คลิกรายการทางซ้ายเพื่อดูรายละเอียด</div>
             </div>
-          ) : (
-            <>
-              {/* Detail header */}
-              <div style={{ padding: '0 20px', height: 56, display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--line)', background: 'var(--surface)', flexShrink: 0 }}>
-                <button onClick={() => setShowDetail(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', padding: 4, display: 'flex' }}>
-                  <IconBack />
-                </button>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>{TYPE_LABEL[selected.type] || selected.type}</div>
-                  <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>#{selected.id} · {new Date(selected.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
-                </div>
-                {s && <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 999, background: s.bg, color: s.color, fontWeight: 700 }}>{s.icon} {s.label}</span>}
-              </div>
-
-              {/* Chat panel */}
-              {token && <ChatPanel key={selected.id} complaint={selected} token={token} />}
-            </>
-          )}
+          ) : token ? (
+            <CaseDetail key={selected.id} complaint={selected} token={token} />
+          ) : null}
         </div>
+
+        {/* Right: sidebar */}
+        {selected ? (
+          <CaseSidebar complaint={selected} onNewComplaint={() => setShowNew(true)} />
+        ) : (
+          <div className="cx-side">
+            <div className="cx-sb">
+              <div className="cx-sb-card">
+                <span className="cx-sb-label">การดำเนินการ</span>
+                <div className="cx-actions">
+                  <button className="cx-action" onClick={() => setShowNew(true)}>
+                    <span><IcoPlus /></span>
+                    แจ้งปัญหาใหม่
+                  </button>
+                </div>
+              </div>
+              <div className="cx-sb-card">
+                <span className="cx-sb-label">ช่วยเหลือ</span>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {['วิธีรายงานการโกง', 'สิทธิ์ผู้ซื้อ', 'ขั้นตอนการร้องเรียน'].map(link => (
+                    <li key={link} style={{ fontSize: 12.5, color: 'var(--ink-2)', display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <IcoHelp />
+                      <span style={{ textDecoration: 'underline', cursor: 'pointer' }}>{link}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {showNew && <NewComplaintModal onClose={() => setShowNew(false)} onSent={load} />}
