@@ -18,7 +18,7 @@ const CATS = [
 ];
 
 const CONDITIONS = ['ใหม่ในกล่อง', 'สภาพ 90%+', 'มือสองทั่วไป', 'ซ่อมได้'];
-const DELIVERY = ['นัดรับ', 'ส่ง PloiShip', 'ส่งฟรี'];
+const DELIVERY = ['นัดรับ', 'ส่งฟรี'];
 
 interface FilterDrawerProps {
   onClose: () => void;

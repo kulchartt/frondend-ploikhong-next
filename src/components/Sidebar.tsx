@@ -20,7 +20,7 @@ const CAT_ORDER = [
 
 const CONDITIONS = ['ใหม่ในกล่อง', 'สภาพ 90%+', 'มือสองทั่วไป', 'ซ่อมได้'];
 const LOCATIONS = ['ทุกที่', 'รอบตัว 5 กม.', 'กรุงเทพฯ-ปริมณฑล', 'ส่งทั่วประเทศ'];
-const DELIVERY = ['นัดรับ', 'ส่ง PloiShip', 'ส่งฟรี'];
+const DELIVERY = ['นัดรับ', 'ส่งฟรี'];
 
 interface SidebarProps {
   onFilter?: (f: any) => void;
