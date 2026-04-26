@@ -243,6 +243,26 @@ export const getComplaints = (status: string, token: string) =>
 export const updateComplaintStatus = (id: number, body: string | Record<string, any>, token: string) =>
   req<any>(`/api/complaints/${id}`, { method: 'PATCH', body: JSON.stringify(typeof body === 'string' ? { status: body } : body) }, token);
 
+// ─── Accounting ──────────────────────────────────────────────────────────────
+
+export const getAccountingSummary = (month: number, year: number, token: string) =>
+  req<any>(`/api/accounting/summary?month=${month}&year=${year}`, {}, token);
+
+export const getAccountingIncome = (month: number, year: number, token: string) =>
+  req<any[]>(`/api/accounting/income?month=${month}&year=${year}`, {}, token);
+
+export const getAccountingExpenses = (month: number, year: number, token: string) =>
+  req<any[]>(`/api/accounting/expenses?month=${month}&year=${year}`, {}, token);
+
+export const addAccountingExpense = (body: { category: string; description: string; amount: number; expense_date: string }, token: string) =>
+  req<any>('/api/accounting/expenses', { method: 'POST', body: JSON.stringify(body) }, token);
+
+export const deleteAccountingExpense = (id: number, token: string) =>
+  req<any>(`/api/accounting/expenses/${id}`, { method: 'DELETE' }, token);
+
+export const getAccountingYearly = (year: number, token: string) =>
+  req<any>(`/api/accounting/yearly?year=${year}`, {}, token);
+
 // ─── Upload ──────────────────────────────────────────────────────────────────
 
 export const uploadImage = async (file: File, token: string): Promise<string> => {

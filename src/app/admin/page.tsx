@@ -748,6 +748,297 @@ function ComplaintsTableTab({ token }: { token: string }) {
   );
 }
 
+// ─── Accounting Tab ───────────────────────────────────────────────────────────
+const EXPENSE_CATS = [
+  { key: 'server',    label: 'Server / Hosting' },
+  { key: 'ai',        label: 'AI / Claude API' },
+  { key: 'marketing', label: 'การตลาด' },
+  { key: 'payment',   label: 'ค่า Payment Gateway' },
+  { key: 'legal',     label: 'ทนาย / นักบัญชี' },
+  { key: 'salary',    label: 'เงินเดือน / ค่าจ้าง' },
+  { key: 'other',     label: 'อื่นๆ' },
+];
+const CAT_COLOR: Record<string, string> = {
+  server: 'var(--accent)', ai: '#8b5cf6', marketing: 'var(--warn)',
+  payment: 'var(--pos)', legal: '#ef4444', salary: '#06b6d4', other: 'var(--ink-3)',
+};
+const MONTH_NAMES = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+function AccountingTab({ token }: { token: string }) {
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear]   = useState(now.getFullYear());
+  const [view, setView]   = useState<'month' | 'year'>('month');
+  const [summary, setSummary] = useState<any>(null);
+  const [income, setIncome]   = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [yearly, setYearly]   = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<'overview' | 'income' | 'expense'>('overview');
+  // Form เพิ่มรายจ่าย
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ category: 'server', description: '', amount: '', expense_date: now.toISOString().split('T')[0] });
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [s, inc, exp] = await Promise.all([
+        api.getAccountingSummary(month, year, token),
+        api.getAccountingIncome(month, year, token),
+        api.getAccountingExpenses(month, year, token),
+      ]);
+      setSummary(s); setIncome(inc); setExpenses(exp);
+    } catch {}
+    setLoading(false);
+  };
+
+  const loadYearly = async () => {
+    try { setYearly(await api.getAccountingYearly(year, token)); } catch {}
+  };
+
+  useEffect(() => { load(); }, [month, year, token]);
+  useEffect(() => { if (view === 'year') loadYearly(); }, [view, year, token]);
+
+  const fmt = (n: number) => '฿' + (n || 0).toLocaleString('th-TH', { maximumFractionDigits: 0 });
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+
+  async function addExpense() {
+    if (!form.description || !form.amount) return;
+    setSaving(true);
+    try {
+      await api.addAccountingExpense({ ...form, amount: parseFloat(form.amount) }, token);
+      setForm({ category: 'server', description: '', amount: '', expense_date: now.toISOString().split('T')[0] });
+      setShowForm(false); setMsg('เพิ่มรายจ่ายแล้ว');
+      load();
+    } catch (e: any) { setMsg(e.message); }
+    setSaving(false);
+  }
+
+  async function delExpense(id: number) {
+    if (!confirm('ลบรายจ่ายนี้?')) return;
+    try { await api.deleteAccountingExpense(id, token); load(); setMsg('ลบแล้ว'); }
+    catch (e: any) { setMsg(e.message); }
+  }
+
+  const profit = (summary?.profit || 0);
+  const profitColor = profit >= 0 ? 'var(--pos)' : 'var(--neg)';
+  const maxYearlyBar = yearly ? Math.max(...yearly.months.map((m: any) => Math.max(m.income, m.expense)), 1) : 1;
+
+  return (
+    <div>
+      {/* Header controls */}
+      <div className="ad-flt-row" style={{ flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className={view === 'month' ? 'btn btn-primary' : 'btn'} style={{ fontSize: 12, padding: '5px 12px' }} onClick={() => setView('month')}>รายเดือน</button>
+          <button className={view === 'year'  ? 'btn btn-primary' : 'btn'} style={{ fontSize: 12, padding: '5px 12px' }} onClick={() => setView('year')}>รายปี</button>
+        </div>
+        {view === 'month' && (
+          <select value={month} onChange={e => setMonth(+e.target.value)} style={{ padding: '5px 10px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 13, background: 'var(--surface)', color: 'var(--ink)' }}>
+            {MONTH_NAMES.map((n, i) => <option key={i+1} value={i+1}>{n}</option>)}
+          </select>
+        )}
+        <select value={year} onChange={e => setYear(+e.target.value)} style={{ padding: '5px 10px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 13, background: 'var(--surface)', color: 'var(--ink)' }}>
+          {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
+          {msg && <span style={{ fontSize: 12, color: 'var(--pos)' }}>{msg} <button onClick={() => setMsg('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>✕</button></span>}
+          <button className="btn btn-primary" style={{ fontSize: 12, padding: '5px 14px' }} onClick={() => setShowForm(!showForm)}>+ เพิ่มรายจ่าย</button>
+        </div>
+      </div>
+
+      {/* Add expense form */}
+      {showForm && (
+        <div style={{ margin: '0 0 14px', padding: '16px 20px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 160px' }}>
+            <label style={{ fontSize: 11, color: 'var(--ink-3)' }}>หมวด</label>
+            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} style={{ padding: '7px 10px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 13, background: 'var(--surface)', color: 'var(--ink)' }}>
+              {EXPENSE_CATS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '2 1 200px' }}>
+            <label style={{ fontSize: 11, color: 'var(--ink-3)' }}>รายละเอียด</label>
+            <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="เช่น Vercel Pro เดือน เม.ย." style={{ padding: '7px 10px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 13, fontFamily: 'inherit', outline: 'none', background: 'var(--surface)', color: 'var(--ink)' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 120px' }}>
+            <label style={{ fontSize: 11, color: 'var(--ink-3)' }}>จำนวนเงิน (฿)</label>
+            <input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0" min="0" style={{ padding: '7px 10px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 13, fontFamily: 'inherit', outline: 'none', background: 'var(--surface)', color: 'var(--ink)' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 140px' }}>
+            <label style={{ fontSize: 11, color: 'var(--ink-3)' }}>วันที่</label>
+            <input type="date" value={form.expense_date} onChange={e => setForm(f => ({ ...f, expense_date: e.target.value }))} style={{ padding: '7px 10px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 13, fontFamily: 'inherit', outline: 'none', background: 'var(--surface)', color: 'var(--ink)' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button className="btn btn-primary" onClick={addExpense} disabled={saving || !form.description || !form.amount} style={{ fontSize: 12, padding: '7px 16px' }}>บันทึก</button>
+            <button className="btn" onClick={() => setShowForm(false)} style={{ fontSize: 12, padding: '7px 12px' }}>ยกเลิก</button>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)' }}>กำลังโหลด...</div>
+      ) : view === 'year' && yearly ? (
+        /* ── รายปี ── */
+        <div>
+          <div className="ad-home-hero" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 16 }}>
+            {[
+              { l: 'รายรับรวมปี', v: fmt(yearly.months.reduce((s: number, m: any) => s + m.income, 0)), col: 'var(--pos)' },
+              { l: 'รายจ่ายรวมปี', v: fmt(yearly.months.reduce((s: number, m: any) => s + m.expense, 0)), col: 'var(--neg)' },
+              { l: 'กำไรสุทธิปี', v: fmt(yearly.months.reduce((s: number, m: any) => s + m.profit, 0)), col: yearly.months.reduce((s: number, m: any) => s + m.profit, 0) >= 0 ? 'var(--pos)' : 'var(--neg)' },
+            ].map(s => (
+              <div key={s.l} className="ad-home-stat">
+                <div className="ad-home-stat-l">{s.l}</div>
+                <div className="ad-home-stat-v" style={{ color: s.col }}>{s.v}</div>
+              </div>
+            ))}
+          </div>
+          <div className="ad-panel">
+            <div className="ad-panel-head"><h3>รายรับ / รายจ่าย รายเดือน {year}</h3></div>
+            <div style={{ padding: '20px', display: 'flex', alignItems: 'flex-end', gap: 4, height: 160, overflowX: 'auto' }}>
+              {yearly.months.map((m: any) => (
+                <div key={m.month} style={{ flex: '0 0 auto', width: 36, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 2, height: 120 }}>
+                    <div style={{ width: 14, background: 'var(--pos)', borderRadius: '3px 3px 0 0', height: Math.max(2, Math.round((m.income / maxYearlyBar) * 100)), opacity: 0.85, alignSelf: 'center' }} />
+                    <div style={{ width: 14, background: 'var(--neg)', borderRadius: '3px 3px 0 0', height: Math.max(2, Math.round((m.expense / maxYearlyBar) * 100)), opacity: 0.85, alignSelf: 'center' }} />
+                  </div>
+                  <span style={{ fontSize: 9, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>{MONTH_NAMES[m.month - 1]}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: '0 20px 16px', display: 'flex', gap: 16, fontSize: 11, color: 'var(--ink-3)' }}>
+              <span><span style={{ display: 'inline-block', width: 10, height: 10, background: 'var(--pos)', borderRadius: 2, marginRight: 4 }} />รายรับ</span>
+              <span><span style={{ display: 'inline-block', width: 10, height: 10, background: 'var(--neg)', borderRadius: 2, marginRight: 4 }} />รายจ่าย</span>
+            </div>
+          </div>
+        </div>
+      ) : summary ? (
+        /* ── รายเดือน ── */
+        <div>
+          {/* KPI cards */}
+          <div className="ad-home-hero" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 16 }}>
+            {[
+              { l: 'รายรับ', v: fmt(summary.income), sub: `${summary.income_count} รายการ`, col: 'var(--pos)' },
+              { l: 'รายจ่าย', v: fmt(summary.expense), sub: `${summary.expense_count} รายการ`, col: 'var(--neg)' },
+              { l: profit >= 0 ? 'กำไร' : 'ขาดทุน', v: fmt(Math.abs(profit)), sub: profit >= 0 ? '▲ ดี' : '▼ ขาดทุน', col: profitColor },
+            ].map(s => (
+              <div key={s.l} className="ad-home-stat">
+                <div className="ad-home-stat-l">{s.l}</div>
+                <div className="ad-home-stat-v" style={{ color: s.col }}>{s.v}</div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Sub tabs */}
+          <div className="ad-flt-row" style={{ marginBottom: 12 }}>
+            <div className="ad-flt-grp">
+              {([['overview', 'ภาพรวม'], ['income', 'รายรับ'], ['expense', 'รายจ่าย']] as const).map(([k, l]) => (
+                <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Overview */}
+          {tab === 'overview' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              {/* รายจ่ายตาม category */}
+              <div className="ad-panel">
+                <div className="ad-panel-head"><h3>รายจ่ายตามหมวด</h3></div>
+                <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {summary.expense_by_cat?.length === 0 && <div style={{ color: 'var(--ink-3)', fontSize: 13 }}>ยังไม่มีรายจ่าย</div>}
+                  {summary.expense_by_cat?.map((c: any) => {
+                    const cat = EXPENSE_CATS.find(x => x.key === c.category);
+                    const pct = summary.expense > 0 ? Math.round((c.amount / summary.expense) * 100) : 0;
+                    return (
+                      <div key={c.category}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                          <span style={{ color: 'var(--ink-2)' }}>{cat?.label || c.category}</span>
+                          <b style={{ color: 'var(--ink)' }}>{fmt(c.amount)} ({pct}%)</b>
+                        </div>
+                        <div style={{ height: 5, background: 'var(--surface-2)', borderRadius: 99, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: CAT_COLOR[c.category] || 'var(--ink-3)', borderRadius: 99 }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* สรุป */}
+              <div className="ad-panel">
+                <div className="ad-panel-head"><h3>สรุปเดือน {MONTH_NAMES[month - 1]} {year}</h3></div>
+                <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
+                  {[['รายรับ', fmt(summary.income), 'var(--pos)'], ['รายจ่าย', fmt(summary.expense), 'var(--neg)'], [profit >= 0 ? 'กำไรสุทธิ' : 'ขาดทุนสุทธิ', fmt(Math.abs(profit)), profitColor]].map(([l, v, col]) => (
+                    <div key={l} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: 8 }}>
+                      <span style={{ color: 'var(--ink-2)' }}>{l}</span>
+                      <b style={{ fontFamily: 'var(--font-mono)', color: col as string }}>{v}</b>
+                    </div>
+                  ))}
+                  <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>
+                    อัตรากำไร: {summary.income > 0 ? Math.round((profit / summary.income) * 100) : 0}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* รายรับ */}
+          {tab === 'income' && (
+            <div className="ad-tbl-wrap">
+              {income.length === 0 ? (
+                <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>ยังไม่มีรายรับในเดือนนี้</div>
+              ) : (
+                <table className="ad-tbl">
+                  <thead><tr><th>วันที่</th><th>ผู้ใช้</th><th>แพ็กเกจ</th><th>เหรียญ</th><th style={{ textAlign: 'right' }}>จำนวนเงิน</th></tr></thead>
+                  <tbody>
+                    {income.map((r: any) => (
+                      <tr key={r.id}>
+                        <td><span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{fmtDate(r.created_at)}</span></td>
+                        <td><div style={{ fontWeight: 500, fontSize: 13 }}>{r.user_name || '—'}</div><div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{r.user_email}</div></td>
+                        <td><span style={{ fontSize: 12 }}>{r.package_key}</span></td>
+                        <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.coins?.toLocaleString()}</span></td>
+                        <td style={{ textAlign: 'right' }}><b style={{ color: 'var(--pos)', fontFamily: 'var(--font-mono)' }}>{fmt(r.amount)}</b></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* รายจ่าย */}
+          {tab === 'expense' && (
+            <div className="ad-tbl-wrap">
+              {expenses.length === 0 ? (
+                <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>ยังไม่มีรายจ่ายในเดือนนี้ กด "เพิ่มรายจ่าย" ด้านบน</div>
+              ) : (
+                <table className="ad-tbl">
+                  <thead><tr><th>วันที่</th><th>หมวด</th><th>รายละเอียด</th><th style={{ textAlign: 'right' }}>จำนวนเงิน</th><th></th></tr></thead>
+                  <tbody>
+                    {expenses.map((r: any) => {
+                      const cat = EXPENSE_CATS.find(x => x.key === r.category);
+                      return (
+                        <tr key={r.id}>
+                          <td><span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{fmtDate(r.expense_date)}</span></td>
+                          <td><span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: `color-mix(in srgb,${CAT_COLOR[r.category] || 'var(--ink-3)'} 12%,transparent)`, color: CAT_COLOR[r.category] || 'var(--ink-3)' }}>{cat?.label || r.category}</span></td>
+                          <td><span style={{ fontSize: 13 }}>{r.description}</span></td>
+                          <td style={{ textAlign: 'right' }}><b style={{ color: 'var(--neg)', fontFamily: 'var(--font-mono)' }}>{fmt(r.amount)}</b></td>
+                          <td><button className="btn-sec danger" onClick={() => delExpense(r.id)} style={{ fontSize: 11, padding: '3px 9px' }}>ลบ</button></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 // ─── Finance Tab ──────────────────────────────────────────────────────────────
 function FinanceTab({ token }: { token: string }) {
   const [coinStats, setCoinStats] = useState<any>(null);
@@ -869,9 +1160,10 @@ export default function AdminPage() {
     { key: 'products',   label: 'ประกาศ',            icon: <IcoBox /> },
     { key: 'complaints', label: 'เคสร้องเรียน',      icon: <IcoAlert /> },
     { key: 'finance',    label: 'การเงิน',            icon: <IcoChart /> },
+    { key: 'accounting', label: 'บัญชี',              icon: <IcoCoin /> },
   ];
 
-  const tabLabels: Record<string, string> = { queue: 'Queue', users: 'ผู้ใช้', products: 'ประกาศ', complaints: 'เคสร้องเรียน', finance: 'การเงิน' };
+  const tabLabels: Record<string, string> = { queue: 'Queue', users: 'ผู้ใช้', products: 'ประกาศ', complaints: 'เคสร้องเรียน', finance: 'การเงิน', accounting: 'บัญชี' };
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -952,6 +1244,7 @@ export default function AdminPage() {
             {tab === 'products'   && <ProductsTab        token={token} />}
             {tab === 'complaints' && <ComplaintsTableTab token={token} />}
             {tab === 'finance'    && <FinanceTab         token={token} />}
+            {tab === 'accounting' && <AccountingTab      token={token} />}
           </div>
         </div>
       </div>
