@@ -1992,8 +1992,6 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
       {/* Alerts */}
       {activateMsg && <div style={{ marginBottom: 14, padding: '12px 16px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 'var(--radius-sm)', fontSize: 13, color: '#16a34a', fontWeight: 600 }}>🎉 {activateMsg}</div>}
       {activateErr && <div style={{ marginBottom: 14, padding: '12px 16px', background: 'rgba(184,50,22,.07)', border: '1px solid rgba(184,50,22,.2)', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--neg)' }}>⚠️ {activateErr}</div>}
-      {submitMsg && <div style={{ marginBottom: 14, padding: '12px 16px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 'var(--radius-sm)', fontSize: 13, color: '#16a34a', fontWeight: 600 }}>✅ {submitMsg}</div>}
-
       {/* Sub-tabs */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 22 }}>
         {TABS.map(t => (
