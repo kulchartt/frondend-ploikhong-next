@@ -201,6 +201,7 @@ export function Navbar({
                       { label: 'สินค้าของฉัน',     icon: <DropStoreIcon />,     action: () => onOpenHub?.('sell') },
                       { label: 'การซื้อของฉัน',    icon: <DropBagIcon />,       action: () => onOpenHub?.('buy') },
                       { label: 'รายการถูกใจ',      icon: <DropHeartIcon />,     action: () => onOpenHub?.('buy', 'saved') },
+                      { label: 'เหรียญของฉัน',     icon: <DropCoinIcon />,      action: () => window.location.href = '/coins' },
                       { label: 'ร้องเรียนของฉัน',  icon: <DropAlertIcon />,     action: () => window.location.href = '/complaints' },
                       ...((session?.user as any)?.is_admin ? [{ label: '🛡️ Admin Panel', icon: <DropShieldIcon />, action: () => window.location.href = '/admin' }] : []),
                     ] as { label: string; icon: React.ReactNode; action: () => void }[]).map(({ label, icon, action }) => (
@@ -380,6 +381,12 @@ function KeyIcon() {
   return <svg style={icSm} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
     <circle cx="7.5" cy="15.5" r="5.5"/>
     <path d="M21 8.5l-5 5-2-2M21 8.5l-2-2-2 2"/>
+  </svg>;
+}
+function DropCoinIcon() {
+  return <svg style={icSm} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 7v2M12 15v2M9.5 9.5C9.5 8.4 10.6 7.5 12 7.5s2.5.9 2.5 2c0 2.5-5 2.5-5 5 0 1.1 1.1 2 2.5 2s2.5-.9 2.5-2"/>
   </svg>;
 }
 function DropAlertIcon() {
