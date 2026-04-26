@@ -1867,12 +1867,9 @@ function HubProfile({ session, mode }: { session: any; mode: string }) {
 
 function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boolean }) {
   const [balance, setBalance] = useState<number | null>(null);
-  const [packages, setPackages] = useState<any[]>([]);
   const [features, setFeatures] = useState<Record<string, any>>({});
   const [activeFeatures, setActiveFeatures] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [promptpay, setPromptpay] = useState('');
-  const [promptpayName, setPromptpayName] = useState('');
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'store' | 'buy' | 'history' | 'admin'>('store');
 
@@ -1883,13 +1880,6 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
   const [paymentRequests, setPaymentRequests] = useState<any[]>([]);
   const [prFilter, setPrFilter] = useState<'pending' | 'confirmed' | 'rejected'>('pending');
   const [prActing, setPrActing] = useState<number | null>(null);
-
-  // Buy flow state
-  const [selectedPkg, setSelectedPkg] = useState<any | null>(null);
-  const [senderName, setSenderName] = useState('');
-  const [submitLoading, setSubmitLoading] = useState(false);
-  const [submitMsg, setSubmitMsg] = useState('');
-  const [submitErr, setSubmitErr] = useState('');
 
   // Feature activate flow
   const [activating, setActivating] = useState<string | null>(null);
@@ -1906,10 +1896,7 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
         token ? api.getCoinTransactions(token) : Promise.resolve([]),
       ]);
       if (pkgData.status === 'fulfilled') {
-        setPackages(pkgData.value.packages ?? []);
         setFeatures(pkgData.value.features ?? {});
-        setPromptpay(pkgData.value.promptpay ?? '');
-        setPromptpayName(pkgData.value.promptpay_name ?? '');
       }
       if (balData.status === 'fulfilled') setBalance((balData.value as any).balance ?? 0);
       if (featData.status === 'fulfilled') setActiveFeatures(Array.isArray(featData.value) ? featData.value : []);
@@ -1930,19 +1917,6 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
       setActiveFeatures(Array.isArray(updated) ? updated : []);
     } catch (e: any) { setActivateErr(e?.message || 'เกิดข้อผิดพลาด'); }
     finally { setActivating(null); }
-  }
-
-  async function handleRequestPayment() {
-    if (!token || !selectedPkg || !senderName.trim()) return;
-    setSubmitLoading(true); setSubmitMsg(''); setSubmitErr('');
-    try {
-      const r = await api.requestCoinPayment({ package_key: selectedPkg.key, sender_name: senderName.trim() }, token);
-      setSubmitMsg(r.message ?? 'ส่งคำขอแล้ว รอ Admin ยืนยัน');
-      setSelectedPkg(null); setSenderName('');
-      const txUpdated = await api.getCoinTransactions(token);
-      setTransactions(Array.isArray(txUpdated) ? txUpdated : []);
-    } catch (e: any) { setSubmitErr(e?.message || 'ส่งคำขอไม่สำเร็จ'); }
-    finally { setSubmitLoading(false); }
   }
 
   if (!token) return <PageWrap><Err msg="กรุณาเข้าสู่ระบบ" /></PageWrap>;
@@ -2008,7 +1982,7 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
             </div>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,.8)', fontWeight: 600 }}>เหรียญของฉัน</div>
           </div>
-          <button onClick={() => setTab('buy')}
+          <button onClick={() => window.location.href = '/coins'}
             style={{ marginLeft: 6, background: 'rgba(255,255,255,.2)', border: '1px solid rgba(255,255,255,.4)', borderRadius: 8, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 10px', cursor: 'pointer' }}>
             + เติม
           </button>
@@ -2086,7 +2060,7 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
                     }
                   </button>
                   {!canAfford && !isActive && (
-                    <button onClick={() => setTab('buy')} style={{ padding: '6px 0', border: '1.5px solid #f59e0b', borderRadius: 'var(--radius-sm)', background: 'none', color: '#d97706', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <button onClick={() => window.location.href = '/coins'} style={{ padding: '6px 0', border: '1.5px solid #f59e0b', borderRadius: 'var(--radius-sm)', background: 'none', color: '#d97706', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                       🪙 เติมเหรียญก่อน
                     </button>
                   )}
@@ -2097,83 +2071,26 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
         </div>
       )}
 
-      {/* ── Buy Coins ── */}
+      {/* ── Buy Coins → redirect to /coins ── */}
       {!loading && tab === 'buy' && (
-        <div>
-          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 'var(--radius)', padding: '14px 18px', marginBottom: 22 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', marginBottom: 6 }}>📲 วิธีเติมเหรียญ</div>
-            <ol style={{ margin: 0, padding: '0 0 0 18px', fontSize: 13, color: '#78350f', lineHeight: 1.8 }}>
-              <li>เลือกแพ็กเกจเหรียญที่ต้องการ</li>
-              <li>โอนเงินผ่าน PromptPay: <strong>{promptpay}</strong> ({promptpayName})</li>
-              <li>กรอกชื่อผู้โอน แล้วกด "ส่งคำขอ"</li>
-              <li>Admin ยืนยันภายใน 15–30 นาที เหรียญเข้าบัญชีอัตโนมัติ</li>
-            </ol>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 24px', gap: 16, textAlign: 'center' }}>
+          <div style={{ fontSize: 56 }}>🪙</div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>เติมเหรียญผ่านหน้าเต็ม</div>
+          <div style={{ fontSize: 13, color: 'var(--ink-3)', maxWidth: 260, lineHeight: 1.6 }}>
+            ชำระผ่านบัตรเครดิต/เดบิต หรือ PromptPay QR<br/>เหรียญเข้าบัญชีอัตโนมัติทันที ไม่ต้องรออนุมัติ
           </div>
-
-          {/* Package grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 12, marginBottom: 24 }}>
-            {packages.map((pkg: any) => (
-              <div key={pkg.key} onClick={() => { setSelectedPkg(selectedPkg?.key === pkg.key ? null : pkg); setSubmitErr(''); setSubmitMsg(''); }}
-                style={{
-                  border: `2px solid ${selectedPkg?.key === pkg.key ? '#f59e0b' : 'var(--line)'}`,
-                  borderRadius: 'var(--radius)', padding: '18px 16px', cursor: 'pointer', background: selectedPkg?.key === pkg.key ? '#fffbeb' : 'var(--surface)',
-                  textAlign: 'center', position: 'relative', transition: 'all .15s',
-                }}>
-                {pkg.bonus && (
-                  <span style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: '#f59e0b', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 999, whiteSpace: 'nowrap' }}>
-                    {pkg.bonus}
-                  </span>
-                )}
-                <div style={{ fontSize: 32, fontWeight: 800, color: '#d97706', fontFamily: 'var(--font-display)', lineHeight: 1 }}>{pkg.coins.toLocaleString()}</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2, marginBottom: 10 }}>เหรียญ</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>฿{pkg.price}</div>
-                {selectedPkg?.key === pkg.key && (
-                  <div style={{ marginTop: 8, background: '#f59e0b', borderRadius: 999, color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 0' }}>✓ เลือกแล้ว</div>
-                )}
+          <button
+            onClick={() => window.location.href = '/coins'}
+            style={{ marginTop: 8, padding: '12px 32px', background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
+            💰 ไปหน้าเติมเหรียญ
+          </button>
+          <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
+            {[{ ic: '💳', t: 'บัตรเครดิต/เดบิต' }, { ic: '📲', t: 'PromptPay QR' }].map(m => (
+              <div key={m.t} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-3)' }}>
+                <span>{m.ic}</span><span>{m.t}</span>
               </div>
             ))}
           </div>
-
-          {/* Payment form */}
-          {selectedPkg && (
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '20px 22px' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 16 }}>
-                ยืนยันการโอน: {selectedPkg.coins} เหรียญ · ฿{selectedPkg.price}
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14, marginBottom: 16 }}>
-                <div>
-                  <label style={labelSt}>PromptPay ปลายทาง</label>
-                  <div style={{ padding: '10px 12px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 600, color: '#92400e', letterSpacing: '.05em' }}>
-                    📲 {promptpay} ({promptpayName})
-                  </div>
-                </div>
-                <div>
-                  <label style={labelSt}>ชื่อผู้โอน (ตามที่บัญชีธนาคาร) *</label>
-                  <input
-                    value={senderName}
-                    onChange={e => setSenderName(e.target.value)}
-                    placeholder="เช่น สมชาย ใจดี"
-                    style={inputSt}
-                    maxLength={60}
-                  />
-                </div>
-              </div>
-              {submitErr && <div style={{ fontSize: 13, color: 'var(--neg)', marginBottom: 12 }}>⚠️ {submitErr}</div>}
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => { setSelectedPkg(null); setSenderName(''); setSubmitErr(''); }}
-                  style={{ flex: 1, padding: '10px 0', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 13, cursor: 'pointer', color: 'var(--ink-2)', fontFamily: 'inherit' }}>
-                  ยกเลิก
-                </button>
-                <button onClick={handleRequestPayment} disabled={submitLoading || !senderName.trim()}
-                  style={{ flex: 2, padding: '10px 0', border: 'none', borderRadius: 'var(--radius-sm)', background: (!senderName.trim() || submitLoading) ? '#e5e7eb' : '#f59e0b', color: (!senderName.trim() || submitLoading) ? '#9ca3af' : '#fff', fontSize: 13, fontWeight: 700, cursor: (submitLoading || !senderName.trim()) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
-                  {submitLoading ? <><svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> กำลังส่ง…</> : '✓ ยืนยันการโอน — ส่งคำขอ'}
-                </button>
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 12, textAlign: 'center' }}>
-                Admin จะยืนยันและเพิ่มเหรียญภายใน 15–30 นาที คุณจะได้รับการแจ้งเตือน
-              </p>
-            </div>
-          )}
         </div>
       )}
 
