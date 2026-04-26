@@ -269,6 +269,21 @@ export const addAccountingExpense = async (body: { category: string; description
   return data;
 };
 
+export const updateAccountingExpense = async (id: number, body: { category?: string; description?: string; amount?: number; expense_date?: string }, token: string, file?: File): Promise<any> => {
+  const form = new FormData();
+  Object.entries(body).forEach(([k, v]) => { if (v !== undefined) form.append(k, String(v)); });
+  if (file) form.append('receipt', file);
+  const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://khai-claude-production.up.railway.app';
+  const res = await fetch(`${BASE}/api/accounting/expenses/${id}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'เกิดข้อผิดพลาด');
+  return data;
+};
+
 export const deleteAccountingExpense = (id: number, token: string) =>
   req<any>(`/api/accounting/expenses/${id}`, { method: 'DELETE' }, token);
 

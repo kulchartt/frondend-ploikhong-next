@@ -775,8 +775,9 @@ function AccountingTab({ token }: { token: string }) {
   const [yearly, setYearly]   = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'overview' | 'income' | 'expense'>('overview');
-  // Form เพิ่มรายจ่าย
+  // Form เพิ่ม/แก้ไขรายจ่าย
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ category: 'server', description: '', amount: '', expense_date: now.toISOString().split('T')[0] });
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
@@ -805,14 +806,38 @@ function AccountingTab({ token }: { token: string }) {
   const fmt = (n: number) => '฿' + (n || 0).toLocaleString('th-TH', { maximumFractionDigits: 0 });
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
 
-  async function addExpense() {
-    if (!form.description || !form.amount) return;
+  function resetForm() {
+    setForm({ category: 'server', description: '', amount: '', expense_date: now.toISOString().split('T')[0] });
+    setReceiptFile(null);
+    setEditingId(null);
+    setShowForm(false);
+  }
+
+  function startEdit(r: any) {
+    setForm({
+      category: r.category,
+      description: r.description,
+      amount: String(r.amount),
+      expense_date: r.expense_date?.split('T')[0] || r.expense_date,
+    });
+    setReceiptFile(null);
+    setEditingId(r.id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function saveExpense() {
+    if (!form.description) return;
     setSaving(true);
     try {
-      await api.addAccountingExpense({ ...form, amount: parseFloat(form.amount) }, token, receiptFile ?? undefined);
-      setForm({ category: 'server', description: '', amount: '', expense_date: now.toISOString().split('T')[0] });
-      setReceiptFile(null);
-      setShowForm(false); setMsg('เพิ่มรายจ่ายแล้ว');
+      if (editingId !== null) {
+        await api.updateAccountingExpense(editingId, { ...form, amount: parseFloat(form.amount) || 0 }, token, receiptFile ?? undefined);
+        setMsg('บันทึกแล้ว');
+      } else {
+        await api.addAccountingExpense({ ...form, amount: parseFloat(form.amount) || 0 }, token, receiptFile ?? undefined);
+        setMsg('เพิ่มรายจ่ายแล้ว');
+      }
+      resetForm();
       load();
     } catch (e: any) { setMsg(e.message); }
     setSaving(false);
@@ -846,13 +871,14 @@ function AccountingTab({ token }: { token: string }) {
         </select>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
           {msg && <span style={{ fontSize: 12, color: 'var(--pos)' }}>{msg} <button onClick={() => setMsg('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>✕</button></span>}
-          <button className="btn btn-primary" style={{ fontSize: 12, padding: '5px 14px' }} onClick={() => setShowForm(!showForm)}>+ เพิ่มรายจ่าย</button>
+          <button className="btn btn-primary" style={{ fontSize: 12, padding: '5px 14px' }} onClick={() => { if (showForm && editingId) { resetForm(); } else { resetForm(); setShowForm(true); } }}>+ เพิ่มรายจ่าย</button>
         </div>
       </div>
 
-      {/* Add expense form */}
+      {/* Add / Edit expense form */}
       {showForm && (
-        <div style={{ margin: '0 0 14px', padding: '16px 20px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
+        <div style={{ margin: '0 0 14px', padding: '16px 20px', background: 'var(--surface)', border: `1px solid ${editingId ? 'var(--accent)' : 'var(--line)'}`, borderRadius: 8, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
+          {editingId && <div style={{ width: '100%', fontSize: 12, color: 'var(--accent)', fontWeight: 600, marginBottom: -4 }}>✏️ แก้ไขรายจ่าย #{editingId}</div>}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 160px' }}>
             <label style={{ fontSize: 11, color: 'var(--ink-3)' }}>หมวด</label>
             <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} style={{ padding: '7px 10px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 13, background: 'var(--surface)', color: 'var(--ink)' }}>
@@ -881,8 +907,8 @@ function AccountingTab({ token }: { token: string }) {
             {receiptFile && <button onClick={() => setReceiptFile(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 11, textAlign: 'left' }}>✕ ลบไฟล์</button>}
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
-            <button className="btn btn-primary" onClick={addExpense} disabled={saving || !form.description || !form.amount} style={{ fontSize: 12, padding: '7px 16px' }}>{saving ? 'กำลังบันทึก...' : 'บันทึก'}</button>
-            <button className="btn" onClick={() => setShowForm(false)} style={{ fontSize: 12, padding: '7px 12px' }}>ยกเลิก</button>
+            <button className="btn btn-primary" onClick={saveExpense} disabled={saving || !form.description} style={{ fontSize: 12, padding: '7px 16px' }}>{saving ? 'กำลังบันทึก...' : editingId ? 'บันทึกการแก้ไข' : 'บันทึก'}</button>
+            <button className="btn" onClick={resetForm} style={{ fontSize: 12, padding: '7px 12px' }}>ยกเลิก</button>
           </div>
         </div>
       )}
@@ -1029,12 +1055,13 @@ function AccountingTab({ token }: { token: string }) {
                   <tbody>
                     {expenses.map((r: any) => {
                       const cat = EXPENSE_CATS.find(x => x.key === r.category);
+                      const isEditing = editingId === r.id;
                       return (
-                        <tr key={r.id}>
+                        <tr key={r.id} style={{ background: isEditing ? 'color-mix(in srgb,var(--accent) 6%,transparent)' : undefined }}>
                           <td><span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{fmtDate(r.expense_date)}</span></td>
                           <td><span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: `color-mix(in srgb,${CAT_COLOR[r.category] || 'var(--ink-3)'} 12%,transparent)`, color: CAT_COLOR[r.category] || 'var(--ink-3)' }}>{cat?.label || r.category}</span></td>
                           <td><span style={{ fontSize: 13 }}>{r.description}</span></td>
-                          <td style={{ textAlign: 'right' }}><b style={{ color: 'var(--neg)', fontFamily: 'var(--font-mono)' }}>{fmt(r.amount)}</b></td>
+                          <td style={{ textAlign: 'right' }}><b style={{ color: r.amount > 0 ? 'var(--neg)' : 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{fmt(r.amount)}</b></td>
                           <td>
                             {r.receipt_url ? (
                               <a href={r.receipt_url} target="_blank" rel="noreferrer" className="btn-sec" style={{ fontSize: 11, padding: '3px 9px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -1043,7 +1070,10 @@ function AccountingTab({ token }: { token: string }) {
                               </a>
                             ) : <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>—</span>}
                           </td>
-                          <td><button className="btn-sec danger" onClick={() => delExpense(r.id)} style={{ fontSize: 11, padding: '3px 9px' }}>ลบ</button></td>
+                          <td style={{ display: 'flex', gap: 4 }}>
+                            <button className="btn-sec" onClick={() => startEdit(r)} style={{ fontSize: 11, padding: '3px 9px' }}>{isEditing ? '✏️ กำลังแก้' : 'แก้ไข'}</button>
+                            <button className="btn-sec danger" onClick={() => delExpense(r.id)} style={{ fontSize: 11, padding: '3px 9px' }}>ลบ</button>
+                          </td>
                         </tr>
                       );
                     })}
