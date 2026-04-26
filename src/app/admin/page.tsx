@@ -778,6 +778,7 @@ function AccountingTab({ token }: { token: string }) {
   // Form เพิ่มรายจ่าย
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ category: 'server', description: '', amount: '', expense_date: now.toISOString().split('T')[0] });
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
 
@@ -808,8 +809,9 @@ function AccountingTab({ token }: { token: string }) {
     if (!form.description || !form.amount) return;
     setSaving(true);
     try {
-      await api.addAccountingExpense({ ...form, amount: parseFloat(form.amount) }, token);
+      await api.addAccountingExpense({ ...form, amount: parseFloat(form.amount) }, token, receiptFile ?? undefined);
       setForm({ category: 'server', description: '', amount: '', expense_date: now.toISOString().split('T')[0] });
+      setReceiptFile(null);
       setShowForm(false); setMsg('เพิ่มรายจ่ายแล้ว');
       load();
     } catch (e: any) { setMsg(e.message); }
@@ -869,8 +871,17 @@ function AccountingTab({ token }: { token: string }) {
             <label style={{ fontSize: 11, color: 'var(--ink-3)' }}>วันที่</label>
             <input type="date" value={form.expense_date} onChange={e => setForm(f => ({ ...f, expense_date: e.target.value }))} style={{ padding: '7px 10px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 13, fontFamily: 'inherit', outline: 'none', background: 'var(--surface)', color: 'var(--ink)' }} />
           </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '2 1 200px' }}>
+            <label style={{ fontSize: 11, color: 'var(--ink-3)' }}>แนบเอกสาร <span style={{ opacity: .6 }}>(รูป / PDF, ไม่บังคับ)</span></label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: '1px dashed var(--line)', borderRadius: 6, cursor: 'pointer', fontSize: 12, color: receiptFile ? 'var(--pos)' : 'var(--ink-3)', background: 'var(--surface)' }}>
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1={12} y1={3} x2={12} y2={15}/></svg>
+              {receiptFile ? receiptFile.name : 'เลือกไฟล์'}
+              <input type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={e => setReceiptFile(e.target.files?.[0] ?? null)} />
+            </label>
+            {receiptFile && <button onClick={() => setReceiptFile(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 11, textAlign: 'left' }}>✕ ลบไฟล์</button>}
+          </div>
           <div style={{ display: 'flex', gap: 6 }}>
-            <button className="btn btn-primary" onClick={addExpense} disabled={saving || !form.description || !form.amount} style={{ fontSize: 12, padding: '7px 16px' }}>บันทึก</button>
+            <button className="btn btn-primary" onClick={addExpense} disabled={saving || !form.description || !form.amount} style={{ fontSize: 12, padding: '7px 16px' }}>{saving ? 'กำลังบันทึก...' : 'บันทึก'}</button>
             <button className="btn" onClick={() => setShowForm(false)} style={{ fontSize: 12, padding: '7px 12px' }}>ยกเลิก</button>
           </div>
         </div>
@@ -1014,7 +1025,7 @@ function AccountingTab({ token }: { token: string }) {
                 <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>ยังไม่มีรายจ่ายในเดือนนี้ กด "เพิ่มรายจ่าย" ด้านบน</div>
               ) : (
                 <table className="ad-tbl">
-                  <thead><tr><th>วันที่</th><th>หมวด</th><th>รายละเอียด</th><th style={{ textAlign: 'right' }}>จำนวนเงิน</th><th></th></tr></thead>
+                  <thead><tr><th>วันที่</th><th>หมวด</th><th>รายละเอียด</th><th style={{ textAlign: 'right' }}>จำนวนเงิน</th><th>เอกสาร</th><th></th></tr></thead>
                   <tbody>
                     {expenses.map((r: any) => {
                       const cat = EXPENSE_CATS.find(x => x.key === r.category);
@@ -1024,6 +1035,14 @@ function AccountingTab({ token }: { token: string }) {
                           <td><span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: `color-mix(in srgb,${CAT_COLOR[r.category] || 'var(--ink-3)'} 12%,transparent)`, color: CAT_COLOR[r.category] || 'var(--ink-3)' }}>{cat?.label || r.category}</span></td>
                           <td><span style={{ fontSize: 13 }}>{r.description}</span></td>
                           <td style={{ textAlign: 'right' }}><b style={{ color: 'var(--neg)', fontFamily: 'var(--font-mono)' }}>{fmt(r.amount)}</b></td>
+                          <td>
+                            {r.receipt_url ? (
+                              <a href={r.receipt_url} target="_blank" rel="noreferrer" className="btn-sec" style={{ fontSize: 11, padding: '3px 9px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                ดูเอกสาร
+                              </a>
+                            ) : <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>—</span>}
+                          </td>
                           <td><button className="btn-sec danger" onClick={() => delExpense(r.id)} style={{ fontSize: 11, padding: '3px 9px' }}>ลบ</button></td>
                         </tr>
                       );
