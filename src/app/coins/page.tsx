@@ -74,10 +74,10 @@ function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem
         submitLabel:  `ชำระ ${fmtMoney(item.price)}`,
         currency:     'THB',
         amount:       item.price * 100,
-        onCreateTokenSuccess: async (token: string) => {
+        onCreateTokenSuccess: async (cardToken: string) => {
           setStep('paying');
           try {
-            const result = await api.chargeCard({ package_key: item.packKey, token }, token as any);
+            const result = await api.chargeCard({ package_key: item.packKey, token: cardToken }, token);
             setTxId(result.charge_id);
             setStep('success');
             onSuccess();
