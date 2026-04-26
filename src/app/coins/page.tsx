@@ -12,11 +12,11 @@ interface TxRow { id: number; type: string; amount: number; description: string;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const PAY_METHODS = [
-  { id: 'promptpay', label: 'PromptPay', sub: 'สแกน QR · โอนทันที', ic: 'PP' },
+  { id: 'promptpay', label: 'PromptPay', sub: 'สแกน QR · ยืนยันอัตโนมัติทันที', ic: 'PP' },
   { id: 'card',      label: 'บัตรเครดิต / เดบิต', sub: 'Visa · Mastercard · JCB', ic: 'CC' },
-  { id: 'truemoney', label: 'TrueMoney Wallet', sub: 'โอนผ่านแอป TrueMoney', ic: 'TM' },
-  { id: 'linepay',   label: 'LINE Pay', sub: 'โอนผ่าน LINE', ic: 'LP' },
 ];
+
+const OPN_PUBLIC_KEY = process.env.NEXT_PUBLIC_OPN_PUBLIC_KEY || 'pkey_test_67heydolr6gthuf18bz';
 
 const PREMIUM_PERKS = [
   { ic: '✨', title: 'Boost อัตโนมัติทุก 7 วัน', desc: 'ประกาศของคุณถูกดันขึ้นบนสุดโดยอัตโนมัติทุกสัปดาห์ เลือกได้สูงสุด 3 ประกาศ', live: true },
@@ -40,68 +40,133 @@ function IcoClose() { return <svg width={16} height={16} viewBox="0 0 24 24" fil
 function IcoInfo() { return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx={12} cy={12} r={10}/><line x1={12} y1={16} x2={12} y2={12}/><line x1={12} y1={8} x2={12.01} y2={8}/></svg>; }
 
 // ─── Checkout Modal ───────────────────────────────────────────────────────────
-type CheckoutStep = 'review' | 'paying' | 'success';
+type CheckoutStep = 'review' | 'paying' | 'qr' | 'success';
 interface CheckoutItem { label: string; coins: number; price: number; packKey: string; }
 
 function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem; token: string; onClose: () => void; onSuccess: () => void }) {
-  const [step, setStep] = useState<CheckoutStep>('review');
+  const [step, setStep]           = useState<CheckoutStep>('review');
   const [payMethod, setPayMethod] = useState('promptpay');
-  const [senderName, setSenderName] = useState('');
-  const [consent, setConsent] = useState(true);
-  const [txId, setTxId] = useState('');
-  const [err, setErr] = useState('');
+  const [consent, setConsent]     = useState(true);
+  const [txId, setTxId]           = useState('');
+  const [qrUrl, setQrUrl]         = useState('');
+  const [err, setErr]             = useState('');
+
+  // Load OPN.js once
+  useEffect(() => {
+    if (document.getElementById('omise-js')) return;
+    const s = document.createElement('script');
+    s.id  = 'omise-js';
+    s.src = 'https://cdn.omise.co/omise.js';
+    document.head.appendChild(s);
+  }, []);
 
   async function handlePay() {
     if (!consent) { setErr('กรุณายอมรับเงื่อนไขก่อนชำระเงิน'); return; }
     setErr('');
-    setStep('paying');
-    try {
-      const result = await api.requestCoinPayment({ package_key: item.packKey, sender_name: senderName || 'ผู้ใช้' }, token);
-      setTxId(result?.id ? `TXN-${result.id}` : `TXN-${Date.now()}`);
-      setTimeout(() => setStep('success'), 1800);
-    } catch (e: any) {
-      setStep('review');
-      setErr(e.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+
+    if (payMethod === 'card') {
+      // OPN.js popup tokenize บัตร
+      const OmiseCard = (window as any).OmiseCard;
+      if (!OmiseCard) { setErr('กำลังโหลด OPN.js กรุณารอสักครู่แล้วลองใหม่'); return; }
+      OmiseCard.configure({ publicKey: OPN_PUBLIC_KEY });
+      OmiseCard.open({
+        frameLabel:   'PloiKhong',
+        submitLabel:  `ชำระ ${fmtMoney(item.price)}`,
+        currency:     'THB',
+        amount:       item.price * 100,
+        onCreateTokenSuccess: async (token: string) => {
+          setStep('paying');
+          try {
+            const result = await api.chargeCard({ package_key: item.packKey, token }, token as any);
+            setTxId(result.charge_id);
+            setStep('success');
+            onSuccess();
+          } catch (e: any) {
+            setStep('review');
+            setErr(e.message || 'ชำระเงินไม่สำเร็จ กรุณาลองใหม่');
+          }
+        },
+        onFormClosed: () => {},
+      });
+      return;
+    }
+
+    if (payMethod === 'promptpay') {
+      setStep('paying');
+      try {
+        const result = await api.chargePromptPay(item.packKey, token);
+        setQrUrl(result.qr_code_url);
+        setTxId(result.charge_id);
+        setStep('qr');
+      } catch (e: any) {
+        setStep('review');
+        setErr(e.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+      }
     }
   }
 
+  const headTitle = step === 'success' ? 'ชำระเงินสำเร็จ ✅'
+    : step === 'qr'     ? 'สแกน QR PromptPay'
+    : step === 'paying' ? 'กำลังดำเนินการ...'
+    : 'ยืนยันการชำระเงิน';
+
   return (
-    <div className="co-ck-overlay" onClick={onClose}>
+    <div className="co-ck-overlay" onClick={step === 'review' ? onClose : undefined}>
       <div className="co-ck" onClick={e => e.stopPropagation()}>
         <div className="co-ck-head">
-          <h2>{step === 'success' ? 'ชำระเงินสำเร็จ' : step === 'paying' ? 'กำลังดำเนินการ...' : 'ยืนยันการชำระเงิน'}</h2>
-          {step !== 'paying' && <button className="co-ck-close" onClick={onClose}><IcoClose /></button>}
+          <h2>{headTitle}</h2>
+          {(step === 'review' || step === 'qr' || step === 'success') &&
+            <button className="co-ck-close" onClick={onClose}><IcoClose /></button>}
         </div>
 
+        {/* ── กำลังประมวลผล ── */}
         {step === 'paying' && (
           <div className="co-ck-paying">
             <div className="co-spinner" />
             <h3>กำลังประมวลผล...</h3>
-            <p>กรุณารอสักครู่ ห้ามปิดหน้าต่างนี้</p>
+            <p>กรุณารอสักครู่</p>
           </div>
         )}
 
+        {/* ── QR PromptPay ── */}
+        {step === 'qr' && (
+          <div className="co-ck-success">
+            <p style={{ fontSize: 13, color: 'var(--ink-2)', marginBottom: 12 }}>สแกน QR ด้านล่างด้วยแอปธนาคาร หรือ Mobile Banking</p>
+            {qrUrl && <img src={qrUrl} alt="PromptPay QR" style={{ width: 220, height: 220, borderRadius: 8, border: '1px solid var(--line)', marginBottom: 12 }} />}
+            <div className="co-ck-rcpt" style={{ marginBottom: 12 }}>
+              <div><span>จำนวน</span><b style={{ color: 'var(--pos)' }}>{fmtMoney(item.price)}</b></div>
+              <div><span>เหรียญ</span><b>{item.coins.toLocaleString()} เหรียญ</b></div>
+              <div><span>อ้างอิง</span><b style={{ fontSize: 11 }}>{txId}</b></div>
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center' }}>
+              เหรียญจะเข้าบัญชีอัตโนมัติทันทีหลังชำระเงิน<br/>ไม่ต้องรออนุมัติจากทีมงาน
+            </p>
+            <button className="btn btn-primary" onClick={onClose} style={{ width: '100%', marginTop: 12 }}>ปิด</button>
+          </div>
+        )}
+
+        {/* ── สำเร็จ (บัตร) ── */}
         {step === 'success' && (
           <div className="co-ck-success">
             <div className="co-check-ic">
               <svg width={36} height={36} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <h3>ชำระเงินสำเร็จ!</h3>
-            <p>ทีมงานจะตรวจสอบและเติมเหรียญให้คุณภายใน 30 นาที</p>
+            <p>เหรียญเข้าบัญชีแล้ว 🎉</p>
             <div className="co-ck-rcpt">
               <div><span>แพ็กเกจ</span><b>{item.label}</b></div>
               <div><span>เหรียญ</span><b>{item.coins.toLocaleString()} เหรียญ</b></div>
               <div><span>จำนวนเงิน</span><b>{fmtMoney(item.price)}</b></div>
-              <div><span>หมายเลขอ้างอิง</span><b>{txId}</b></div>
+              <div><span>หมายเลขอ้างอิง</span><b style={{ fontSize: 11 }}>{txId}</b></div>
             </div>
             <button className="btn btn-primary" onClick={() => { onSuccess(); onClose(); }} style={{ width: '100%', marginTop: 8 }}>เสร็จสิ้น</button>
           </div>
         )}
 
+        {/* ── Review ── */}
         {step === 'review' && (
           <>
             <div className="co-ck-body">
-              {/* Item */}
               <div className="co-ck-item">
                 <div className="co-ck-item-ic">🪙</div>
                 <div className="co-ck-item-main">
@@ -111,7 +176,6 @@ function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem
                 <div className="co-ck-item-p">{fmtMoney(item.price)}</div>
               </div>
 
-              {/* Payment method */}
               <div className="co-ck-sec">
                 <h3>วิธีการชำระเงิน</h3>
                 {PAY_METHODS.map(m => (
@@ -126,25 +190,16 @@ function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem
                 ))}
               </div>
 
-              {/* Sender name */}
-              <div className="co-ck-sec">
-                <h3>ชื่อผู้โอน <span style={{ fontWeight: 400, color: 'var(--ink-3)', textTransform: 'none' }}>(ไม่บังคับ)</span></h3>
-                <input value={senderName} onChange={e => setSenderName(e.target.value)} placeholder="ชื่อผู้โอนเงิน เพื่อให้ยืนยันได้เร็วขึ้น"
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 13, fontFamily: 'inherit', outline: 'none', background: 'var(--surface)', color: 'var(--ink)', boxSizing: 'border-box' }} />
-              </div>
-
-              {/* Summary */}
               <div className="co-ck-sum">
                 <div className="co-ck-sum-r"><span>ราคาสินค้า</span><b>{fmtMoney(item.price)}</b></div>
                 <div className="co-ck-sum-r"><span>ค่าธรรมเนียม</span><b>฿0</b></div>
                 <div className="co-ck-sum-r total"><span>รวมทั้งหมด</span><b>{fmtMoney(item.price)}</b></div>
-                <div className="co-ck-sum-note">* เหรียญจะเข้าบัญชีภายใน 30 นาทีหลังยืนยันการชำระเงิน</div>
+                <div className="co-ck-sum-note">⚡ เหรียญเข้าบัญชีอัตโนมัติทันทีหลังชำระ</div>
               </div>
 
-              {/* Consent */}
               <label className="co-ck-consent">
                 <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />
-                <span>ยอมรับ <a onClick={e => e.preventDefault()}>เงื่อนไขการให้บริการ</a> และ <a onClick={e => e.preventDefault()}>นโยบายการคืนเงิน</a></span>
+                <span>ยอมรับ <a href="/terms" target="_blank">เงื่อนไขการให้บริการ</a> และ <a href="/refund" target="_blank">นโยบายการคืนเงิน</a></span>
               </label>
 
               {err && <div style={{ fontSize: 13, color: 'var(--neg)', padding: '8px 12px', background: 'color-mix(in srgb,var(--neg) 8%,transparent)', borderRadius: 6 }}>{err}</div>}

@@ -201,6 +201,12 @@ export const getCoinTransactions = (token: string) =>
 export const requestCoinPayment = (body: { package_key: string; sender_name: string; slip_url?: string }, token: string) =>
   req<any>('/api/coins/request-payment', { method: 'POST', body: JSON.stringify(body) }, token);
 
+export const chargeCard = (body: { package_key: string; token: string }, token: string) =>
+  req<{ success: boolean; charge_id: string; coins: number }>('/api/coins/charge', { method: 'POST', body: JSON.stringify(body) }, token);
+
+export const chargePromptPay = (package_key: string, token: string) =>
+  req<{ charge_id: string; qr_code_url: string; amount: number; expires_at: string }>('/api/coins/charge-promptpay', { method: 'POST', body: JSON.stringify({ package_key }) }, token);
+
 export const getMyPaymentRequests = (token: string) =>
   req<any[]>('/api/coins/payment-requests/my', {}, token);
 
