@@ -752,6 +752,7 @@ function ComplaintsTableTab({ token }: { token: string }) {
 const EXPENSE_CATS = [
   { key: 'server',    label: 'Server / Hosting' },
   { key: 'ai',        label: 'AI / Claude API' },
+  { key: 'platform',  label: 'Platform Fee' },
   { key: 'marketing', label: 'การตลาด' },
   { key: 'payment',   label: 'ค่า Payment Gateway' },
   { key: 'legal',     label: 'ทนาย / นักบัญชี' },
@@ -759,7 +760,7 @@ const EXPENSE_CATS = [
   { key: 'other',     label: 'อื่นๆ' },
 ];
 const CAT_COLOR: Record<string, string> = {
-  server: 'var(--accent)', ai: '#8b5cf6', marketing: 'var(--warn)',
+  server: 'var(--accent)', ai: '#8b5cf6', platform: '#f59e0b', marketing: 'var(--warn)',
   payment: 'var(--pos)', legal: '#ef4444', salary: '#06b6d4', other: 'var(--ink-3)',
 };
 const MONTH_NAMES = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
