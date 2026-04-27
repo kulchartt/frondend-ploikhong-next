@@ -1886,6 +1886,25 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
   const [activateMsg, setActivateMsg] = useState('');
   const [activateErr, setActivateErr] = useState('');
 
+  // Product picker (for product-specific features)
+  const [pickerFeatureKey, setPickerFeatureKey] = useState<string | null>(null);
+  const [myProducts, setMyProducts] = useState<any[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+
+  const NEEDS_PRODUCT_PICKER = ['boost', 'featured', 'auto_relist', 'price_alert'];
+
+  async function openProductPicker(featureKey: string) {
+    setPickerFeatureKey(featureKey);
+    if (myProducts.length === 0 && token) {
+      setProductsLoading(true);
+      try {
+        const prods = await api.getMyProducts(token);
+        setMyProducts(Array.isArray(prods) ? prods.filter((p: any) => p.status !== 'sold') : []);
+      } catch { setMyProducts([]); }
+      finally { setProductsLoading(false); }
+    }
+  }
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -1906,17 +1925,25 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
 
   useEffect(() => { load(); }, [load]);
 
-  async function handleActivate(featureKey: string) {
+  async function handleActivate(featureKey: string, productId?: number | null) {
     if (!token) return;
     setActivating(featureKey); setActivateMsg(''); setActivateErr('');
     try {
-      const r = await api.activateFeature(featureKey, null, token);
+      const r = await api.activateFeature(featureKey, productId ?? null, token);
       setActivateMsg(r.message ?? 'เปิดใช้งานสำเร็จ!');
       if (r.new_balance !== undefined) setBalance(r.new_balance);
       const updated = await api.getActiveFeatures(token);
       setActiveFeatures(Array.isArray(updated) ? updated : []);
     } catch (e: any) { setActivateErr(e?.message || 'เกิดข้อผิดพลาด'); }
     finally { setActivating(null); }
+  }
+
+  async function handleProductSelected(productId: number) {
+    const key = pickerFeatureKey;
+    setPickerFeatureKey(null);
+    if (!key) return;
+    setActivateMsg(''); setActivateErr('');
+    await handleActivate(key, productId);
   }
 
   if (!token) return <PageWrap><Err msg="กรุณาเข้าสู่ระบบ" /></PageWrap>;
@@ -2042,7 +2069,11 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
                   </div>
                   <p style={{ margin: 0, fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.6 }}>{feat.desc}</p>
                   <button
-                    onClick={() => { setActivateMsg(''); setActivateErr(''); handleActivate(key); }}
+                    onClick={() => {
+                      setActivateMsg(''); setActivateErr('');
+                      if (NEEDS_PRODUCT_PICKER.includes(key)) { openProductPicker(key); }
+                      else { handleActivate(key); }
+                    }}
                     disabled={isActivating || isActive}
                     style={{
                       padding: '9px 0', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 700, cursor: (isActivating || isActive) ? 'not-allowed' : 'pointer',
@@ -2065,6 +2096,58 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Product Picker Modal ── */}
+      {pickerFeatureKey && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onClick={() => setPickerFeatureKey(null)}>
+          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', padding: '24px 22px', maxWidth: 420, width: '100%', maxHeight: '70vh', display: 'flex', flexDirection: 'column', gap: 16 }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
+                  {features[pickerFeatureKey]?.icon ?? '⭐'} {features[pickerFeatureKey]?.label ?? pickerFeatureKey}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>เลือกสินค้าที่ต้องการเปิดฟีเจอร์นี้</div>
+              </div>
+              <button onClick={() => setPickerFeatureKey(null)}
+                style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--ink-3)', lineHeight: 1 }}>✕</button>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {productsLoading && <div style={{ textAlign: 'center', color: 'var(--ink-3)', fontSize: 13, padding: '24px 0' }}>⏳ กำลังโหลดสินค้า…</div>}
+              {!productsLoading && myProducts.length === 0 && (
+                <div style={{ textAlign: 'center', color: 'var(--ink-3)', fontSize: 13, padding: '24px 0' }}>
+                  ไม่มีสินค้าในร้าน<br/>
+                  <span style={{ fontSize: 11 }}>ลงขายสินค้าก่อนแล้วค่อยเปิดฟีเจอร์นี้</span>
+                </div>
+              )}
+              {!productsLoading && myProducts.map((p: any) => {
+                const thumb = p.images?.[0] ?? p.image_url ?? null;
+                return (
+                  <button key={p.id} onClick={() => handleProductSelected(p.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', transition: 'border-color .12s' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#f59e0b')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--line)')}>
+                    {thumb
+                      ? <img src={thumb} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                      : <div style={{ width: 44, height: 44, borderRadius: 8, background: 'var(--surface-2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>📦</div>
+                    }
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>฿{Number(p.price).toLocaleString()} · {p.status === 'active' ? '🟢 ขายอยู่' : p.status === 'draft' ? '✏️ ฉบับร่าง' : p.status}</div>
+                    </div>
+                    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth={2.5} style={{ flexShrink: 0 }}><path d="m9 18 6-6-6-6"/></svg>
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={() => setPickerFeatureKey(null)}
+              style={{ padding: '10px 0', border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'none', color: 'var(--ink-3)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              ยกเลิก
+            </button>
           </div>
         </div>
       )}
