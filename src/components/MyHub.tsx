@@ -253,7 +253,7 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
           {mode === 'sell' && sellTab === 'listings'  && <SellListings token={token} onNewListing={onNewListing} />}
           {mode === 'sell' && sellTab === 'offers'    && <SellOffers token={token} onBadgeChange={setPendingSellOffers} />}
           {mode === 'sell' && sellTab === 'insights'  && <SellInsights token={token} />}
-          {mode === 'sell' && sellTab === 'premium'   && <SellPremium token={token} isAdmin={!!(session as any)?.user?.is_admin} />}
+          {mode === 'sell' && sellTab === 'premium'   && <SellPremium token={token} />}
           {mode === 'sell' && sellTab === 'profile'   && <HubProfile session={session} mode="sell" />}
           {mode === 'buy'  && buyTab === 'saved'         && <BuySaved token={token} onOpenChat={onOpenChat ? () => { onClose(); onOpenChat(); } : undefined} onViewProduct={onViewProduct ? (p) => { onClose(); onViewProduct(p); } : undefined} />}
           {mode === 'buy'  && buyTab === 'offers'        && <BuyOffers token={token} />}
@@ -1865,7 +1865,7 @@ function HubProfile({ session, mode }: { session: any; mode: string }) {
 
 // ─── SELL: Premium & Coins ────────────────────────────────────────────────────
 
-function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boolean }) {
+function SellPremium({ token }: { token?: string }) {
   const [balance, setBalance] = useState<number | null>(null);
   const [features, setFeatures] = useState<Record<string, any>>({});
   const [activeFeatures, setActiveFeatures] = useState<any[]>([]);
@@ -1873,13 +1873,7 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'store' | 'buy' | 'history' | 'admin'>('store');
 
-  // Admin stats
-  const [adminStats, setAdminStats] = useState<any | null>(null);
-  const [adminLoading, setAdminLoading] = useState(false);
-  const [adminErr, setAdminErr] = useState('');
-  const [paymentRequests, setPaymentRequests] = useState<any[]>([]);
-  const [prFilter, setPrFilter] = useState<'pending' | 'confirmed' | 'rejected'>('pending');
-  const [prActing, setPrActing] = useState<number | null>(null);
+  // (Admin stats moved to /admin page)
 
   // Feature activate flow
   const [activating, setActivating] = useState<string | null>(null);
@@ -1953,44 +1947,7 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
     { k: 'store',   label: '⭐ ฟีเจอร์พิเศษ' },
     { k: 'buy',     label: '💰 เติมเหรียญ' },
     { k: 'history', label: '📋 ประวัติ' },
-    ...(isAdmin ? [{ k: 'admin' as typeof tab, label: '🛡️ Admin' }] : []),
   ];
-
-  // Load admin stats when tab switches
-  useEffect(() => {
-    if (tab !== 'admin' || !token || !isAdmin) return;
-    setAdminLoading(true); setAdminErr('');
-    Promise.allSettled([
-      api.getCoinAdminStats(token),
-      api.getPaymentRequests(prFilter, token),
-    ]).then(([statsRes, prRes]) => {
-      if (statsRes.status === 'fulfilled') setAdminStats(statsRes.value);
-      else setAdminErr('โหลดสถิติไม่สำเร็จ');
-      if (prRes.status === 'fulfilled') setPaymentRequests(Array.isArray(prRes.value) ? prRes.value : []);
-    }).finally(() => setAdminLoading(false));
-  }, [tab, token, isAdmin, prFilter]);
-
-  async function handleConfirmPayment(id: number) {
-    if (!token) return;
-    setPrActing(id);
-    try {
-      await api.confirmPayment(id, token);
-      setPaymentRequests(prev => prev.map(p => p.id === id ? { ...p, status: 'confirmed' } : p));
-      if (adminStats) setAdminStats((s: any) => ({ ...s, pending: { ...s.pending, count: Math.max(0, s.pending.count - 1) } }));
-    } catch (e: any) { alert(e?.message || 'เกิดข้อผิดพลาด'); }
-    finally { setPrActing(null); }
-  }
-
-  async function handleRejectPayment(id: number) {
-    if (!token) return;
-    const note = prompt('เหตุผลที่ปฏิเสธ (ไม่บังคับ):') ?? '';
-    setPrActing(id);
-    try {
-      await api.rejectPayment(id, note, token);
-      setPaymentRequests(prev => prev.map(p => p.id === id ? { ...p, status: 'rejected' } : p));
-    } catch (e: any) { alert(e?.message || 'เกิดข้อผิดพลาด'); }
-    finally { setPrActing(null); }
-  }
 
   return (
     <PageWrap>
@@ -2206,166 +2163,6 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* ── Admin Dashboard ── */}
-      {!loading && tab === 'admin' && isAdmin && (
-        <div>
-          {adminLoading && <Skeleton h={100} n={4} />}
-          {adminErr && <Err msg={adminErr} />}
-          {!adminLoading && adminStats && (
-            <>
-              {/* KPI Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 24 }}>
-                {[
-                  { label: 'รายได้รวม', value: `฿${Number(adminStats.revenue.total).toLocaleString()}`, sub: `${adminStats.revenue.count} ธุรกรรม`, color: '#16a34a', icon: '💰' },
-                  { label: 'รอยืนยัน', value: `฿${Number(adminStats.pending.total).toLocaleString()}`, sub: `${adminStats.pending.count} รายการ`, color: '#d97706', icon: '⏳' },
-                  { label: 'เหรียญทั้งหมดที่ออก', value: adminStats.coins.issued.toLocaleString(), sub: `ใช้ไปแล้ว ${adminStats.coins.spent.toLocaleString()}`, color: '#7c3aed', icon: '🪙' },
-                  { label: 'เหรียญคงเหลือในระบบ', value: adminStats.coins.outstanding.toLocaleString(), sub: 'ยังไม่ได้ใช้', color: '#0891b2', icon: '💎' },
-                ].map(k => (
-                  <div key={k.label} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '16px 18px' }}>
-                    <div style={{ fontSize: 20, marginBottom: 6 }}>{k.icon}</div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: k.color, marginBottom: 2 }}>{k.value}</div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 600 }}>{k.label}</div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{k.sub}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Monthly revenue chart (bar) */}
-              {adminStats.monthly_revenue.length > 0 && (
-                <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '18px 20px', marginBottom: 20 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 16 }}>📈 รายได้รายเดือน (6 เดือนล่าสุด)</div>
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 100 }}>
-                    {(() => {
-                      const max = Math.max(...adminStats.monthly_revenue.map((m: any) => m.revenue), 1);
-                      return adminStats.monthly_revenue.map((m: any) => (
-                        <div key={m.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                          <div style={{ fontSize: 10, color: 'var(--ink-3)', fontWeight: 600 }}>฿{Number(m.revenue).toLocaleString()}</div>
-                          <div style={{ width: '100%', background: '#f59e0b', borderRadius: '4px 4px 0 0', height: `${Math.max(6, (m.revenue / max) * 72)}px`, transition: 'height .3s' }} />
-                          <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>{m.month.slice(5)}/{m.month.slice(2,4)}</div>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </div>
-              )}
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-                {/* Feature usage */}
-                <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '16px 18px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>⭐ ฟีเจอร์ที่ใช้บ่อย</div>
-                  {adminStats.feature_usage.length === 0 ? <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>ยังไม่มีข้อมูล</div> : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      {adminStats.feature_usage.map((f: any) => {
-                        const maxT = Math.max(...adminStats.feature_usage.map((x: any) => x.total), 1);
-                        const FEAT_ICONS: Record<string, string> = { boost: '🚀', price_alert: '🔔', auto_relist: '🔄', featured: '⭐', analytics_pro: '📊' };
-                        return (
-                          <div key={f.feature_key}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                              <span style={{ fontWeight: 600 }}>{FEAT_ICONS[f.feature_key] ?? '•'} {f.feature_key.replace('_', ' ')}</span>
-                              <span style={{ color: 'var(--ink-3)' }}>{f.total} ครั้ง · 🪙{Number(f.coins_spent).toLocaleString()}</span>
-                            </div>
-                            <div style={{ height: 5, background: 'var(--surface-2)', borderRadius: 3 }}>
-                              <div style={{ height: '100%', width: `${(f.total / maxT) * 100}%`, background: '#f59e0b', borderRadius: 3, transition: 'width .3s' }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Revenue by package */}
-                <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '16px 18px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>📦 แพ็กเกจที่ขายดี</div>
-                  {adminStats.revenue_by_package.length === 0 ? <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>ยังไม่มีข้อมูล</div> : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {adminStats.revenue_by_package.map((pkg: any) => (
-                        <div key={pkg.package_key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
-                          <span style={{ fontWeight: 600 }}>🪙 {pkg.package_key.replace('coins_', '')} เหรียญ</span>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontWeight: 700, color: '#16a34a' }}>฿{Number(pkg.revenue).toLocaleString()}</div>
-                            <div style={{ color: 'var(--ink-3)', fontSize: 11 }}>{pkg.count} ครั้ง</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Top buyers */}
-              {adminStats.top_buyers.length > 0 && (
-                <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '16px 18px', marginBottom: 20 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>👑 ผู้ซื้อเหรียญสูงสุด</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {adminStats.top_buyers.map((b: any, i: number) => (
-                      <div key={b.email} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12 }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: ['#f59e0b','#94a3b8','#b45309'][i] ?? 'var(--ink-3)', width: 20 }}>#{i+1}</span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.name}</div>
-                          <div style={{ color: 'var(--ink-3)', fontSize: 11 }}>{b.email}</div>
-                        </div>
-                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                          <div style={{ fontWeight: 700, color: '#16a34a' }}>฿{Number(b.total_spent).toLocaleString()}</div>
-                          <div style={{ color: 'var(--ink-3)', fontSize: 11 }}>🪙 {b.coin_balance.toLocaleString()} เหลือ</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Payment requests management */}
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '16px 18px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>💳 คำขอเติมเหรียญ</div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {(['pending','confirmed','rejected'] as const).map(s => (
-                      <button key={s} onClick={() => setPrFilter(s)}
-                        style={{ padding: '4px 12px', borderRadius: 999, border: `1px solid ${prFilter===s?'#f59e0b':'var(--line)'}`, background: prFilter===s?'#fffbeb':'var(--surface)', color: prFilter===s?'#d97706':'var(--ink-2)', fontSize: 11, fontWeight: prFilter===s?700:400, cursor: 'pointer', fontFamily: 'inherit' }}>
-                        {s === 'pending' ? '⏳ รอ' : s === 'confirmed' ? '✅ ยืนยัน' : '✕ ปฏิเสธ'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {paymentRequests.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--ink-3)', fontSize: 13 }}>ไม่มีรายการ</div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {paymentRequests.map((pr: any) => (
-                      <div key={pr.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', fontSize: 12 }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{pr.user_name} <span style={{ color: 'var(--ink-3)', fontWeight: 400 }}>({pr.user_email})</span></div>
-                          <div style={{ color: 'var(--ink-2)', marginTop: 2 }}>🪙 {pr.coins} เหรียญ · ฿{Number(pr.amount).toLocaleString()} · โอนชื่อ: <strong>{pr.sender_name}</strong></div>
-                          <div style={{ color: 'var(--ink-3)', fontSize: 11, marginTop: 1 }}>{new Date(pr.created_at).toLocaleString('th-TH')}</div>
-                        </div>
-                        {pr.status === 'pending' && (
-                          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                            <button onClick={() => handleConfirmPayment(pr.id)} disabled={prActing === pr.id}
-                              style={{ padding: '5px 12px', border: 'none', borderRadius: 'var(--radius-sm)', background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                              ✓ ยืนยัน
-                            </button>
-                            <button onClick={() => handleRejectPayment(pr.id)} disabled={prActing === pr.id}
-                              style={{ padding: '5px 10px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--neg)', fontSize: 11, cursor: 'pointer' }}>
-                              ✕
-                            </button>
-                          </div>
-                        )}
-                        {pr.status !== 'pending' && (
-                          <span style={{ fontSize: 11, fontWeight: 700, color: pr.status === 'confirmed' ? '#16a34a' : '#64748b' }}>
-                            {pr.status === 'confirmed' ? '✅ ยืนยันแล้ว' : '✕ ปฏิเสธ'}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
         </div>
       )}
 

@@ -1117,8 +1117,12 @@ function FinanceTab({ token }: { token: string }) {
   }
 
   const totalRevenue = coinStats?.revenue?.total || 0;
+  const maxMonthly = Math.max(...(coinStats?.monthly_revenue || []).map((m: any) => m.revenue || 0), 1);
+  const FEAT_ICONS: Record<string, string> = { boost: '🚀', price_alert: '🔔', auto_relist: '🔄', featured: '⭐', analytics_pro: '📊' };
+
   return (
     <div>
+      {/* KPI Row */}
       <div className="ad-home-hero" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
         {[
           { l: 'รายได้รวม', v: fmtMoney(totalRevenue) },
@@ -1132,6 +1136,92 @@ function FinanceTab({ token }: { token: string }) {
           </div>
         ))}
       </div>
+
+      {/* Feature usage + Revenue by package */}
+      {coinStats && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+          <div className="ad-panel">
+            <div className="ad-panel-head"><h3>⭐ ฟีเจอร์ที่ใช้บ่อย</h3></div>
+            <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {(coinStats.feature_usage || []).length === 0
+                ? <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>ยังไม่มีข้อมูล</div>
+                : (coinStats.feature_usage || []).map((f: any) => {
+                    const maxT = Math.max(...(coinStats.feature_usage || []).map((x: any) => x.total), 1);
+                    return (
+                      <div key={f.feature_key}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                          <span style={{ fontWeight: 600 }}>{FEAT_ICONS[f.feature_key] ?? '•'} {f.feature_key.replace(/_/g, ' ')}</span>
+                          <span style={{ color: 'var(--ink-3)' }}>{f.total} ครั้ง · 🪙{Number(f.coins_spent).toLocaleString()}</span>
+                        </div>
+                        <div style={{ height: 5, background: 'var(--surface-2)', borderRadius: 3 }}>
+                          <div style={{ height: '100%', width: `${(f.total / maxT) * 100}%`, background: 'var(--accent)', borderRadius: 3 }} />
+                        </div>
+                      </div>
+                    );
+                  })
+              }
+            </div>
+          </div>
+          <div className="ad-panel">
+            <div className="ad-panel-head"><h3>📦 แพ็กเกจที่ขายดี</h3></div>
+            <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(coinStats.revenue_by_package || []).length === 0
+                ? <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>ยังไม่มีข้อมูล</div>
+                : (coinStats.revenue_by_package || []).map((pkg: any) => (
+                    <div key={pkg.package_key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
+                      <span style={{ fontWeight: 600 }}>🪙 {pkg.package_key.replace('coins_', '')} เหรียญ</span>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: 700, color: 'var(--pos)' }}>฿{Number(pkg.revenue).toLocaleString()}</div>
+                        <div style={{ color: 'var(--ink-3)', fontSize: 11 }}>{pkg.count} ครั้ง</div>
+                      </div>
+                    </div>
+                  ))
+              }
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Monthly revenue chart */}
+      {(coinStats?.monthly_revenue || []).length > 0 && (
+        <div className="ad-panel" style={{ marginBottom: 14 }}>
+          <div className="ad-panel-head"><h3>📈 รายได้รายเดือน (6 เดือนล่าสุด)</h3></div>
+          <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-end', gap: 8, height: 120 }}>
+            {(coinStats.monthly_revenue || []).map((m: any) => (
+              <div key={m.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontSize: 9, color: 'var(--ink-3)', fontWeight: 600 }}>฿{Number(m.revenue || 0).toLocaleString()}</span>
+                <div style={{ width: '100%', background: 'var(--accent)', borderRadius: '3px 3px 0 0', height: Math.max(4, Math.round(((m.revenue || 0) / maxMonthly) * 80)), opacity: .85 }} />
+                <span style={{ fontSize: 9, color: 'var(--ink-3)' }}>{m.month.slice(5)}/{m.month.slice(2, 4)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Top buyers */}
+      {(coinStats?.top_buyers || []).length > 0 && (
+        <div className="ad-panel" style={{ marginBottom: 14 }}>
+          <div className="ad-panel-head"><h3>👑 ผู้ซื้อเหรียญสูงสุด</h3></div>
+          <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {(coinStats.top_buyers || []).map((b: any, i: number) => (
+              <div key={b.email} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12 }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: ['#f59e0b','#94a3b8','#b45309'][i] ?? 'var(--ink-3)', width: 20 }}>#{i + 1}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.name}</div>
+                  <div style={{ color: 'var(--ink-3)', fontSize: 11 }}>{b.email}</div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontWeight: 700, color: 'var(--pos)' }}>฿{Number(b.total_spent).toLocaleString()}</div>
+                  <div style={{ color: 'var(--ink-3)', fontSize: 11 }}>🪙 {b.coin_balance.toLocaleString()} เหลือ</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Payment Requests */}
+      <div className="ad-panel-head" style={{ marginBottom: 8 }}><h3>💳 คำขอเติมเหรียญ</h3></div>
       <div className="ad-flt-row">
         <div className="ad-flt-grp">
           {(['pending', 'confirmed', 'rejected'] as const).map(k => (
