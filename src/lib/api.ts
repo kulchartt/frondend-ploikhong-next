@@ -19,8 +19,15 @@ async function req<T>(path: string, opts?: RequestInit, token?: string): Promise
 function normalizeProduct(p: any): any {
   if (!p || typeof p !== 'object') return p;
   // Backend returns image_url (string); components expect images (string[])
-  // Normalise images: filter out null/empty entries, fallback to image_url
-  p.images = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+  // Normalise images: backend may return objects {id,url,sort_order} or plain strings
+  if (Array.isArray(p.images)) {
+    p.images = p.images
+      .map((img: any) => (img && typeof img === 'object' ? img.url : img))
+      .filter(Boolean);
+  } else {
+    p.images = [];
+  }
+  // Fallback to image_url when no valid images
   if (!p.images.length && p.image_url) {
     p.images = [p.image_url];
   }
