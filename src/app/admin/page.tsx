@@ -1115,6 +1115,10 @@ function FinanceTab({ token }: { token: string }) {
     try { const r = await api.rejectPayment(id, rejectNote[id] || '', token); setMsg(r.message || 'ปฏิเสธแล้ว'); api.getPaymentRequests(filter, token).then(setPayments); }
     catch (e: any) { setMsg(e.message); }
   }
+  async function deleteReq(id: number) {
+    try { await api.deletePaymentRequest(id, token); setPayments(prev => prev.filter(p => p.id !== id)); setMsg('ลบแล้ว'); }
+    catch (e: any) { setMsg(e.message); }
+  }
 
   const totalRevenue = coinStats?.revenue?.total || 0;
   const maxMonthly = Math.max(...(coinStats?.monthly_revenue || []).map((m: any) => m.revenue || 0), 1);
@@ -1268,8 +1272,12 @@ function FinanceTab({ token }: { token: string }) {
                   )}
                   {/* OPN pending → waiting for webhook */}
                   {filter === 'pending' && isOPN && (
-                    <div style={{ fontSize: 11, color: 'var(--ink-3)', background: 'var(--surface-2)', borderRadius: 5, padding: '6px 10px' }}>
-                      ⏳ รอ OPN webhook ยืนยันอัตโนมัติ — ไม่ต้องดำเนินการ
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, color: 'var(--ink-3)', background: 'var(--surface-2)', borderRadius: 5, padding: '6px 10px' }}>
+                      <span style={{ flex: 1 }}>⏳ รอ OPN webhook ยืนยันอัตโนมัติ — ไม่ต้องดำเนินการ</span>
+                      <button onClick={() => deleteReq(req.id)}
+                        style={{ flexShrink: 0, padding: '3px 10px', border: '1px solid var(--line)', borderRadius: 4, background: 'none', color: 'var(--neg)', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        🗑 ลบ
+                      </button>
                     </div>
                   )}
                   {req.admin_note && <div style={{ fontSize: 12, color: 'var(--neg)', background: 'color-mix(in srgb,var(--neg) 8%,transparent)', padding: '6px 10px', borderRadius: 5 }}>หมายเหตุ: {req.admin_note}</div>}
