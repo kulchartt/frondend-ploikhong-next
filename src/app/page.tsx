@@ -104,6 +104,14 @@ export default function HomePage() {
 
   useEffect(() => { loadProducts(); }, [loadProducts]);
 
+  // open ProductDetail when landing with ?product=ID (e.g. from coins/boosts page)
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('product');
+    if (!id) return;
+    window.history.replaceState({}, '', '/');
+    api.getProduct(Number(id)).then(p => setSelectedProduct(p)).catch(() => {});
+  }, []);
+
   // Poll unread chat count every 30s
   useEffect(() => {
     if (!token) { setUnreadChat(0); return; }

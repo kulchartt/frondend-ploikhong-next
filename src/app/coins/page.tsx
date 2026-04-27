@@ -371,7 +371,7 @@ function ActiveBoostsTab({ token, onTopup, onBoost, refreshKey }: { token: strin
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
                     {f.product_id ? (
-                      <a href={`/products/${f.product_id}`} style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }}
+                      <a href={`/?product=${f.product_id}`} style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }}
                         onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline'; }}
                         onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none'; }}>
                         {f.product_title || featureLabels[f.feature_key] || f.feature_key}
