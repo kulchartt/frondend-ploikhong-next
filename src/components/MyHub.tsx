@@ -40,7 +40,7 @@ const SELL_NAV = [
   { k: 'listings', label: 'สินค้าของฉัน' },
   { k: 'offers',   label: 'คำขอราคา' },
   { k: 'insights', label: 'สถิติ' },
-  { k: 'premium',  label: 'Premium & เหรียญ' },
+  { k: 'premium',  label: 'Premium' },
   { k: 'profile',  label: 'ตั้งค่าร้านค้า' },
 ];
 
@@ -1914,7 +1914,7 @@ function SellPremium({ token }: { token?: string }) {
   const [activeFeatures, setActiveFeatures] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'store' | 'buy' | 'history' | 'admin'>('store');
+  const [tab, setTab] = useState<'store' | 'history' | 'admin'>('store');
 
   // (Admin stats moved to /admin page)
 
@@ -1988,7 +1988,6 @@ function SellPremium({ token }: { token?: string }) {
   const featureEntries = Object.entries(features);
   const TABS: { k: typeof tab; label: string }[] = [
     { k: 'store',   label: '⭐ ฟีเจอร์พิเศษ' },
-    { k: 'buy',     label: '💰 เติมเหรียญ' },
     { k: 'history', label: '📋 ประวัติ' },
   ];
 
@@ -2009,7 +2008,7 @@ function SellPremium({ token }: { token?: string }) {
             </div>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,.8)', fontWeight: 600 }}>เหรียญของฉัน</div>
           </div>
-          <button onClick={() => window.location.href = '/coins'}
+          <button onClick={() => window.location.href = '/coins?tab=boosts'}
             style={{ marginLeft: 6, background: 'rgba(255,255,255,.2)', border: '1px solid rgba(255,255,255,.4)', borderRadius: 8, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 10px', cursor: 'pointer' }}>
             + เติม
           </button>
@@ -2182,29 +2181,6 @@ function SellPremium({ token }: { token?: string }) {
               style={{ padding: '10px 0', border: '1.5px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'none', color: 'var(--ink-3)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               ยกเลิก
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Buy Coins → redirect to /coins ── */}
-      {!loading && tab === 'buy' && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 24px', gap: 16, textAlign: 'center' }}>
-          <div style={{ fontSize: 56 }}>🪙</div>
-          <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>เติมเหรียญผ่านหน้าเต็ม</div>
-          <div style={{ fontSize: 13, color: 'var(--ink-3)', maxWidth: 260, lineHeight: 1.6 }}>
-            ชำระผ่านบัตรเครดิต/เดบิต หรือ PromptPay QR<br/>เหรียญเข้าบัญชีอัตโนมัติทันที ไม่ต้องรออนุมัติ
-          </div>
-          <button
-            onClick={() => window.location.href = '/coins'}
-            style={{ marginTop: 8, padding: '12px 32px', background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
-            💰 ไปหน้าเติมเหรียญ
-          </button>
-          <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
-            {[{ ic: '💳', t: 'บัตรเครดิต/เดบิต' }, { ic: '📲', t: 'PromptPay QR' }].map(m => (
-              <div key={m.t} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-3)' }}>
-                <span>{m.ic}</span><span>{m.t}</span>
-              </div>
-            ))}
           </div>
         </div>
       )}

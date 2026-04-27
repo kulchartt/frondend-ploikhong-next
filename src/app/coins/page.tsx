@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import * as api from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -307,7 +307,7 @@ function TopupTab({ token, balance, onRefresh }: { token: string; balance: numbe
 }
 
 // ─── ActiveBoostsTab ──────────────────────────────────────────────────────────
-function ActiveBoostsTab({ token }: { token: string }) {
+function ActiveBoostsTab({ token, balance, onTopup }: { token: string; balance: number; onTopup: () => void }) {
   const [features, setFeatures] = useState<ActiveFeature[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -319,6 +319,20 @@ function ActiveBoostsTab({ token }: { token: string }) {
 
   return (
     <div className="co-body">
+      {/* ── Coin Balance Card ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg,#f59e0b,#d97706)', borderRadius: 'var(--radius)', padding: '18px 22px', marginBottom: 24, gap: 16 }}>
+        <div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.75)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 6 }}>เหรียญคงเหลือ</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: '#fff', fontFamily: 'var(--font-mono)', lineHeight: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>🪙</span>{balance.toLocaleString()}
+          </div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginTop: 6 }}>1 Boost = 30 · Featured 7 วัน = 80 · เหรียญไม่หมดอายุ</div>
+        </div>
+        <button onClick={onTopup} style={{ flexShrink: 0, background: 'rgba(255,255,255,.2)', border: '1.5px solid rgba(255,255,255,.5)', borderRadius: 'var(--radius-sm)', color: '#fff', fontSize: 13, fontWeight: 700, padding: '10px 20px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+          + เติมเหรียญ
+        </button>
+      </div>
+
       <div className="co-actives-head">
         <h2>ประกาศที่กำลัง Boost</h2>
         <p>ดูสถานะการใช้งาน Boost/Featured ของคุณแบบเรียลไทม์</p>
@@ -506,9 +520,11 @@ function HistoryTab({ token }: { token: string }) {
 export default function CoinsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const token: string | undefined = (session as any)?.token;
 
-  const [tab, setTab] = useState<'topup' | 'boosts' | 'premium' | 'history'>('topup');
+  const initTab = (searchParams.get('tab') as 'topup' | 'boosts' | 'premium' | 'history') || 'topup';
+  const [tab, setTab] = useState<'topup' | 'boosts' | 'premium' | 'history'>(initTab);
   const [balance, setBalance] = useState(0);
 
   function refreshBalance() {
@@ -557,7 +573,7 @@ export default function CoinsPage() {
 
       {/* Content */}
       {tab === 'topup'   && token && <TopupTab    token={token} balance={balance} onRefresh={refreshBalance} />}
-      {tab === 'boosts'  && token && <ActiveBoostsTab token={token} />}
+      {tab === 'boosts'  && token && <ActiveBoostsTab token={token} balance={balance} onTopup={() => setTab('topup')} />}
       {tab === 'premium' && <PremiumTab />}
       {tab === 'history' && token && <HistoryTab  token={token} />}
     </div>

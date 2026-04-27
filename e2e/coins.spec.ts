@@ -317,6 +317,29 @@ test.describe('Coins Page — Boost tab', () => {
     await expect(page.getByRole('button', { name: 'ต่ออายุ' })).toBeVisible({ timeout: 8000 });
   });
 
+  test('boost tab shows coin balance card', async ({ page }) => {
+    await gotoCoins(page, { balance: 420 });
+    await page.getByRole('button', { name: 'Boost ที่ใช้งาน' }).click();
+    await expect(page.getByText('กำลังโหลด...')).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('เหรียญคงเหลือ')).toBeVisible({ timeout: 8000 });
+  });
+
+  test('+ เติมเหรียญ button in boost tab switches to topup tab', async ({ page }) => {
+    await gotoCoins(page);
+    await page.getByRole('button', { name: 'Boost ที่ใช้งาน' }).click();
+    await expect(page.getByText('กำลังโหลด...')).not.toBeVisible({ timeout: 5000 });
+    await page.getByRole('button', { name: '+ เติมเหรียญ' }).click();
+    // should now be on topup tab
+    await expect(page.locator('.co-hero h2')).toBeVisible({ timeout: 8000 });
+  });
+
+  test('?tab=boosts query param lands on Boost tab', async ({ page }) => {
+    await setupRoutes(page, { features: [], balance: 100 });
+    await page.goto('/coins?tab=boosts');
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('เหรียญคงเหลือ')).toBeVisible({ timeout: 8000 });
+  });
+
 });
 
 // =============================================================================
