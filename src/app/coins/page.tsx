@@ -516,8 +516,13 @@ export default function CoinsPage() {
 
   useEffect(() => { refreshBalance(); }, [token]);
 
+  // redirect must be inside useEffect — calling router.push during render crashes React
+  useEffect(() => {
+    if (status !== 'loading' && !session?.user) router.push('/');
+  }, [status, session, router]);
+
   if (status === 'loading') return <div style={{ height: '100vh', display: 'grid', placeItems: 'center', color: 'var(--ink-3)' }}>กำลังโหลด...</div>;
-  if (!session?.user) { if (typeof window !== 'undefined') router.push('/'); return null; }
+  if (!session?.user) return null;
 
   const tabs: Array<{ key: typeof tab; label: string }> = [
     { key: 'topup',   label: 'เติมเหรียญ' },
