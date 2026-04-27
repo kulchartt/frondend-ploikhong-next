@@ -400,10 +400,11 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ─── Coins (.co-*) ──────────────────────────────────────────────────────── */
 .co-balance{display:flex;align-items:center;gap:6px;padding:6px 14px;background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn);border-radius:999px;font-size:13px;font-weight:600}
-.co-tabs{display:flex;gap:4px;padding:14px 24px;border-bottom:1px solid var(--line);background:var(--surface);flex-shrink:0}
-.co-tabs button{padding:8px 16px;border-radius:999px;font-size:13px;color:var(--ink-2);font-weight:500;background:transparent;border:none;cursor:pointer;font-family:inherit;transition:.15s}
+.co-tabs{display:flex;gap:4px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface);flex-shrink:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.co-tabs::-webkit-scrollbar{display:none}
+.co-tabs button{padding:8px 14px;border-radius:999px;font-size:13px;color:var(--ink-2);font-weight:500;background:transparent;border:none;cursor:pointer;font-family:inherit;transition:.15s;white-space:nowrap;flex-shrink:0}
 .co-tabs button.on{background:var(--ink);color:var(--bg)}
-.co-body{flex:1;overflow-y:auto;padding:24px;max-width:1100px;margin:0 auto;width:100%}
+.co-body{flex:1;overflow-y:auto;padding:20px 16px;max-width:1100px;margin:0 auto;width:100%}
 .co-hero{text-align:center;margin-bottom:24px}
 .co-hero h2{font-family:var(--font-disp);font-size:24px;font-weight:700;margin:0 0 6px}
 .co-hero h2 b{color:var(--accent)}
