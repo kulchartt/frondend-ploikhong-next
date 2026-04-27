@@ -585,10 +585,10 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
               const st = STATUS_MAP[p.status ?? 'active'] ?? STATUS_MAP.active;
               const isEditing = editId === p.id;
               const isDel = deleteId === p.id;
-              const isActive = !p.status || p.status === 'active';
+              const isActive = !p.status || p.status === 'active' || p.status === 'available' || p.status === 'reserved';
               const isSold = p.status === 'sold' || p.status === 'sold-out';
               const isDraft = p.status === 'draft';
-              const isHidden = p.status === 'hidden';
+              const isHidden = p.status === 'hidden' || p.status === 'inactive';
               // Stale warning: listing not bumped/updated in 14+ days
               const daysSinceActivity = p.bumped_at
                 ? (Date.now() - new Date(p.bumped_at).getTime()) / 86400000
