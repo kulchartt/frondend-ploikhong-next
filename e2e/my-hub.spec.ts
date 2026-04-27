@@ -918,3 +918,87 @@ test.describe('V8Hub — SellListings: Boost button', () => {
   });
 
 });
+
+// =============================================================================
+// SELL: LISTINGS — Feature button status coverage
+// =============================================================================
+
+test.describe('V8Hub — SellListings: Feature button status coverage', () => {
+
+  test('Feature button label is "⚡ Feature" (not Boost)', async ({ page }) => {
+    await openSellHub(page);
+    // There should be a button containing "Feature" text
+    const btn = hub(page).getByRole('button', { name: /Feature/i }).first();
+    await expect(btn).toBeVisible({ timeout: 8000 });
+  });
+
+  test('status:available product shows Feature button', async ({ page }) => {
+    const products = [
+      { id: 20, title: 'สินค้า available', price: 5000, status: 'available',
+        image_url: '', images: [], condition: 'มือสอง', category: 'อื่นๆ',
+        created_at: new Date().toISOString(), is_boosted: false },
+    ];
+    await openSellHub(page, products);
+    await expect(hub(page).getByText('สินค้า available')).toBeVisible({ timeout: 8000 });
+    const btn = hub(page).getByRole('button', { name: /Feature/i });
+    await expect(btn).toBeVisible({ timeout: 5000 });
+  });
+
+  test('status:reserved product shows Feature button', async ({ page }) => {
+    const products = [
+      { id: 21, title: 'สินค้า reserved', price: 5000, status: 'reserved',
+        image_url: '', images: [], condition: 'มือสอง', category: 'อื่นๆ',
+        created_at: new Date().toISOString(), is_boosted: false },
+    ];
+    await openSellHub(page, products);
+    await expect(hub(page).getByText('สินค้า reserved')).toBeVisible({ timeout: 8000 });
+    const btn = hub(page).getByRole('button', { name: /Feature/i });
+    await expect(btn).toBeVisible({ timeout: 5000 });
+  });
+
+  test('status:active product shows Feature button', async ({ page }) => {
+    const products = [
+      { id: 22, title: 'สินค้า active', price: 5000, status: 'active',
+        image_url: '', images: [], condition: 'มือสอง', category: 'อื่นๆ',
+        created_at: new Date().toISOString(), is_boosted: false },
+    ];
+    await openSellHub(page, products);
+    await expect(hub(page).getByText('สินค้า active')).toBeVisible({ timeout: 8000 });
+    await expect(hub(page).getByRole('button', { name: /Feature/i })).toBeVisible({ timeout: 5000 });
+  });
+
+  test('status:sold product does NOT show Feature button', async ({ page }) => {
+    const products = [
+      { id: 23, title: 'สินค้า sold', price: 5000, status: 'sold',
+        image_url: '', images: [], condition: 'มือสอง', category: 'อื่นๆ',
+        created_at: new Date().toISOString(), is_boosted: false },
+    ];
+    await openSellHub(page, products);
+    await expect(hub(page).getByText('สินค้า sold')).toBeVisible({ timeout: 8000 });
+    await expect(hub(page).getByRole('button', { name: /Feature/i })).not.toBeVisible({ timeout: 3000 });
+  });
+
+  test('status:inactive product shows Feature button', async ({ page }) => {
+    const products = [
+      { id: 24, title: 'สินค้า inactive', price: 5000, status: 'inactive',
+        image_url: '', images: [], condition: 'มือสอง', category: 'อื่นๆ',
+        created_at: new Date().toISOString(), is_boosted: false },
+    ];
+    await openSellHub(page, products);
+    await expect(hub(page).getByText('สินค้า inactive')).toBeVisible({ timeout: 8000 });
+    await expect(hub(page).getByRole('button', { name: /Feature/i })).toBeVisible({ timeout: 5000 });
+  });
+
+  test('Feature button opens BoostModal with the correct product', async ({ page }) => {
+    const products = [
+      { id: 25, title: 'PS5 Portal', price: 4000, status: 'available',
+        image_url: '', images: [], condition: 'มือสอง', category: 'อื่นๆ',
+        created_at: new Date().toISOString(), is_boosted: false },
+    ];
+    await page.route('**/api/coins/balance**', r => r.fulfill({ json: { balance: 500 } }));
+    await openSellHub(page, products);
+    await hub(page).getByRole('button', { name: /Feature/i }).click();
+    await expect(page.locator('.bo-modal, .bo-sheet')).toBeVisible({ timeout: 8000 });
+  });
+
+});

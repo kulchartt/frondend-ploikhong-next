@@ -318,4 +318,102 @@ test.describe('Product Detail', () => {
     await expect(img.first()).toBeVisible();
   });
 
+  // ─── normalizeProduct: images fallback fixes ───────────────────────────────
+
+  test('images:[] + image_url → detail modal shows <img> tag (not placeholder)', async ({ page }) => {
+    await page.route('**/api/products*', route => {
+      route.fulfill({
+        json: [{ id: 55, title: 'รูปจาก image_url (empty array)', price: 2500,
+          images: [], image_url: 'https://placekitten.com/400/400',
+          seller_name: 'Test', condition: 'มือสอง' }],
+      });
+    });
+    await page.goto('/');
+    await page.getByText('รูปจาก image_url (empty array)').click();
+    // <img> with the image_url should render in the dark gallery panel
+    await expect(page.locator('section img[src*="placekitten"]').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('images:[null] + image_url → detail modal shows <img> tag (not placeholder)', async ({ page }) => {
+    await page.route('**/api/products*', route => {
+      route.fulfill({
+        json: [{ id: 56, title: 'รูปจาก image_url (null in array)', price: 2500,
+          images: [null], image_url: 'https://placekitten.com/401/401',
+          seller_name: 'Test', condition: 'มือสอง' }],
+      });
+    });
+    await page.goto('/');
+    await page.getByText('รูปจาก image_url (null in array)').click();
+    await expect(page.locator('section img[src*="placekitten"]').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('images:[""] + image_url → detail modal shows <img> tag (not placeholder)', async ({ page }) => {
+    await page.route('**/api/products*', route => {
+      route.fulfill({
+        json: [{ id: 57, title: 'รูปจาก image_url (empty string)', price: 2500,
+          images: [''], image_url: 'https://placekitten.com/402/402',
+          seller_name: 'Test', condition: 'มือสอง' }],
+      });
+    });
+    await page.goto('/');
+    await page.getByText('รูปจาก image_url (empty string)').click();
+    await expect(page.locator('section img[src*="placekitten"]').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('images with valid URL → detail modal renders image directly', async ({ page }) => {
+    await page.route('**/api/products*', route => {
+      route.fulfill({
+        json: [{ id: 58, title: 'รูปอยู่ใน images array', price: 2500,
+          images: ['https://placekitten.com/403/403'], image_url: null,
+          seller_name: 'Test', condition: 'มือสอง' }],
+      });
+    });
+    await page.goto('/');
+    await page.getByText('รูปอยู่ใน images array').click();
+    await expect(page.locator('section img[src*="placekitten"]').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  // ─── Deep-link: /?product=ID ───────────────────────────────────────────────
+
+  test('navigating to /?product=ID opens ProductDetail modal', async ({ page }) => {
+    await page.route('**/api/products*', r => r.fulfill({ json: MOCK_PRODUCTS }));
+    await page.route('**/api/products/1', r => r.fulfill({ json: MOCK_PRODUCTS[0] }));
+    await page.goto('/?product=1');
+    await expect(page.locator('h1').filter({ hasText: 'iPhone 14 Pro 256GB สีม่วง' })).toBeVisible({ timeout: 8000 });
+  });
+
+  test('deep-link cleans ?product= from URL after opening modal', async ({ page }) => {
+    await page.route('**/api/products*', r => r.fulfill({ json: MOCK_PRODUCTS }));
+    await page.route('**/api/products/1', r => r.fulfill({ json: MOCK_PRODUCTS[0] }));
+    await page.goto('/?product=1');
+    await expect(page.locator('h1').filter({ hasText: 'iPhone 14 Pro 256GB สีม่วง' })).toBeVisible({ timeout: 8000 });
+    await expect(page).toHaveURL('/');
+  });
+
+  test('deep-link shows correct product price', async ({ page }) => {
+    await page.route('**/api/products*', r => r.fulfill({ json: MOCK_PRODUCTS }));
+    await page.route('**/api/products/1', r => r.fulfill({ json: MOCK_PRODUCTS[0] }));
+    await page.goto('/?product=1');
+    await expect(page.getByText('32,900').first()).toBeVisible({ timeout: 8000 });
+  });
+
+  test('closing deep-linked modal leaves user on homepage', async ({ page }) => {
+    await page.route('**/api/products*', r => r.fulfill({ json: MOCK_PRODUCTS }));
+    await page.route('**/api/products/1', r => r.fulfill({ json: MOCK_PRODUCTS[0] }));
+    await page.goto('/?product=1');
+    await expect(page.locator('h1').filter({ hasText: 'iPhone 14 Pro 256GB สีม่วง' })).toBeVisible({ timeout: 8000 });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('h1').filter({ hasText: 'iPhone 14 Pro' })).not.toBeVisible();
+    await expect(page).toHaveURL('/');
+  });
+
+  test('invalid /?product=ID does not crash page', async ({ page }) => {
+    await page.route('**/api/products*', r => r.fulfill({ json: MOCK_PRODUCTS }));
+    await page.route('**/api/products/9999', r => r.fulfill({ status: 404, json: { error: 'not found' } }));
+    await page.goto('/?product=9999');
+    // Page should still render normally (no crash, no modal)
+    await expect(page.getByText('iPhone 14 Pro 256GB สีม่วง')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('h1').filter({ hasText: 'iPhone 14 Pro' })).not.toBeVisible();
+  });
+
 });

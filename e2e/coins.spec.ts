@@ -355,6 +355,73 @@ test.describe('Coins Page — Boost tab', () => {
     await expect(page.getByText('iPhone 14 Pro')).toBeVisible({ timeout: 8000 });
   });
 
+  // ─── Product title link ────────────────────────────────────────────────────
+
+  test('active boost product title renders as a link', async ({ page }) => {
+    await gotoCoins(page, { features: MOCK_ACTIVE_FEATURES });
+    await page.getByRole('button', { name: 'Boost ที่ใช้งาน' }).click();
+    // Title should be an <a> element
+    const link = page.locator('a', { hasText: 'iPhone 14 Pro' });
+    await expect(link).toBeVisible({ timeout: 8000 });
+  });
+
+  test('active boost product title link points to /?product=ID', async ({ page }) => {
+    await gotoCoins(page, { features: MOCK_ACTIVE_FEATURES });
+    await page.getByRole('button', { name: 'Boost ที่ใช้งาน' }).click();
+    const link = page.locator('a', { hasText: 'iPhone 14 Pro' });
+    await expect(link).toHaveAttribute('href', '/?product=10', { timeout: 8000 });
+  });
+
+  test('clicking active boost product title navigates to homepage and opens product modal', async ({ page }) => {
+    await setupRoutes(page, { features: MOCK_ACTIVE_FEATURES });
+    await page.route('**/api/products*', r => r.fulfill({ json: [] }));
+    await page.route('**/api/products/10', r => r.fulfill({
+      json: { id: 10, title: 'iPhone 14 Pro', price: 32900,
+        images: ['https://placekitten.com/400/400'], seller_name: 'ผู้ขาย', condition: 'มือสอง' },
+    }));
+    await page.goto('/coins?tab=boosts');
+    await page.waitForLoadState('networkidle');
+    const link = page.locator('a', { hasText: 'iPhone 14 Pro' });
+    await expect(link).toBeVisible({ timeout: 8000 });
+    await link.click();
+    // Modal opens on homepage
+    await expect(page.locator('h1').filter({ hasText: 'iPhone 14 Pro' })).toBeVisible({ timeout: 8000 });
+  });
+
+  // ─── Active boosts refresh after new boost ─────────────────────────────────
+
+  test('active boost list re-fetches after confirming a boost', async ({ page }) => {
+    let fetchCount = 0;
+    const newFeature = {
+      id: 2, feature_key: 'featured', product_id: 99,
+      product_title: 'AirPods Pro', expires_at: new Date(Date.now() + 3 * 86400000).toISOString(),
+    };
+    // Initially empty; after activate, return 1 item
+    await setupRoutes(page, { features: [], balance: 500 });
+    await page.route('**/api/coins/active-features**', r => {
+      fetchCount++;
+      // First 2 fetches: empty. Subsequent: 1 feature (simulating post-boost refresh)
+      r.fulfill({ json: fetchCount <= 2 ? [] : [newFeature] });
+    });
+    await page.route('**/api/products/my**', r => r.fulfill({
+      json: [{ id: 99, title: 'AirPods Pro', price: 7900, status: 'active', images: [] }],
+    }));
+    await page.route('**/api/coins/activate-feature**', r => r.fulfill({ json: { success: true } }));
+    await page.goto('/coins?tab=boosts');
+    await page.waitForLoadState('networkidle');
+    // Initially empty
+    await expect(page.getByText('ยังไม่มีประกาศที่กำลัง Boost')).toBeVisible({ timeout: 8000 });
+    // Open BoostModal and select product
+    await page.getByRole('button', { name: /เริ่ม Boost/ }).click();
+    await expect(page.getByText('AirPods Pro')).toBeVisible({ timeout: 8000 });
+    await page.locator('[data-testid="boost-product-item"]').first().click();
+    // Confirm boost
+    await page.getByRole('button', { name: /ยืนยัน|เปิดใช้/ }).first().click();
+    // After confirming, the list should re-fetch and show the new item
+    await expect(page.getByText('AirPods Pro')).toBeVisible({ timeout: 8000 });
+    expect(fetchCount).toBeGreaterThan(2);
+  });
+
 });
 
 // =============================================================================
