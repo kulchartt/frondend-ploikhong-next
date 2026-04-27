@@ -2034,25 +2034,53 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
       {/* ── Feature Store ── */}
       {!loading && tab === 'store' && (
         <div>
-          {/* Active features banner */}
-          {activeFeatures.length > 0 && (
-            <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 'var(--radius)', padding: '14px 18px', marginBottom: 20 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#c2410c', marginBottom: 10 }}>✅ ฟีเจอร์ที่ใช้งานอยู่</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {activeFeatures.map((f: any, i) => (
-                  <div key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #fed7aa', borderRadius: 999, padding: '5px 12px', fontSize: 12 }}>
-                    <span>{features[f.feature_key]?.icon ?? '⭐'}</span>
-                    <span style={{ fontWeight: 600, color: '#c2410c' }}>{features[f.feature_key]?.label ?? f.feature_key}</span>
-                    {f.product_title && <span style={{ color: '#92400e' }}>→ {f.product_title}</span>}
-                    {!f.product_title && f.product_id && <span style={{ color: '#92400e' }}>→ #{f.product_id}</span>}
-                    <span style={{ color: '#92400e' }}>
-                      · หมดอายุ {new Date(f.expires_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
-                    </span>
-                  </div>
-                ))}
+          {/* Active features banner — grouped by product */}
+          {activeFeatures.length > 0 && (() => {
+            // Group by product_id (null = global)
+            const grouped: Record<string, any[]> = {};
+            activeFeatures.forEach((f: any) => {
+              const k = f.product_id ? String(f.product_id) : '__global__';
+              if (!grouped[k]) grouped[k] = [];
+              grouped[k].push(f);
+            });
+            const entries = Object.entries(grouped);
+            return (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#c2410c', marginBottom: 10 }}>✅ ฟีเจอร์ที่ใช้งานอยู่</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {entries.map(([pid, acts]) => {
+                    const first = acts[0];
+                    const isGlobal = pid === '__global__';
+                    return (
+                      <div key={pid} style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 'var(--radius)', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {/* Thumbnail or global icon */}
+                        {!isGlobal && first.product_image
+                          ? <img src={first.product_image} alt="" style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                          : <div style={{ width: 52, height: 52, borderRadius: 8, background: isGlobal ? '#fef3c7' : 'var(--surface-2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{isGlobal ? '🌐' : '📦'}</div>
+                        }
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {isGlobal ? 'ฟีเจอร์ระดับร้านค้า' : (first.product_title ?? `สินค้า #${pid}`)}
+                          </div>
+                          {!isGlobal && first.product_price && (
+                            <div style={{ fontSize: 11, color: '#b45309', marginBottom: 4 }}>฿{Number(first.product_price).toLocaleString()}</div>
+                          )}
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 4 }}>
+                            {acts.map((f: any, i: number) => (
+                              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fff', border: '1px solid #fed7aa', borderRadius: 999, padding: '3px 9px', fontSize: 11, color: '#c2410c', fontWeight: 600 }}>
+                                {features[f.feature_key]?.icon ?? '⭐'} {features[f.feature_key]?.label ?? f.feature_key}
+                                <span style={{ color: '#b45309', fontWeight: 400 }}>· {new Date(f.expires_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}</span>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 14 }}>
             {featureEntries.map(([key, feat]: [string, any]) => {
