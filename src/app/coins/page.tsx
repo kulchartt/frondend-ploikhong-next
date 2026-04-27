@@ -307,7 +307,7 @@ function TopupTab({ token, balance, onRefresh }: { token: string; balance: numbe
 }
 
 // ─── ActiveBoostsTab ──────────────────────────────────────────────────────────
-function ActiveBoostsTab({ token, balance, onTopup }: { token: string; balance: number; onTopup: () => void }) {
+function ActiveBoostsTab({ token, onTopup }: { token: string; onTopup: () => void }) {
   const [features, setFeatures] = useState<ActiveFeature[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -319,20 +319,6 @@ function ActiveBoostsTab({ token, balance, onTopup }: { token: string; balance: 
 
   return (
     <div className="co-body">
-      {/* ── Coin Balance Card ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg,#f59e0b,#d97706)', borderRadius: 'var(--radius)', padding: '18px 22px', marginBottom: 24, gap: 16 }}>
-        <div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.75)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 6 }}>เหรียญคงเหลือ</div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: '#fff', fontFamily: 'var(--font-mono)', lineHeight: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>🪙</span>{balance.toLocaleString()}
-          </div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginTop: 6 }}>1 Boost = 30 · Featured 7 วัน = 80 · เหรียญไม่หมดอายุ</div>
-        </div>
-        <button onClick={onTopup} style={{ flexShrink: 0, background: 'rgba(255,255,255,.2)', border: '1.5px solid rgba(255,255,255,.5)', borderRadius: 'var(--radius-sm)', color: '#fff', fontSize: 13, fontWeight: 700, padding: '10px 20px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-          + เติมเหรียญ
-        </button>
-      </div>
-
       <div className="co-actives-head">
         <h2>ประกาศที่กำลัง Boost</h2>
         <p>ดูสถานะการใช้งาน Boost/Featured ของคุณแบบเรียลไทม์</p>
@@ -342,42 +328,91 @@ function ActiveBoostsTab({ token, balance, onTopup }: { token: string; balance: 
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-3)' }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🚀</div>
           <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>ยังไม่มีประกาศที่กำลัง Boost</div>
-          <div style={{ fontSize: 14 }}>ไปที่แท็บ "เติมเหรียญ" เพื่อซื้อแพ็กเกจ แล้วเปิด Boost บนหน้าประกาศ</div>
+          <div style={{ fontSize: 14 }}>กด "+ เริ่ม Boost ประกาศใหม่" ด้านล่างเพื่อเริ่มต้น</div>
+          {/* CTA */}
+          <button onClick={onTopup}
+            style={{ width: '100%', marginTop: 12, padding: '14px', background: 'none', border: '1.5px dashed var(--line-2)', borderRadius: 'var(--radius)', fontSize: 13, fontWeight: 600, color: 'var(--ink-3)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.color = '#7c3aed'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line-2)'; e.currentTarget.style.color = 'var(--ink-3)'; }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M12 5v14M5 12h14"/></svg>
+            เริ่ม Boost ประกาศใหม่
+          </button>
         </div>
       ) : (
         <div className="co-actives">
           {features.map(f => {
             const featureLabels: Record<string, string> = {
-              featured: 'สินค้าเด่น', auto_relist: 'ดันสินค้า', price_alert: 'แจ้งเตือนราคา',
+              featured: 'สินค้าเด่น', auto_relist: 'ดันสินค้า', price_alert: 'แจ้งเตือนราคา', boost: 'Boost',
             };
             const isFeatured = f.feature_key === 'featured';
-            const daysLeft = f.expires_at ? Math.max(0, Math.ceil((new Date(f.expires_at).getTime() - Date.now()) / 86400000)) : null;
+            const hoursLeft = f.expires_at
+              ? Math.max(0, Math.ceil((new Date(f.expires_at).getTime() - Date.now()) / 3600000))
+              : null;
+            const timeLabel = hoursLeft === null ? 'ไม่มีวันหมดอายุ'
+              : hoursLeft < 48 ? `เหลือเวลา ${hoursLeft} ชม.`
+              : `เหลือ ${Math.ceil(hoursLeft / 24)} วัน`;
+            const views      = f.stats?.views_used ?? f.stats?.views ?? 0;
+            const viewsTotal = f.stats?.views_total ?? 2000;
+            const messages   = f.stats?.messages_new ?? f.stats?.messages ?? 0;
+            const boostPct   = f.stats?.boost_percent ?? null;
+            const progress   = viewsTotal > 0 ? Math.min(100, (views / viewsTotal) * 100) : 0;
+
             return (
-              <div key={f.id} className={`co-active ${isFeatured ? 'featured' : 'boost'}`}>
-                <div style={{ width: 90, height: 90, borderRadius: 8, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', fontSize: 32 }}>
-                  {isFeatured ? '⭐' : '🚀'}
+              <div key={f.id} className="co-active" style={{ display: 'flex', gap: 14, padding: '16px', background: 'var(--surface)', border: `1.5px solid ${isFeatured ? '#f59e0b' : 'var(--line)'}`, borderRadius: 'var(--radius)', alignItems: 'flex-start' }}>
+                {/* Thumbnail */}
+                <div style={{ width: 64, height: 64, borderRadius: 10, background: 'var(--surface-2)', flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 28, overflow: 'hidden' }}>
+                  {f.stats?.product_image
+                    ? <img src={f.stats.product_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : isFeatured ? '⭐' : '🚀'}
                 </div>
-                <div className="co-active-main">
-                  <div className="co-active-top">
-                    <h3>{f.product_title || featureLabels[f.feature_key] || f.feature_key}</h3>
-                    <span className={`co-active-tag ${isFeatured ? 'featured' : 'boost'}`}>{featureLabels[f.feature_key] || f.feature_key}</span>
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {f.product_title || featureLabels[f.feature_key] || f.feature_key}
+                    </span>
+                    <span style={{ background: isFeatured ? '#f59e0b' : '#7c3aed', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, flexShrink: 0 }}>
+                      {isFeatured ? 'Featured' : 'Boost'}
+                    </span>
                   </div>
-                  <div className="co-active-meta">
-                    {daysLeft !== null ? `เหลือ <b>${daysLeft} วัน</b>` : 'ไม่มีวันหมดอายุ'}
-                    {f.expires_at && ` · หมดอายุ ${fmtDate(f.expires_at)}`}
+                  {/* Time + views */}
+                  <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 6 }}>
+                    {timeLabel}{views > 0 ? ` · ใช้ไป ${views.toLocaleString()} / ${viewsTotal.toLocaleString()} views` : ''}
                   </div>
-                  {daysLeft !== null && (
-                    <div className="co-active-bar">
-                      <div className="co-active-fill" style={{ width: `${Math.min(100, (daysLeft / 7) * 100)}%` }} />
+                  {/* Progress bar */}
+                  {hoursLeft !== null && (
+                    <div style={{ height: 5, background: 'var(--surface-2)', borderRadius: 999, overflow: 'hidden', marginBottom: 10 }}>
+                      <div style={{ height: '100%', width: `${Math.min(100, hoursLeft < 48 ? 80 - (hoursLeft / 48) * 60 : (1 - hoursLeft / 168) * 100)}%`, background: isFeatured ? '#f59e0b' : '#7c3aed', borderRadius: 999, minWidth: 8 }} />
                     </div>
                   )}
+                  {/* Stats */}
+                  <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--ink-2)', flexWrap: 'wrap' }}>
+                    <span><b style={{ color: 'var(--ink)' }}>{views.toLocaleString()}</b> ผู้เข้าชม</span>
+                    {messages > 0 && <span><b style={{ color: 'var(--ink)' }}>{messages}</b> ข้อความใหม่</span>}
+                    {boostPct != null && <span style={{ color: '#16a34a', fontWeight: 700 }}>+{boostPct}% เทียบก่อน Boost</span>}
+                  </div>
                 </div>
-                <div className="co-active-actions">
+                {/* Actions */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+                  {f.product_id && (
+                    <button className="btn btn-ghost" style={{ fontSize: 12, padding: '5px 12px' }}
+                      onClick={() => window.location.href = `/products/${f.product_id}`}>
+                      ดูประกาศ
+                    </button>
+                  )}
                   <button className="btn btn-ghost" style={{ fontSize: 12, padding: '5px 12px' }}>ต่ออายุ</button>
                 </div>
               </div>
             );
           })}
+          {/* CTA */}
+          <button onClick={onTopup}
+            style={{ width: '100%', marginTop: 12, padding: '14px', background: 'none', border: '1.5px dashed var(--line-2)', borderRadius: 'var(--radius)', fontSize: 13, fontWeight: 600, color: 'var(--ink-3)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.color = '#7c3aed'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line-2)'; e.currentTarget.style.color = 'var(--ink-3)'; }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M12 5v14M5 12h14"/></svg>
+            เริ่ม Boost ประกาศใหม่
+          </button>
         </div>
       )}
     </div>
@@ -573,7 +608,7 @@ function CoinsPageContent() {
 
       {/* Content */}
       {tab === 'topup'   && token && <TopupTab    token={token} balance={balance} onRefresh={refreshBalance} />}
-      {tab === 'boosts'  && token && <ActiveBoostsTab token={token} balance={balance} onTopup={() => setTab('topup')} />}
+      {tab === 'boosts'  && token && <ActiveBoostsTab token={token} onTopup={() => setTab('topup')} />}
       {tab === 'premium' && <PremiumTab />}
       {tab === 'history' && token && <HistoryTab  token={token} />}
     </div>

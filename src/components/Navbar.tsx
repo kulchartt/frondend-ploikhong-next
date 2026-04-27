@@ -3,8 +3,9 @@
 import { ChevronDown } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import * as api from '@/lib/api';
 
 const SUBNAV = ['สำหรับคุณ', 'ใกล้ฉัน', 'ของใหม่', 'Boost เด่น', 'ส่งฟรี', 'ลดราคา', 'ของสะสม', 'ดีลพนักงาน', 'นัดรับ'];
 
@@ -24,8 +25,15 @@ export function Navbar({
   const { data: session } = useSession();
   const [accountOpen, setAccountOpen] = useState(false);
   const [dark, setDark] = useState(false);
+  const [coinBalance, setCoinBalance] = useState<number | null>(null);
   const isMobile = useBreakpoint(768);
   const avatarLetter = session?.user?.name?.[0]?.toUpperCase() ?? '?';
+  const token: string | undefined = (session as any)?.token;
+
+  useEffect(() => {
+    if (!token) return;
+    api.getCoinBalance(token).then(d => setCoinBalance(d.balance ?? 0)).catch(() => {});
+  }, [token]);
 
   function toggleDark() {
     const next = !dark;
@@ -201,10 +209,10 @@ export function Navbar({
                       { label: 'สินค้าของฉัน',     icon: <DropStoreIcon />,     action: () => onOpenHub?.('sell') },
                       { label: 'การซื้อของฉัน',    icon: <DropBagIcon />,       action: () => onOpenHub?.('buy') },
                       { label: 'รายการถูกใจ',      icon: <DropHeartIcon />,     action: () => onOpenHub?.('buy', 'saved') },
-                      { label: 'เหรียญของฉัน',     icon: <DropCoinIcon />,      action: () => window.location.href = '/coins' },
+                      { label: 'เติมเหรียญ & Premium', icon: <DropCoinIcon />, action: () => window.location.href = '/coins', badge: coinBalance !== null ? coinBalance.toLocaleString() : null },
                       { label: 'ร้องเรียนของฉัน',  icon: <DropAlertIcon />,     action: () => window.location.href = '/complaints' },
                       ...((session?.user as any)?.is_admin ? [{ label: '🛡️ Admin Panel', icon: <DropShieldIcon />, action: () => window.location.href = '/admin' }] : []),
-                    ] as { label: string; icon: React.ReactNode; action: () => void }[]).map(({ label, icon, action }) => (
+                    ] as { label: string; icon: React.ReactNode; action: () => void; badge?: string | null }[]).map(({ label, icon, action, badge }) => (
                       <button key={label} onClick={action}
                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                           padding: '10px 14px', background: 'none', border: 'none',
@@ -212,7 +220,13 @@ export function Navbar({
                           fontFamily: 'inherit' }}
                         onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
-                        {icon} {label}
+                        {icon}
+                        <span style={{ flex: 1 }}>{label}</span>
+                        {badge != null && (
+                          <span style={{ background: '#f59e0b', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, flexShrink: 0 }}>
+                            {badge}
+                          </span>
+                        )}
                       </button>
                     ))}
 

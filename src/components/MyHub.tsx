@@ -40,7 +40,6 @@ const SELL_NAV = [
   { k: 'listings', label: 'สินค้าของฉัน' },
   { k: 'offers',   label: 'คำขอราคา' },
   { k: 'insights', label: 'สถิติ' },
-  { k: 'premium',  label: 'Premium' },
   { k: 'profile',  label: 'ตั้งค่าร้านค้า' },
 ];
 
@@ -253,7 +252,6 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
           {mode === 'sell' && sellTab === 'listings'  && <SellListings token={token} onNewListing={onNewListing} />}
           {mode === 'sell' && sellTab === 'offers'    && <SellOffers token={token} onBadgeChange={setPendingSellOffers} />}
           {mode === 'sell' && sellTab === 'insights'  && <SellInsights token={token} />}
-          {mode === 'sell' && sellTab === 'premium'   && <SellPremium token={token} />}
           {mode === 'sell' && sellTab === 'profile'   && <HubProfile session={session} mode="sell" />}
           {mode === 'buy'  && buyTab === 'saved'         && <BuySaved token={token} onOpenChat={onOpenChat ? () => { onClose(); onOpenChat(); } : undefined} onViewProduct={onViewProduct ? (p) => { onClose(); onViewProduct(p); } : undefined} />}
           {mode === 'buy'  && buyTab === 'offers'        && <BuyOffers token={token} />}
