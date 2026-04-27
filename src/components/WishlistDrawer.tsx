@@ -119,7 +119,7 @@ export function WishlistDrawer({ onClose, onProductClick, onRemove }: WishlistDr
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ fontFamily: 'var(--font-disp-th)', fontWeight: 700, fontSize: 18, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 10 }}>
               รายการถูกใจ
               {items.length > 0 && (
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, background: 'var(--accent)', color: '#fff', padding: '2px 8px', borderRadius: 999 }}>
@@ -171,7 +171,7 @@ export function WishlistDrawer({ onClose, onProductClick, onRemove }: WishlistDr
           {token && !loading && items.length === 0 && !error && (
             <div style={{ textAlign: 'center', padding: '80px 0' }}>
               <div style={{ fontSize: 48, marginBottom: 14 }}>🤍</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--ink)', marginBottom: 8 }}>
+              <div style={{ fontFamily: 'var(--font-disp-th)', fontWeight: 700, fontSize: 17, color: 'var(--ink)', marginBottom: 8 }}>
                 ยังไม่มีรายการถูกใจ
               </div>
               <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6 }}>

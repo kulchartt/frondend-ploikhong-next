@@ -105,7 +105,7 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
             style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surface-2)', border: 'none', display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0 }}>
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2}><path d="M15 18l-6-6 6-6"/></svg>
           </button>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 15, color: 'var(--ink)' }}>ศูนย์ซื้อขาย</span>
+          <span style={{ fontFamily: 'var(--font-disp-th)', fontWeight: 800, fontSize: 15, color: 'var(--ink)' }}>ศูนย์ซื้อขาย</span>
           <div style={{ display: 'flex', background: 'var(--surface-2)', borderRadius: 8, padding: 3, gap: 2, marginLeft: 'auto' }}>
             {(['sell', 'buy'] as const).map(m => (
               <button key={m} onClick={() => setMode(m)}
@@ -148,7 +148,7 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
                   title="กลับ">
                   <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2}><path d="M15 18l-6-6 6-6"/></svg>
                 </button>
-                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 15, color: 'var(--ink)', letterSpacing: '-.01em' }}>ศูนย์ซื้อขาย</span>
+                <span style={{ fontFamily: 'var(--font-disp-th)', fontWeight: 800, fontSize: 15, color: 'var(--ink)', letterSpacing: '-.01em' }}>ศูนย์ซื้อขาย</span>
               </div>
 
               {/* Mode switch — pill style */}
@@ -292,7 +292,7 @@ function PageWrap({ children }: { children: React.ReactNode }) {
 }
 
 function PageH1({ children }: { children: React.ReactNode }) {
-  return <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--ink)', marginBottom: 4, letterSpacing: '-.02em' }}>{children}</h1>;
+  return <h1 style={{ fontFamily: 'var(--font-disp-th)', fontSize: 22, fontWeight: 800, color: 'var(--ink)', marginBottom: 4, letterSpacing: '-.02em' }}>{children}</h1>;
 }
 
 function PageSub({ children }: { children: React.ReactNode }) {
@@ -487,7 +487,7 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
 
       {/* Header row: title + search + toggle */}
       <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--ink)', margin: 0, letterSpacing: '-.02em', flex: 1 }}>
+        <h1 style={{ fontFamily: 'var(--font-disp-th)', fontSize: 20, fontWeight: 800, color: 'var(--ink)', margin: 0, letterSpacing: '-.02em', flex: 1 }}>
           รายการสินค้าของคุณ
         </h1>
         {/* Search */}
@@ -1750,7 +1750,7 @@ function HubProfile({ session, mode }: { session: any; mode: string }) {
             : <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 22, flexShrink: 0 }}>{letter}</div>
           }
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: 3 }}>{user?.name ?? 'ผู้ใช้'}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-disp-th)', marginBottom: 3 }}>{user?.name ?? 'ผู้ใช้'}</div>
             <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>{user?.email ?? '—'}</div>
           </div>
         </div>
@@ -2142,7 +2142,7 @@ function SellPremium({ token }: { token?: string }) {
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-disp-th)' }}>
                   {features[pickerFeatureKey]?.icon ?? '⭐'} {features[pickerFeatureKey]?.label ?? pickerFeatureKey}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>เลือกสินค้าที่ต้องการเปิดฟีเจอร์นี้</div>
@@ -2190,7 +2190,7 @@ function SellPremium({ token }: { token?: string }) {
       {!loading && tab === 'buy' && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 24px', gap: 16, textAlign: 'center' }}>
           <div style={{ fontSize: 56 }}>🪙</div>
-          <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>เติมเหรียญผ่านหน้าเต็ม</div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-disp-th)' }}>เติมเหรียญผ่านหน้าเต็ม</div>
           <div style={{ fontSize: 13, color: 'var(--ink-3)', maxWidth: 260, lineHeight: 1.6 }}>
             ชำระผ่านบัตรเครดิต/เดบิต หรือ PromptPay QR<br/>เหรียญเข้าบัญชีอัตโนมัติทันที ไม่ต้องรออนุมัติ
           </div>

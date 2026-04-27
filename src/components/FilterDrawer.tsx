@@ -86,7 +86,7 @@ export function FilterDrawer({ onClose, onFilter, initialFilters = {}, resultCou
         <div style={{ padding: '12px 20px 14px', borderBottom: '1px solid var(--line)', background: 'var(--surface)', borderRadius: '16px 16px 0 0' }}>
           <div style={{ width: 36, height: 4, borderRadius: 99, background: 'var(--line-2)', margin: '0 auto 14px' }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17 }}>ตัวกรอง</span>
+            <span style={{ fontFamily: 'var(--font-disp-th)', fontWeight: 700, fontSize: 17 }}>ตัวกรอง</span>
             <button onClick={reset}
               style={{ fontSize: 13, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
               ล้างทั้งหมด

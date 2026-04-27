@@ -156,7 +156,7 @@ export function ShopDrawer({ sellerId, onClose, onProductClick, onMessage, onOpe
 
         {/* ── Name + action buttons ── */}
         <div style={{ textAlign: 'center', padding: '12px 24px 16px', borderBottom: '1px solid var(--line)' }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: isMobile ? 20 : 24, fontWeight: 700, letterSpacing: '-.015em', marginBottom: 4 }}>
+          <div style={{ fontFamily: 'var(--font-disp-th)', fontSize: isMobile ? 20 : 24, fontWeight: 700, letterSpacing: '-.015em', marginBottom: 4 }}>
             {loading ? '…' : sellerName}
           </div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-3)', marginBottom: 12, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>

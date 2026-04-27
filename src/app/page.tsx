@@ -186,7 +186,7 @@ export default function HomePage() {
               fontSize: 18, flexShrink: 0,
             }}>✦</div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 16,
+              <div style={{ fontFamily: 'var(--font-disp-th)', fontSize: 16,
                 fontWeight: 700, letterSpacing: '-.01em', marginBottom: 2, color: 'var(--ink)' }}>
                 เรามีฟีเจอร์ที่ช่วยคุณขายของได้ไวอย่างมากมาย
               </div>
@@ -243,7 +243,7 @@ export default function HomePage() {
                   textTransform: 'uppercase',
                 }}>{m.badge}</span>
                 <div style={{
-                  fontFamily: 'var(--font-display)', fontWeight: 700,
+                  fontFamily: 'var(--font-disp-th)', fontWeight: 700,
                   fontSize: 15, letterSpacing: '-.01em',
                   display: 'flex', alignItems: 'center', gap: 6,
                 }}>

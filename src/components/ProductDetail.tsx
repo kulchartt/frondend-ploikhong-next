@@ -378,7 +378,7 @@ export function ProductDetail({ product, onClose, onViewShop, onOpenChatDrawer, 
 
               {/* Title */}
               <h1 style={{
-                fontFamily: 'var(--font-display)', fontSize: isMobile ? 17 : 20,
+                fontFamily: 'var(--font-disp-th)', fontSize: isMobile ? 17 : 20,
                 fontWeight: 600, letterSpacing: '-.01em', lineHeight: 1.35,
                 marginTop: 10, color: '#1c1e21',
               }}>
@@ -683,7 +683,7 @@ function Tag({ children, boost, accent }: { children: React.ReactNode; boost?: b
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 14, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink-3)', marginBottom: 10, fontWeight: 600 }}>
+    <h3 style={{ fontFamily: 'var(--font-disp-th)', fontSize: 14, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink-3)', marginBottom: 10, fontWeight: 600 }}>
       {children}
     </h3>
   );

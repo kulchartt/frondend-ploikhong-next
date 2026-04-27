@@ -814,7 +814,7 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
             <div style={{ height: 1, minHeight: 1, flexShrink: 0, background: 'var(--line)', margin: '0 16px' }} />
             {/* สินค้าที่คุยกันอยู่ */}
             <div style={{ padding: '14px 16px 16px' }}>
-              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>สินค้าที่คุยกันอยู่</h4>
+              <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-disp-th)' }}>สินค้าที่คุยกันอยู่</h4>
               {selectedRoom.product_image ? (
                 <div style={{
                   width: '100%', height: 180, borderRadius: 'var(--radius)',
@@ -842,7 +842,7 @@ export function ChatDrawer({ onClose, initialRoomId }: ChatDrawerProps) {
             <div style={{ height: 1, minHeight: 1, flexShrink: 0, background: 'var(--line)', margin: '0 16px' }} />
             {/* การดำเนินการ */}
             <div style={{ padding: '14px 16px 8px' }}>
-              <h4 style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>การดำเนินการ</h4>
+              <h4 style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-disp-th)' }}>การดำเนินการ</h4>
               {[
                 { icon: '📎', label: 'ไฟล์ที่แชร์', color: 'var(--ink-2)' },
                 { icon: '🔕', label: 'ปิดการแจ้งเตือน', color: 'var(--ink-2)' },
