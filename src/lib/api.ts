@@ -19,7 +19,7 @@ async function req<T>(path: string, opts?: RequestInit, token?: string): Promise
 function normalizeProduct(p: any): any {
   if (!p || typeof p !== 'object') return p;
   // Backend returns image_url (string); components expect images (string[])
-  if (p.images === undefined || p.images === null) {
+  if (!p.images || !p.images.length) {
     p.images = p.image_url ? [p.image_url] : [];
   }
   // Backend may return seller's id as user_id; components expect seller_id
