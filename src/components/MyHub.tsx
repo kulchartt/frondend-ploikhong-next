@@ -2043,6 +2043,8 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
                   <div key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #fed7aa', borderRadius: 999, padding: '5px 12px', fontSize: 12 }}>
                     <span>{features[f.feature_key]?.icon ?? '⭐'}</span>
                     <span style={{ fontWeight: 600, color: '#c2410c' }}>{features[f.feature_key]?.label ?? f.feature_key}</span>
+                    {f.product_title && <span style={{ color: '#92400e' }}>→ {f.product_title}</span>}
+                    {!f.product_title && f.product_id && <span style={{ color: '#92400e' }}>→ #{f.product_id}</span>}
                     <span style={{ color: '#92400e' }}>
                       · หมดอายุ {new Date(f.expires_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
                     </span>
@@ -2054,7 +2056,10 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 14 }}>
             {featureEntries.map(([key, feat]: [string, any]) => {
-              const isActive = activeFeatures.some(f => f.feature_key === key);
+              // Product-specific features can be activated multiple times (one per product)
+              // Only global features (analytics_pro) block when already active
+              const isActive = !NEEDS_PRODUCT_PICKER.includes(key) && activeFeatures.some(f => f.feature_key === key);
+              const activeForProducts = NEEDS_PRODUCT_PICKER.includes(key) ? activeFeatures.filter(f => f.feature_key === key) : [];
               const canAfford = (balance ?? 0) >= feat.coins;
               const isActivating = activating === key;
               return (
@@ -2066,6 +2071,7 @@ function SellPremium({ token, isAdmin = false }: { token?: string; isAdmin?: boo
                       <div style={{ fontSize: 11, color: '#d97706', fontWeight: 600 }}>🪙 {feat.coins} เหรียญ / {feat.days} วัน</div>
                     </div>
                     {isActive && <span style={{ background: '#f59e0b', color: '#fff', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999 }}>ACTIVE</span>}
+                    {activeForProducts.length > 0 && <span style={{ background: '#f59e0b', color: '#fff', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999 }}>{activeForProducts.length} สินค้า</span>}
                   </div>
                   <p style={{ margin: 0, fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.6 }}>{feat.desc}</p>
                   <button
