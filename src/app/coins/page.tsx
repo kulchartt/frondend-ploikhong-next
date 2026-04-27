@@ -370,9 +370,17 @@ function ActiveBoostsTab({ token, onTopup, onBoost, refreshKey }: { token: strin
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {f.product_title || featureLabels[f.feature_key] || f.feature_key}
-                    </span>
+                    {f.product_id ? (
+                      <a href={`/products/${f.product_id}`} style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }}
+                        onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline'; }}
+                        onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none'; }}>
+                        {f.product_title || featureLabels[f.feature_key] || f.feature_key}
+                      </a>
+                    ) : (
+                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {f.product_title || featureLabels[f.feature_key] || f.feature_key}
+                      </span>
+                    )}
                     <span style={{ background: isFeatured ? '#f59e0b' : '#7c3aed', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, flexShrink: 0 }}>
                       {isFeatured ? 'Featured' : 'Boost'}
                     </span>
@@ -396,12 +404,6 @@ function ActiveBoostsTab({ token, onTopup, onBoost, refreshKey }: { token: strin
                 </div>
                 {/* Actions */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
-                  {f.product_id && (
-                    <button className="btn btn-ghost" style={{ fontSize: 12, padding: '5px 12px' }}
-                      onClick={() => window.location.href = `/products/${f.product_id}`}>
-                      ดูประกาศ
-                    </button>
-                  )}
                   <button className="btn btn-ghost" style={{ fontSize: 12, padding: '5px 12px' }}>ต่ออายุ</button>
                 </div>
               </div>
