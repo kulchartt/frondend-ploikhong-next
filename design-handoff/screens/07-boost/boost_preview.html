@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="th" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<title>PloiKhong — Boost Preview</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Inter+Tight:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="v12_boost.css"/>
+<style>
+:root{
+  --accent:#0B5FFF;--accent-ink:#fff;
+  --radius:10px;--radius-sm:6px;--density:1;
+  --font-th:'IBM Plex Sans Thai','IBM Plex Sans',system-ui,sans-serif;
+  --font-display:'Inter Tight','IBM Plex Sans',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --bg:#f8fafc;--surface:#fff;--surface-2:#f1f5f9;
+  --line:#e2e8f0;--line-2:#cbd5e1;
+  --ink:#0f172a;--ink-2:#475569;--ink-3:#94a3b8;
+  --pos:#16a34a;--warn:#d97706;--neg:#dc2626;
+}
+html[data-theme="dark"]{
+  --bg:#0f172a;--surface:#1e293b;--surface-2:#334155;
+  --line:#334155;--line-2:#475569;
+  --ink:#f1f5f9;--ink-2:#94a3b8;--ink-3:#64748b;
+  --pos:#4ade80;--warn:#fbbf24;--neg:#f87171;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:var(--font-th);font-size:15px;line-height:1.5}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer}
+
+/* simple chrome for the preview page */
+.preview-top{
+  position:sticky;top:0;z-index:90;
+  background:var(--surface);border-bottom:1px solid var(--line);
+  padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.preview-brand{
+  font-family:var(--font-display);font-weight:800;font-size:16px;letter-spacing:-.01em;
+}
+.preview-brand span{color:var(--accent)}
+.preview-sep{flex:1}
+.preview-pill{
+  display:flex;gap:4px;background:var(--surface-2);padding:3px;border-radius:999px;
+}
+.preview-pill button{
+  padding:6px 14px;border-radius:999px;font-size:13px;color:var(--ink-2);font-weight:500;
+}
+.preview-pill button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.06);font-weight:600}
+.preview-mini{
+  font-size:12px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;color:var(--ink-2);
+}
+.preview-mini:hover{border-color:var(--line-2);color:var(--ink)}
+
+.stage{
+  min-height:calc(100vh - 56px);
+  padding:60px 24px;display:flex;flex-direction:column;align-items:center;gap:32px;
+}
+.stage-card{
+  width:100%;max-width:920px;
+  border:1px solid var(--line);border-radius:14px;background:var(--surface);
+  padding:40px 32px;text-align:center;
+}
+.stage-card h1{font-family:var(--font-display);font-size:28px;font-weight:700;letter-spacing:-.02em;margin:0 0 8px}
+.stage-card p{font-size:15px;color:var(--ink-2);margin:0 0 24px;max-width:540px;margin-left:auto;margin-right:auto;line-height:1.6}
+.stage-card .open-btn{
+  background:var(--accent);color:var(--accent-ink);
+  padding:14px 28px;border-radius:8px;font-size:15px;font-weight:600;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.stage-card .open-btn:hover{filter:brightness(.95)}
+.product-preview{
+  display:flex;gap:14px;align-items:center;
+  padding:14px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);
+  max-width:480px;margin:0 auto 24px;text-align:left;
+}
+.product-preview .ph{
+  width:64px;height:64px;border-radius:6px;flex-shrink:0;overflow:hidden;
+  background:linear-gradient(135deg,#e9d7c0,#b5927a);
+  position:relative;
+}
+.product-preview .ph::before{
+  content:"";position:absolute;inset:0;
+  background-image:repeating-linear-gradient(135deg,transparent 0 10px,rgba(0,0,0,.04) 10px 11px);
+}
+.product-preview-main{flex:1;min-width:0}
+.product-preview-t{font-size:14px;font-weight:500;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.product-preview-meta{font-size:12px;color:var(--ink-2);font-family:var(--font-mono)}
+
+.notes{
+  max-width:920px;width:100%;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+}
+.note{
+  border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:18px;
+}
+.note h3{font-family:var(--font-display);font-size:14px;font-weight:700;letter-spacing:-.01em;margin:0 0 8px;display:flex;align-items:center;gap:6px}
+.note h3 .v{font-family:var(--font-mono);font-size:11px;background:var(--accent);color:var(--accent-ink);padding:2px 6px;border-radius:4px;font-weight:700}
+.note p{font-size:12px;color:var(--ink-2);line-height:1.55;margin:0 0 8px}
+.note ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px}
+.note li{font-size:12px;color:var(--ink-2);padding-left:14px;position:relative;line-height:1.5}
+.note li::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.5}
+.note li b{color:var(--ink);font-weight:600}
+
+/* fake Thumb fallback (since shared.jsx not loaded) */
+.bo-prod-img-ph{
+  background:linear-gradient(135deg,#e9d7c0,#b5927a);
+  position:relative;
+}
+.bo-prod-img-ph::before{
+  content:"";position:absolute;inset:0;
+  background-image:repeating-linear-gradient(135deg,transparent 0 8px,rgba(0,0,0,.05) 8px 9px);
+}
+.bo-feed-card-img > div{
+  width:100%;height:100%;
+  background:linear-gradient(135deg,#dce6d1,#708c7e);
+  position:relative;
+}
+.bo-feed-card-img > div::before{
+  content:"";position:absolute;inset:0;
+  background-image:repeating-linear-gradient(135deg,transparent 0 8px,rgba(0,0,0,.05) 8px 9px);
+}
+
+@media(max-width:780px){
+  .notes{grid-template-columns:1fr}
+  .stage-card{padding:28px 20px}
+  .stage-card h1{font-size:22px}
+}
+</style>
+</head>
+<body>
+
+<div class="preview-top">
+  <div class="preview-brand">PloiKhong<span>.</span> · Boost Preview</div>
+  <div class="preview-sep"></div>
+  <span style="font-size:12px;color:var(--ink-3);font-family:var(--font-mono)">VARIANT</span>
+  <div class="preview-pill" id="variantPill">
+    <button data-v="A">A · Modal</button>
+    <button data-v="B" class="on">B · Wizard</button>
+    <button data-v="C">C · Sheet</button>
+  </div>
+  <button class="preview-mini" id="themeBtn">Dark</button>
+</div>
+
+<div class="stage">
+  <div class="stage-card">
+    <div class="product-preview">
+      <div class="ph"></div>
+      <div class="product-preview-main">
+        <div class="product-preview-t">iPhone 14 Pro 256GB สี Deep Purple เครื่องศูนย์ไทย ประกันศูนย์เหลือ 4 เดือน</div>
+        <div class="product-preview-meta">฿24,900 · มือถือ · กรุงเทพ</div>
+      </div>
+    </div>
+
+    <h1>เริ่ม Boost ประกาศใหม่</h1>
+    <p>3 รูปแบบให้เลือก: <b>Modal กลางจอ</b> สำหรับ desktop · <b>Wizard 3-step</b> สำหรับ flow ละเอียด · <b>Bottom Sheet</b> สำหรับ mobile</p>
+    <button class="open-btn" id="openBtn">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19c1-4 4-7 8-8l3-3 3 3-3 3c-1 4-4 7-8 8M9 15l-2 2M5 19h-2"/></svg>
+      <span>เปิดหน้า Boost (Variant <b id="curV">B</b>)</span>
+    </button>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h3><span class="v">A</span> Modal Classic</h3>
+      <p>Modal 640px กลางจอ — เหมาะ desktop, จบเร็ว</p>
+      <ul>
+        <li>เลือกแพ็คเกจในหน้าเดียว</li>
+        <li>มี duration row + summary บอก coin balance</li>
+        <li>ใช้เป็น default จาก feed/MyHub ก็ดี</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3><span class="v">B</span> Wizard 3-step</h3>
+      <p>Full-screen 3 ขั้น — มี preview ของจริงบน feed + reach chart</p>
+      <ul>
+        <li><b>1.</b> เลือกแพ็คเกจ + bundle</li>
+        <li><b>2.</b> ตั้งเวลา + ตัวเลือกเสริม</li>
+        <li><b>3.</b> ตรวจสอบ + ยืนยัน</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3><span class="v">C</span> Bottom Sheet</h3>
+      <p>Slide-up จากล่าง — mobile-first, แตะเลือกแพ็คเกจรวดเร็ว</p>
+      <ul>
+        <li>4 แพ็คเกจเป็นปุ่มแถวเดียว</li>
+        <li>Estimated reach + msgs ด้านล่าง</li>
+        <li>CTA full-width ติดล่าง</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- minimal Thumb fallback for preview -->
+<script type="text/babel">
+const TINTS = [
+  ['#e9d7c0','#b5927a'],['#dce6d1','#708c7e'],['#e4d8e8','#8a6ea1'],['#d8e2ec','#5b7893'],
+  ['#efe1cf','#c08a56'],['#e3d7c5','#8a7a62'],['#d5dfe8','#6a8095'],['#ece0dc','#a07d77'],
+  ['#d8ddd4','#6f8170'],['#e5dbe1','#8f7387'],['#d9e4df','#6d8a81'],['#eadfd4','#a57a5a'],
+];
+function Thumb({ id }){
+  const t = TINTS[((id||1)-1) % TINTS.length];
+  return <div style={{
+    width:'100%',height:'100%',
+    background:`linear-gradient(135deg,${t[0]},${t[1]})`,
+    position:'relative'
+  }}/>;
+}
+window.Thumb = Thumb;
+window.PLOI_DATA = { IMG_TINTS: TINTS };
+
+const MOCK_PRODUCT = {
+  id: 1,
+  title: 'iPhone 14 Pro 256GB สี Deep Purple เครื่องศูนย์ไทย ประกันศูนย์เหลือ 4 เดือน',
+  price: 24900,
+  cat: 'มือถือ',
+  loc: 'กรุงเทพ · พระราม 9',
+  posted: '2 ชม.ที่แล้ว',
+  img: 1
+};
+window.__BOOST_MOCK_PRODUCT = MOCK_PRODUCT;
+</script>
+
+<!-- v12 Boost component -->
+<script type="text/babel" src="v12_boost.jsx"></script>
+
+<!-- mount + variant switcher -->
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+function BoostHostPortal(){
+  const [open, setOpen] = useState(false);
+  const [variant, setVariant] = useState('B');
+
+  useEffect(()=>{
+    window.__openBoost = (p, v) => { if(v) setVariant(v); setOpen(true); };
+    window.__setBoostVariant = setVariant;
+    window.__BOOST_VARIANT = variant;
+  },[variant]);
+
+  if(!open) return null;
+  return (
+    <V12Boost
+      product={window.__BOOST_MOCK_PRODUCT}
+      variant={variant}
+      onClose={()=>setOpen(false)}
+      onConfirmed={()=>{ /* keep success state visible */ }}
+    />
+  );
+}
+
+const portalEl = document.createElement('div');
+portalEl.id='boost-portal';
+document.body.appendChild(portalEl);
+ReactDOM.createRoot(portalEl).render(<BoostHostPortal/>);
+
+// variant switcher
+const pill = document.getElementById('variantPill');
+const curV = document.getElementById('curV');
+pill.querySelectorAll('button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    pill.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    const v = btn.dataset.v;
+    curV.textContent = v;
+    window.__BOOST_VARIANT = v;
+    window.__setBoostVariant && window.__setBoostVariant(v);
+  });
+});
+
+document.getElementById('openBtn').addEventListener('click', ()=>{
+  window.__openBoost(window.__BOOST_MOCK_PRODUCT, window.__BOOST_VARIANT||'B');
+});
+
+// theme toggle
+document.getElementById('themeBtn').addEventListener('click', e=>{
+  const html = document.documentElement;
+  const cur = html.getAttribute('data-theme')||'light';
+  const next = cur==='light'?'dark':'light';
+  html.setAttribute('data-theme', next);
+  e.target.textContent = next==='light'?'Dark':'Light';
+});
+
+// auto-open on first load for quick demo
+setTimeout(()=>document.getElementById('openBtn').click(), 100);
+</script>
+
+</body>
+</html>

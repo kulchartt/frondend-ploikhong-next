@@ -10,6 +10,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { AuthModal } from '@/components/AuthModal';
 import { ProductDetail } from '@/components/ProductDetail';
 import { ListingFlow } from '@/components/ListingFlow';
+import { BoostModal } from '@/components/BoostModal';
 import { MyHub } from '@/components/MyHub';
 import { FilterDrawer } from '@/components/FilterDrawer';
 import { WishlistDrawer } from '@/components/WishlistDrawer';
@@ -63,6 +64,7 @@ export default function HomePage() {
   const [complaintSent, setComplaintSent] = useState(false);
   const [complaintLoading, setComplaintLoading] = useState(false);
   const [listingOpen, setListingOpen] = useState(false);
+  const [postBoostProduct, setPostBoostProduct] = useState<any>(null);
   const [hubOpen, setHubOpen] = useState<{ mode: 'sell' | 'buy'; tab?: string } | null>(null);
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -578,7 +580,8 @@ export default function HomePage() {
           </div>
         </div>
       )}
-      {listingOpen && <ListingFlow onClose={() => setListingOpen(false)} onPosted={loadProducts} />}
+      {listingOpen && <ListingFlow onClose={() => setListingOpen(false)} onPosted={loadProducts} onBoostAfterPost={p => setPostBoostProduct(p)} />}
+      {postBoostProduct && token && <BoostModal product={postBoostProduct} token={token} onClose={() => setPostBoostProduct(null)} onConfirmed={() => setPostBoostProduct(null)} />}
       {hubOpen && (
         <MyHub
           mode={hubOpen.mode}

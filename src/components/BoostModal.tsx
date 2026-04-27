@@ -445,6 +445,20 @@ export function BoostModal({ product, token, onClose, onConfirmed, variant }: Bo
   // when product prop changes (e.g. opened from different listing), reset
   useEffect(() => { setSelectedProduct(product); }, [product]);
 
+  // Esc key closes modal
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  // body scroll lock while modal is open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   if (!selectedProduct) {
     return <BoostProductPicker token={token} onSelect={setSelectedProduct} onClose={onClose} />;
   }

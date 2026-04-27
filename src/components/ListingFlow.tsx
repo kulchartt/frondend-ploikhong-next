@@ -9,6 +9,7 @@ import * as api from '@/lib/api';
 interface ListingFlowProps {
   onClose: () => void;
   onPosted?: () => void;
+  onBoostAfterPost?: (product: any) => void;
 }
 
 const IMG_TINTS = [
@@ -49,7 +50,7 @@ interface Form {
   boost: boolean;
 }
 
-export function ListingFlow({ onClose, onPosted }: ListingFlowProps) {
+export function ListingFlow({ onClose, onPosted, onBoostAfterPost }: ListingFlowProps) {
   const { data: session } = useSession();
   const token: string | undefined = (session as any)?.token;
   const isMobile = useBreakpoint(768);
@@ -68,6 +69,7 @@ export function ListingFlow({ onClose, onPosted }: ListingFlowProps) {
   const [postError, setPostError] = useState('');
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const [posted, setPosted] = useState(false);
+  const [newProduct, setNewProduct] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Lock body scroll
@@ -172,7 +174,7 @@ export function ListingFlow({ onClose, onPosted }: ListingFlowProps) {
       setUploadProgress(null);
 
       // 2. Create the product
-      await api.createProduct({
+      const newProduct = await api.createProduct({
         title: form.title.trim(),
         description: form.desc.trim(),
         price: Number(form.price),
@@ -186,9 +188,11 @@ export function ListingFlow({ onClose, onPosted }: ListingFlowProps) {
         image_url: imageUrls[0] ?? '',
       }, token);
 
+      setNewProduct(newProduct);
       setPosted(true);
       onPosted?.();
-      setTimeout(onClose, 2200);
+      // if onBoostAfterPost provided, let user click Boost button instead of auto-close
+      if (!onBoostAfterPost) setTimeout(onClose, 2200);
     } catch (err: any) {
       setPostError(err?.message || 'โพสต์ไม่สำเร็จ กรุณาลองใหม่');
     } finally {
@@ -202,9 +206,23 @@ export function ListingFlow({ onClose, onPosted }: ListingFlowProps) {
         <div style={{ background: 'var(--surface)', borderRadius: 16, padding: '48px 40px', textAlign: 'center', maxWidth: 360 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>โพสต์สำเร็จเรียบร้อย</div>
-          <div style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.6 }}>
+          <div style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: onBoostAfterPost ? 20 : 0 }}>
             ประกาศของคุณกำลังแสดงบนฟีดแล้ว{form.boost ? ' พร้อม Boost 48 ชม.' : ''}
           </div>
+          {onBoostAfterPost && newProduct && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button
+                onClick={() => { onClose(); onBoostAfterPost(newProduct); }}
+                style={{ padding: '11px 20px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M13 3L4 14h7v7l9-11h-6z"/></svg>
+                Boost ประกาศนี้
+              </button>
+              <button onClick={onClose}
+                style={{ padding: '9px 20px', background: 'none', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                ข้ามไปก่อน
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
