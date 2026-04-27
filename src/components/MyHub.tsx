@@ -324,7 +324,8 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState<'all' | 'active' | 'sold' | 'draft' | 'hidden'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'sold' | 'draft' | 'hidden' | 'boosted'>('all');
+  const [activeFeatures, setActiveFeatures] = useState<any[]>([]);
   const [q, setQ] = useState('');
   const [gridView, setGridView] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
@@ -373,27 +374,50 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
   const load = useCallback(async () => {
     if (!token) return;
     setLoading(true); setError('');
-    try { setProducts(Array.isArray(await api.getMyProducts(token)) ? await api.getMyProducts(token) : []); }
+    try {
+      const [prods, feats] = await Promise.all([
+        api.getMyProducts(token),
+        api.getActiveFeatures(token),
+      ]);
+      setProducts(Array.isArray(prods) ? prods : []);
+      setActiveFeatures(Array.isArray(feats) ? feats : []);
+    }
     catch (e: any) { setError(e?.message || 'โหลดสินค้าไม่สำเร็จ'); }
     finally { setLoading(false); }
   }, [token]);
 
   useEffect(() => { load(); }, [load]);
 
+  // Build a set of product IDs that have active features
+  const boostedProductIds = new Set(
+    activeFeatures.filter(f => f.product_id).map(f => f.product_id)
+  );
+  // Build a map of product_id → feature list for badge display
+  const featuresByProduct: Record<number, any[]> = {};
+  activeFeatures.forEach(f => {
+    if (!f.product_id) return;
+    if (!featuresByProduct[f.product_id]) featuresByProduct[f.product_id] = [];
+    featuresByProduct[f.product_id].push(f);
+  });
+
+  const FEAT_ICON: Record<string, string> = { boost: '🚀', featured: '⭐', auto_relist: '🔄', price_alert: '🔔', analytics_pro: '📊' };
+
   const filtered = products.filter(p => {
     if (filter === 'active' && p.status && p.status !== 'active') return false;
     if (filter === 'sold' && p.status !== 'sold' && p.status !== 'sold-out') return false;
     if (filter === 'draft' && p.status !== 'draft') return false;
     if (filter === 'hidden' && p.status !== 'hidden') return false;
+    if (filter === 'boosted' && !boostedProductIds.has(p.id)) return false;
     if (q && !p.title?.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
 
-  const cntAll    = products.length;
-  const cntActive = products.filter(p => !p.status || p.status === 'active').length;
-  const cntSold   = products.filter(p => p.status === 'sold' || p.status === 'sold-out').length;
-  const cntDraft  = products.filter(p => p.status === 'draft').length;
-  const cntHidden = products.filter(p => p.status === 'hidden').length;
+  const cntAll     = products.length;
+  const cntActive  = products.filter(p => !p.status || p.status === 'active').length;
+  const cntSold    = products.filter(p => p.status === 'sold' || p.status === 'sold-out').length;
+  const cntDraft   = products.filter(p => p.status === 'draft').length;
+  const cntHidden  = products.filter(p => p.status === 'hidden').length;
+  const cntBoosted = products.filter(p => boostedProductIds.has(p.id)).length;
 
   async function saveEdit() {
     if (!token || editId === null) return;
@@ -429,11 +453,12 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
   if (!token) return <PageWrap><Err msg="กรุณาเข้าสู่ระบบเพื่อดูรายการสินค้า" /></PageWrap>;
 
   const filterTabs = [
-    { k: 'all',    label: 'ทั้งหมด',   count: cntAll },
-    { k: 'active', label: 'กำลังขาย',  count: cntActive },
-    { k: 'sold',   label: 'ขายแล้ว',   count: cntSold },
-    { k: 'draft',  label: 'ฉบับร่าง',  count: cntDraft },
-    { k: 'hidden', label: 'ซ่อนอยู่',  count: cntHidden },
+    { k: 'all',     label: 'ทั้งหมด',      count: cntAll },
+    { k: 'active',  label: 'กำลังขาย',     count: cntActive },
+    { k: 'boosted', label: '⚡ มี Feature', count: cntBoosted },
+    { k: 'sold',    label: 'ขายแล้ว',      count: cntSold },
+    { k: 'draft',   label: 'ฉบับร่าง',     count: cntDraft },
+    { k: 'hidden',  label: 'ซ่อนอยู่',     count: cntHidden },
   ];
 
   return (
@@ -525,14 +550,21 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
               const tints = IMG_TINTS[p.id % IMG_TINTS.length];
               const imgUrl = p.images?.[0] || p.image_url || null;
               const st = STATUS_MAP[p.status ?? 'active'] ?? STATUS_MAP.active;
+              const pFeats = featuresByProduct[p.id] || [];
               return (
-                <div key={p.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', overflow: 'hidden', cursor: 'pointer' }}
+                <div key={p.id} style={{ background: 'var(--surface)', border: `1px solid ${pFeats.length ? '#f59e0b' : 'var(--line)'}`, borderRadius: 'var(--radius)', overflow: 'hidden', cursor: 'pointer' }}
                   onClick={() => { setEditId(p.id); setEditForm({ title: p.title ?? '', price: String(p.price ?? ''), description: p.description ?? '' }); }}>
                   {/* Image */}
                   <div style={{ width: '100%', aspectRatio: '1', background: imgUrl ? undefined : `linear-gradient(135deg,${tints[0]},${tints[1]})`, position: 'relative', overflow: 'hidden' }}>
                     {imgUrl && <img src={imgUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                     <span style={{ position: 'absolute', bottom: 6, left: 6, fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: st.bg, color: st.color }}>{st.label}</span>
-                    {p.is_featured && <span style={{ position: 'absolute', top: 6, right: 6, fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 999, background: '#f59e0b', color: '#fff' }}>⭐</span>}
+                    {pFeats.length > 0 && (
+                      <div style={{ position: 'absolute', top: 5, right: 5, display: 'flex', gap: 3, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        {pFeats.map((f: any, i: number) => (
+                          <span key={i} style={{ fontSize: 11, background: '#f59e0b', borderRadius: 999, padding: '1px 5px', lineHeight: 1.4 }} title={f.feature_key}>{FEAT_ICON[f.feature_key] ?? '⭐'}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {/* Info */}
                   <div style={{ padding: '10px 10px 8px' }}>
@@ -565,8 +597,19 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
                 ? new Date(p.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: '2-digit', year: 'numeric' }).replace(/\//g, '/')
                 : '—';
 
+              const pFeats = featuresByProduct[p.id] || [];
               return (
-                <div key={p.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)' }}>
+                <div key={p.id} style={{ background: 'var(--surface)', border: `1px solid ${pFeats.length ? '#f59e0b' : 'var(--line)'}`, borderRadius: 'var(--radius)' }}>
+                  {/* Feature badges strip */}
+                  {pFeats.length > 0 && (
+                    <div style={{ display: 'flex', gap: 5, padding: '5px 12px', borderBottom: '1px solid #fed7aa', background: '#fffbeb', borderRadius: 'var(--radius) var(--radius) 0 0', flexWrap: 'wrap' }}>
+                      {pFeats.map((f: any, i: number) => (
+                        <span key={i} style={{ fontSize: 11, fontWeight: 700, color: '#92400e', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 999, padding: '1px 8px' }}>
+                          {FEAT_ICON[f.feature_key] ?? '⭐'} {f.feature_key.replace(/_/g, ' ')} · {new Date(f.expires_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <div style={{ display: 'flex', gap: 0, alignItems: 'stretch' }}>
                     {/* Large image — radius on image itself so card can overflow for popovers */}
                     <div style={{
