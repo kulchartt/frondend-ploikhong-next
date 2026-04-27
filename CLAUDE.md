@@ -178,3 +178,25 @@ window.__openChat(threadId?)       // เปิด chat inbox
 - ปรึกษา user ก่อนเลือก backend stack (REST / GraphQL / Firebase / Supabase)
 
 ดู `uploads/PLOIKHONG_SPEC.md` สำหรับ functional requirements
+
+---
+
+## 9. Design Handoff — กฎสำคัญ
+
+**Design handoff ทุกชิ้นให้ integrate เข้า Next.js app (`src/`) เสมอ — ไม่ใช่ legacy HTML project**
+
+โครงสร้างของ folder นี้มีสองโปรเจคอยู่ด้วยกัน:
+
+| โปรเจค | ที่อยู่ | Stack | สถานะ |
+|---|---|---|---|
+| **Next.js app** (production) | `src/`, `app/` | Next.js 14, TypeScript, Tailwind | ใช้งานจริง — integrate handoff ที่นี่ |
+| **Legacy HTML prototype** | `ploikhong.html`, `ploi/` | HTML + inline JSX + Babel standalone | Reference เท่านั้น — อย่าแก้ |
+
+เมื่อได้รับ handoff (jsx + css + INTEGRATION.md) ที่เขียนสำหรับ legacy project ให้:
+1. อ่าน handoff component เพื่อเข้าใจ UI และ logic
+2. Rewrite เป็น proper TypeScript React component ใน `src/components/`
+3. แปลง CSS ที่ใช้ token legacy (`--accent`, `--ink`, ฯลฯ) ให้ใช้ Tailwind หรือ CSS Modules แทน
+4. แปลง `window.__openXxx()` API ให้เป็น React state / router navigation
+5. แปลง `const balance = 1240` hardcode ให้ดึงจาก API จริง (`src/lib/api.ts`)
+
+**ห้าม** copy JSX ไปวางใน `ploi/` หรือแก้ `ploikhong.html` เพราะนั้นคือ legacy ที่ไม่ได้ใช้งานจริง
