@@ -29,10 +29,8 @@
   --warn:         #a85a00;
   --neg:          #b83216;
 
-  /* Typography */
-  --font-th:      'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif;
-  --font-display: 'Inter Tight', 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono:    'IBM Plex Mono', ui-monospace, monospace;
+  /* Typography — variables are injected by Next.js font loader via <html> class;
+     fallbacks here only apply if the font loader hasn't run */
 
   /* Radius */
   --radius:    10px;
@@ -58,25 +56,25 @@
 body {
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--font-th);
+  font-family: var(--font-th, 'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif);
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
+  font-family: var(--font-display, 'Inter Tight', 'IBM Plex Sans', system-ui, sans-serif);
   letter-spacing: -0.01em;
 }
 
-.mono { font-family: var(--font-mono); letter-spacing: -0.02em; }
+.mono { font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace); letter-spacing: -0.02em; }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 99px; }
 
 /* ─── Font alias for design tokens ─────────────────────────────────────────── */
-:root { --font-disp: var(--font-display); }
+:root { --font-disp: var(--font-display, 'Inter Tight', system-ui, sans-serif); }
 
 /* ─── Keyframes ──────────────────────────────────────────────────────────── */
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
