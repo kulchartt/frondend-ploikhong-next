@@ -1237,30 +1237,45 @@ function FinanceTab({ token }: { token: string }) {
           <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>ไม่มีคำขอ</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {payments.map(req => (
-              <div key={req.id} style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 8, background: 'var(--surface)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{req.user_name || `User #${req.user_id}`} <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 400 }}>{req.user_email}</span></div>
-                    <div style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 2 }}>แพ็กเกจ: <b>{req.package_key}</b> · {req.coins} เหรียญ · <b>{fmtMoney(req.amount)}</b></div>
-                    {req.sender_name && <div style={{ fontSize: 12, color: 'var(--ink-2)' }}>ชื่อผู้โอน: <b>{req.sender_name}</b></div>}
-                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{fmtDate(req.created_at)}</div>
+            {payments.map(req => {
+              const isOPN = req.sender_name === 'OPN PromptPay' || req.sender_name === 'OPN Card';
+              return (
+                <div key={req.id} style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 8, background: isOPN ? 'color-mix(in srgb,var(--accent) 4%,var(--surface))' : 'var(--surface)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 600, fontSize: 14 }}>{req.user_name || `User #${req.user_id}`}</span>
+                        <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{req.user_email}</span>
+                        {isOPN && <span style={{ fontSize: 10, fontWeight: 700, background: 'var(--accent)', color: '#fff', borderRadius: 4, padding: '1px 7px' }}>OPN อัตโนมัติ</span>}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 2 }}>แพ็กเกจ: <b>{req.package_key}</b> · {req.coins} เหรียญ · <b>{fmtMoney(req.amount)}</b></div>
+                      {req.sender_name && !isOPN && <div style={{ fontSize: 12, color: 'var(--ink-2)' }}>ชื่อผู้โอน: <b>{req.sender_name}</b></div>}
+                      {isOPN && <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>charge: {req.slip_url}</div>}
+                      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{fmtDate(req.created_at)}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                      {req.slip_url && !isOPN && <a href={req.slip_url} target="_blank" rel="noreferrer" className="btn-sec" style={{ fontSize: 11, padding: '4px 10px', textDecoration: 'none' }}>ดูสลิป</a>}
+                      <StatusTag status={req.status} />
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                    {req.slip_url && <a href={req.slip_url} target="_blank" rel="noreferrer" className="btn-sec" style={{ fontSize: 11, padding: '4px 10px', textDecoration: 'none' }}>ดูสลิป</a>}
-                    <StatusTag status={req.status} />
-                  </div>
+                  {/* Manual bank transfer → show approve/reject buttons */}
+                  {filter === 'pending' && !isOPN && (
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button className="btn-grad" onClick={() => confirm(req.id)} style={{ fontSize: 12, padding: '5px 14px' }}>ยืนยัน ✓</button>
+                      <input placeholder="หมายเหตุปฏิเสธ..." value={rejectNote[req.id] || ''} onChange={e => setRejectNote(prev => ({ ...prev, [req.id]: e.target.value }))} style={{ flex: 1, minWidth: 150, padding: '4px 10px', border: '1px solid var(--line)', borderRadius: 5, fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+                      <button className="btn-sec danger" onClick={() => reject(req.id)} style={{ fontSize: 12, padding: '5px 12px' }}>ปฏิเสธ ✕</button>
+                    </div>
+                  )}
+                  {/* OPN pending → waiting for webhook */}
+                  {filter === 'pending' && isOPN && (
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', background: 'var(--surface-2)', borderRadius: 5, padding: '6px 10px' }}>
+                      ⏳ รอ OPN webhook ยืนยันอัตโนมัติ — ไม่ต้องดำเนินการ
+                    </div>
+                  )}
+                  {req.admin_note && <div style={{ fontSize: 12, color: 'var(--neg)', background: 'color-mix(in srgb,var(--neg) 8%,transparent)', padding: '6px 10px', borderRadius: 5 }}>หมายเหตุ: {req.admin_note}</div>}
                 </div>
-                {filter === 'pending' && (
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button className="btn-grad" onClick={() => confirm(req.id)} style={{ fontSize: 12, padding: '5px 14px' }}>ยืนยัน ✓</button>
-                    <input placeholder="หมายเหตุปฏิเสธ..." value={rejectNote[req.id] || ''} onChange={e => setRejectNote(prev => ({ ...prev, [req.id]: e.target.value }))} style={{ flex: 1, minWidth: 150, padding: '4px 10px', border: '1px solid var(--line)', borderRadius: 5, fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
-                    <button className="btn-sec danger" onClick={() => reject(req.id)} style={{ fontSize: 12, padding: '5px 12px' }}>ปฏิเสธ ✕</button>
-                  </div>
-                )}
-                {req.admin_note && <div style={{ fontSize: 12, color: 'var(--neg)', background: 'color-mix(in srgb,var(--neg) 8%,transparent)', padding: '6px 10px', borderRadius: 5 }}>หมายเหตุ: {req.admin_note}</div>}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
