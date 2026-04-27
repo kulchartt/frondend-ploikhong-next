@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as api from '@/lib/api';
@@ -517,7 +517,7 @@ function HistoryTab({ token }: { token: string }) {
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-export default function CoinsPage() {
+function CoinsPageContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -577,5 +577,13 @@ export default function CoinsPage() {
       {tab === 'premium' && <PremiumTab />}
       {tab === 'history' && token && <HistoryTab  token={token} />}
     </div>
+  );
+}
+
+export default function CoinsPage() {
+  return (
+    <Suspense fallback={<div style={{ height: '100vh', display: 'grid', placeItems: 'center', color: 'var(--ink-3)' }}>กำลังโหลด...</div>}>
+      <CoinsPageContent />
+    </Suspense>
   );
 }
