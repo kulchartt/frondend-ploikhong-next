@@ -201,7 +201,7 @@ export function ListingFlow({ onClose, onPosted }: ListingFlowProps) {
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ background: 'var(--surface)', borderRadius: 16, padding: '48px 40px', textAlign: 'center', maxWidth: 360 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-          <div style={{ fontFamily: 'var(--font-disp-th)', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>โพสต์สำเร็จเรียบร้อย</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>โพสต์สำเร็จเรียบร้อย</div>
           <div style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.6 }}>
             ประกาศของคุณกำลังแสดงบนฟีดแล้ว{form.boost ? ' พร้อม Boost 48 ชม.' : ''}
           </div>
@@ -544,7 +544,7 @@ export function ListingFlow({ onClose, onPosted }: ListingFlowProps) {
                       background: 'linear-gradient(90deg,#111,#333)', color: '#fff',
                       fontFamily: 'var(--font-mono)', letterSpacing: '.06em', marginBottom: 6,
                     }}>BOOST</span>
-                    <div style={{ fontFamily: 'var(--font-disp-th)', fontWeight: 700, fontSize: 15, marginBottom: 3 }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, marginBottom: 3 }}>
                       ดันประกาศขึ้นบนสุด 48 ชั่วโมง
                     </div>
                     <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>เห็นเพิ่มขึ้น 8-12 เท่า · ขายเร็วขึ้นเฉลี่ย 3 วัน</div>
@@ -615,7 +615,7 @@ export function ListingFlow({ onClose, onPosted }: ListingFlowProps) {
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.07em', marginBottom: 8 }}>
                       {form.cat.toUpperCase()} · {form.loc} · เพิ่งลง
                     </div>
-                    <div style={{ fontFamily: 'var(--font-disp-th)', fontSize: 16, fontWeight: 700, letterSpacing: '-.01em', marginBottom: 6, lineHeight: 1.3 }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, letterSpacing: '-.01em', marginBottom: 6, lineHeight: 1.3 }}>
                       {form.title || 'ยังไม่ใส่ชื่อประกาศ'}
                     </div>
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, letterSpacing: '-.02em', marginBottom: 8 }}>
@@ -764,7 +764,7 @@ export function ListingFlow({ onClose, onPosted }: ListingFlowProps) {
 function StepHeader({ title, sub }: { title: string; sub: string }) {
   return (
     <div style={{ marginBottom: 22 }}>
-      <h2 style={{ fontFamily: 'var(--font-disp-th)', fontSize: 20, fontWeight: 700, letterSpacing: '-.015em', marginBottom: 6, color: 'var(--ink)' }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, letterSpacing: '-.015em', marginBottom: 6, color: 'var(--ink)' }}>
         {title}
       </h2>
       <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0 }}>{sub}</p>
