@@ -50,6 +50,21 @@ function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem
   const [txId, setTxId]           = useState('');
   const [qrUrl, setQrUrl]         = useState('');
   const [err, setErr]             = useState('');
+  const [simulating, setSimulating] = useState(false);
+
+  const isTestMode = process.env.NEXT_PUBLIC_OPN_PUBLIC_KEY?.startsWith('pkey_test_') ?? false;
+
+  async function handleSimulatePayment() {
+    if (!txId) return;
+    setSimulating(true);
+    try {
+      const r = await api.simulatePromptPayPayment(txId, token);
+      onSuccess();
+      setStep('success');
+    } catch (e: any) {
+      setErr(e.message || 'จำลองไม่สำเร็จ');
+    } finally { setSimulating(false); }
+  }
 
   // Load OPN.js once
   useEffect(() => {
@@ -141,7 +156,16 @@ function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem
             <p style={{ fontSize: 12, color: 'var(--ink-3)', textAlign: 'center' }}>
               เหรียญจะเข้าบัญชีอัตโนมัติทันทีหลังชำระเงิน<br/>ไม่ต้องรออนุมัติจากทีมงาน
             </p>
-            <button className="btn btn-primary" onClick={onClose} style={{ width: '100%', marginTop: 12 }}>ปิด</button>
+            {/* Test mode only — simulate payment without real scan */}
+            {isTestMode && (
+              <button
+                onClick={handleSimulatePayment}
+                disabled={simulating}
+                style={{ width: '100%', marginTop: 8, padding: '10px', border: '1.5px dashed #7c3aed', borderRadius: 8, background: '#f5f3ff', color: '#7c3aed', fontSize: 13, fontWeight: 700, cursor: simulating ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                {simulating ? '⏳ กำลังจำลอง...' : '🧪 จำลองการชำระ (Test Mode)'}
+              </button>
+            )}
+            <button className="btn btn-primary" onClick={onClose} style={{ width: '100%', marginTop: 8 }}>ปิด</button>
           </div>
         )}
 

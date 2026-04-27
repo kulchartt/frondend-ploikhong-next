@@ -235,6 +235,9 @@ export const rejectPayment = (id: number, note: string, token: string) =>
 export const deletePaymentRequest = (id: number, token: string) =>
   req<any>(`/api/coins/payment-requests/${id}`, { method: 'DELETE' }, token);
 
+export const simulatePromptPayPayment = (charge_id: string, token: string) =>
+  req<any>('/api/coins/test/simulate-payment', { method: 'POST', body: JSON.stringify({ charge_id }) }, token);
+
 // ─── Complaints ──────────────────────────────────────────────────────────────
 
 export const getMyComplaints = (token: string) =>
