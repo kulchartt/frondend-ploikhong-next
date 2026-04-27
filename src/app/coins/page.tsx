@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as api from '@/lib/api';
 import { BoostModal } from '@/components/BoostModal';
+import { ProductDetail } from '@/components/ProductDetail';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface CoinPack { key: string; coins: number; bonus: number; price: number; popular?: boolean; }
@@ -308,7 +309,7 @@ function TopupTab({ token, balance, onRefresh }: { token: string; balance: numbe
 }
 
 // ─── ActiveBoostsTab ──────────────────────────────────────────────────────────
-function ActiveBoostsTab({ token, onTopup, onBoost, refreshKey }: { token: string; onTopup: () => void; onBoost: () => void; refreshKey?: number }) {
+function ActiveBoostsTab({ token, onTopup, onBoost, refreshKey, onViewProduct }: { token: string; onTopup: () => void; onBoost: () => void; refreshKey?: number; onViewProduct?: (id: number) => void }) {
   const [features, setFeatures] = useState<ActiveFeature[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -371,11 +372,12 @@ function ActiveBoostsTab({ token, onTopup, onBoost, refreshKey }: { token: strin
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
                     {f.product_id ? (
-                      <a href={`/?product=${f.product_id}`} style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none' }}
+                      <button onClick={() => onViewProduct?.(f.product_id!)}
+                        style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'none', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}
                         onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline'; }}
                         onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none'; }}>
                         {f.product_title || featureLabels[f.feature_key] || f.feature_key}
-                      </a>
+                      </button>
                     ) : (
                       <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {f.product_title || featureLabels[f.feature_key] || f.feature_key}
@@ -567,6 +569,14 @@ function CoinsPageContent() {
   const [balance, setBalance] = useState(0);
   const [boostOpen, setBoostOpen] = useState(false);
   const [boostRefreshKey, setBoostRefreshKey] = useState(0);
+  const [viewProduct, setViewProduct] = useState<any>(null);
+
+  async function handleViewProduct(id: number) {
+    try {
+      const p = await api.getProduct(id);
+      setViewProduct(p);
+    } catch {}
+  }
 
   function refreshBalance() {
     if (!token) return;
@@ -614,8 +624,9 @@ function CoinsPageContent() {
 
       {/* Content */}
       {tab === 'topup'   && token && <TopupTab    token={token} balance={balance} onRefresh={refreshBalance} />}
-      {tab === 'boosts'  && token && <ActiveBoostsTab token={token} onTopup={() => setTab('topup')} onBoost={() => setBoostOpen(true)} refreshKey={boostRefreshKey} />}
+      {tab === 'boosts'  && token && <ActiveBoostsTab token={token} onTopup={() => setTab('topup')} onBoost={() => setBoostOpen(true)} refreshKey={boostRefreshKey} onViewProduct={handleViewProduct} />}
       {boostOpen && token && <BoostModal product={null} token={token} onClose={() => setBoostOpen(false)} onConfirmed={() => { setBoostOpen(false); refreshBalance(); setBoostRefreshKey(k => k + 1); }} />}
+      {viewProduct && <ProductDetail product={viewProduct} onClose={() => setViewProduct(null)} />}
       {tab === 'premium' && <PremiumTab />}
       {tab === 'history' && token && <HistoryTab  token={token} />}
     </div>
