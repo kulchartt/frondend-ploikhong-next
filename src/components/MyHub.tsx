@@ -601,16 +601,6 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
               const pFeats = featuresByProduct[p.id] || [];
               return (
                 <div key={p.id} style={{ background: 'var(--surface)', border: `1px solid ${pFeats.length ? '#f59e0b' : 'var(--line)'}`, borderRadius: 'var(--radius)' }}>
-                  {/* Feature badges strip */}
-                  {pFeats.length > 0 && (
-                    <div style={{ display: 'flex', gap: 5, padding: '5px 12px', borderBottom: '1px solid #fed7aa', background: '#fffbeb', borderRadius: 'var(--radius) var(--radius) 0 0', flexWrap: 'wrap' }}>
-                      {pFeats.map((f: any, i: number) => (
-                        <span key={i} style={{ fontSize: 11, fontWeight: 700, color: '#92400e', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 999, padding: '1px 8px' }}>
-                          {FEAT_ICON[f.feature_key] ?? '⭐'} {f.feature_key.replace(/_/g, ' ')} · {new Date(f.expires_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                   <div style={{ display: 'flex', gap: 0, alignItems: 'stretch' }}>
                     {/* Large image — radius on image itself so card can overflow for popovers */}
                     <div style={{
