@@ -8,7 +8,7 @@ import * as api from '@/lib/api';
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface CoinPack { key: string; coins: number; bonus: number; price: number; popular?: boolean; }
 interface ActiveFeature { id: number; feature_key: string; product_id: number | null; product_title?: string; expires_at: string | null; stats?: any; }
-interface TxRow { id: number; type: string; amount: number; description: string; created_at: string; }
+interface TxRow { id: number; type: string; amount?: number; delta?: number; description: string; created_at: string; }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const PAY_METHODS = [
@@ -449,9 +449,11 @@ function HistoryTab({ token }: { token: string }) {
     api.getCoinTransactions(token).then(data => setTxs(data || [])).catch(() => {}).finally(() => setLoading(false));
   }, [token]);
 
-  const filtered = typeFilter ? txs.filter(t => (typeFilter === 'credit' ? t.amount > 0 : t.amount < 0)) : txs;
-  const totalIn = txs.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
-  const totalOut = txs.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
+  // API may return either `delta` or `amount` — normalise to one field
+  const txsNorm = txs.map(t => ({ ...t, _val: t.delta ?? t.amount ?? 0 }));
+  const filtered = typeFilter ? txsNorm.filter(t => (typeFilter === 'credit' ? t._val > 0 : t._val < 0)) : txsNorm;
+  const totalIn  = txsNorm.filter(t => t._val > 0).reduce((s, t) => s + t._val, 0);
+  const totalOut = txsNorm.filter(t => t._val < 0).reduce((s, t) => s + Math.abs(t._val), 0);
 
   if (loading) return <div className="co-body" style={{ textAlign: 'center', paddingTop: 60, color: 'var(--ink-3)' }}>กำลังโหลด...</div>;
 
@@ -479,7 +481,7 @@ function HistoryTab({ token }: { token: string }) {
           <div style={{ padding: '32px', textAlign: 'center', background: 'var(--surface)', color: 'var(--ink-3)', fontSize: 14 }}>ยังไม่มีประวัติธุรกรรม</div>
         )}
         {filtered.map(t => {
-          const isPos = t.amount > 0;
+          const isPos = t._val > 0;
           return (
             <div key={t.id} className="co-hist-row">
               <div className={`co-hist-ic ${isPos ? 'pos' : 'neg'}`}>
@@ -490,7 +492,7 @@ function HistoryTab({ token }: { token: string }) {
                 <div className="co-hist-s co-hist-method">{fmtDate(t.created_at)}</div>
               </div>
               <div className="co-hist-r">
-                <div className={`co-hist-n ${isPos ? 'pos' : 'neg'}`}>{isPos ? '+' : ''}{t.amount.toLocaleString()} 🪙</div>
+                <div className={`co-hist-n ${isPos ? 'pos' : 'neg'}`}>{isPos ? '+' : ''}{t._val.toLocaleString()} 🪙</div>
               </div>
             </div>
           );
