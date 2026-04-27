@@ -381,8 +381,8 @@ function ActiveBoostsTab({ token, onTopup }: { token: string; onTopup: () => voi
                   </div>
                   {/* Progress bar */}
                   {hoursLeft !== null && (
-                    <div style={{ height: 5, background: 'var(--surface-2)', borderRadius: 999, overflow: 'hidden', marginBottom: 10 }}>
-                      <div style={{ height: '100%', width: `${Math.min(100, hoursLeft < 48 ? 80 - (hoursLeft / 48) * 60 : (1 - hoursLeft / 168) * 100)}%`, background: isFeatured ? '#f59e0b' : '#7c3aed', borderRadius: 999, minWidth: 8 }} />
+                    <div className="co-active-bar" style={{ height: 5, background: 'var(--surface-2)', borderRadius: 999, overflow: 'hidden', marginBottom: 10 }}>
+                      <div className="co-active-fill" style={{ height: '100%', width: `${Math.min(100, hoursLeft < 48 ? 80 - (hoursLeft / 48) * 60 : (1 - hoursLeft / 168) * 100)}%`, background: isFeatured ? '#f59e0b' : '#7c3aed', borderRadius: 999, minWidth: 8 }} />
                     </div>
                   )}
                   {/* Stats */}
