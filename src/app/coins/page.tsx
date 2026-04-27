@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as api from '@/lib/api';
+import { BoostModal } from '@/components/BoostModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface CoinPack { key: string; coins: number; bonus: number; price: number; popular?: boolean; }
@@ -307,7 +308,7 @@ function TopupTab({ token, balance, onRefresh }: { token: string; balance: numbe
 }
 
 // ─── ActiveBoostsTab ──────────────────────────────────────────────────────────
-function ActiveBoostsTab({ token, onTopup }: { token: string; onTopup: () => void }) {
+function ActiveBoostsTab({ token, onTopup, onBoost }: { token: string; onTopup: () => void; onBoost: () => void }) {
   const [features, setFeatures] = useState<ActiveFeature[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -330,7 +331,7 @@ function ActiveBoostsTab({ token, onTopup }: { token: string; onTopup: () => voi
           <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>ยังไม่มีประกาศที่กำลัง Boost</div>
           <div style={{ fontSize: 14 }}>กด "+ เริ่ม Boost ประกาศใหม่" ด้านล่างเพื่อเริ่มต้น</div>
           {/* CTA */}
-          <button onClick={onTopup}
+          <button onClick={onBoost}
             style={{ width: '100%', marginTop: 12, padding: '14px', background: 'none', border: '1.5px dashed var(--line-2)', borderRadius: 'var(--radius)', fontSize: 13, fontWeight: 600, color: 'var(--ink-3)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.color = '#7c3aed'; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line-2)'; e.currentTarget.style.color = 'var(--ink-3)'; }}>
@@ -406,7 +407,7 @@ function ActiveBoostsTab({ token, onTopup }: { token: string; onTopup: () => voi
             );
           })}
           {/* CTA */}
-          <button onClick={onTopup}
+          <button onClick={onBoost}
             style={{ width: '100%', marginTop: 12, padding: '14px', background: 'none', border: '1.5px dashed var(--line-2)', borderRadius: 'var(--radius)', fontSize: 13, fontWeight: 600, color: 'var(--ink-3)', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.color = '#7c3aed'; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line-2)'; e.currentTarget.style.color = 'var(--ink-3)'; }}>
@@ -561,6 +562,7 @@ function CoinsPageContent() {
   const initTab = (searchParams.get('tab') as 'topup' | 'boosts' | 'premium' | 'history') || 'topup';
   const [tab, setTab] = useState<'topup' | 'boosts' | 'premium' | 'history'>(initTab);
   const [balance, setBalance] = useState(0);
+  const [boostOpen, setBoostOpen] = useState(false);
 
   function refreshBalance() {
     if (!token) return;
@@ -608,7 +610,8 @@ function CoinsPageContent() {
 
       {/* Content */}
       {tab === 'topup'   && token && <TopupTab    token={token} balance={balance} onRefresh={refreshBalance} />}
-      {tab === 'boosts'  && token && <ActiveBoostsTab token={token} onTopup={() => setTab('topup')} />}
+      {tab === 'boosts'  && token && <ActiveBoostsTab token={token} onTopup={() => setTab('topup')} onBoost={() => setBoostOpen(true)} />}
+      {boostOpen && token && <BoostModal product={null} token={token} onClose={() => setBoostOpen(false)} onConfirmed={() => { setBoostOpen(false); refreshBalance(); }} />}
       {tab === 'premium' && <PremiumTab />}
       {tab === 'history' && token && <HistoryTab  token={token} />}
     </div>

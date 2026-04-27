@@ -887,3 +887,34 @@ test.describe('V8Hub — Auth guard', () => {
   });
 
 });
+
+// =============================================================================
+// BOOST MODAL — from listing action button
+// =============================================================================
+
+test.describe('V8Hub — SellListings: Boost button', () => {
+
+  test('active listing shows "Boost" button', async ({ page }) => {
+    await openSellHub(page);
+    await expect(hub(page).getByRole('button', { name: 'Boost' }).first()).toBeVisible({ timeout: 8000 });
+  });
+
+  test('clicking Boost button on listing opens BoostModal product picker', async ({ page }) => {
+    await page.route('**/api/coins/balance**', r => r.fulfill({ json: { balance: 500 } }));
+    await openSellHub(page);
+    await hub(page).getByRole('button', { name: 'Boost' }).first().click();
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 8000 });
+    // BoostModal shows the product info directly (product is passed in)
+    await expect(page.locator('.bo-modal, .bo-sheet')).toBeVisible({ timeout: 8000 });
+  });
+
+  test('BoostModal can be closed with ยกเลิก button', async ({ page }) => {
+    await page.route('**/api/coins/balance**', r => r.fulfill({ json: { balance: 500 } }));
+    await openSellHub(page);
+    await hub(page).getByRole('button', { name: 'Boost' }).first().click();
+    await expect(page.locator('.bo-modal, .bo-sheet')).toBeVisible({ timeout: 8000 });
+    await page.getByRole('button', { name: 'ยกเลิก' }).click();
+    await expect(page.locator('.bo-modal, .bo-sheet')).not.toBeVisible({ timeout: 5000 });
+  });
+
+});

@@ -331,6 +331,30 @@ test.describe('Coins Page — Boost tab', () => {
     await expect(page.locator('.co-actives-head h2')).toBeVisible({ timeout: 8000 });
   });
 
+  test('clicking "+ เริ่ม Boost ประกาศใหม่" CTA opens BoostModal product picker', async ({ page }) => {
+    await setupRoutes(page, { features: [], balance: 500 });
+    await page.route('**/api/products/my**', r => r.fulfill({
+      json: [{ id: 10, title: 'iPhone 14 Pro', price: 32900, status: 'active', images: [] }],
+    }));
+    await gotoCoins(page, { features: [] });
+    await page.getByRole('button', { name: 'Boost ที่ใช้งาน' }).click();
+    await expect(page.getByText('กำลังโหลด...')).not.toBeVisible({ timeout: 5000 });
+    await page.getByRole('button', { name: /เริ่ม Boost/ }).click();
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('เลือกประกาศที่จะ Boost')).toBeVisible();
+  });
+
+  test('BoostModal product picker shows user listings', async ({ page }) => {
+    await setupRoutes(page, { features: [], balance: 500 });
+    await page.route('**/api/products/my**', r => r.fulfill({
+      json: [{ id: 10, title: 'iPhone 14 Pro', price: 32900, status: 'active', images: [] }],
+    }));
+    await gotoCoins(page, { features: [] });
+    await page.getByRole('button', { name: 'Boost ที่ใช้งาน' }).click();
+    await page.getByRole('button', { name: /เริ่ม Boost/ }).click();
+    await expect(page.getByText('iPhone 14 Pro')).toBeVisible({ timeout: 8000 });
+  });
+
 });
 
 // =============================================================================
