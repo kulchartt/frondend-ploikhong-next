@@ -308,13 +308,14 @@ function TopupTab({ token, balance, onRefresh }: { token: string; balance: numbe
 }
 
 // ─── ActiveBoostsTab ──────────────────────────────────────────────────────────
-function ActiveBoostsTab({ token, onTopup, onBoost }: { token: string; onTopup: () => void; onBoost: () => void }) {
+function ActiveBoostsTab({ token, onTopup, onBoost, refreshKey }: { token: string; onTopup: () => void; onBoost: () => void; refreshKey?: number }) {
   const [features, setFeatures] = useState<ActiveFeature[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     api.getActiveFeatures(token).then(data => { setFeatures(data || []); }).catch(() => {}).finally(() => setLoading(false));
-  }, [token]);
+  }, [token, refreshKey]);
 
   if (loading) return <div className="co-body" style={{ textAlign: 'center', paddingTop: 60, color: 'var(--ink-3)' }}>กำลังโหลด...</div>;
 
@@ -563,6 +564,7 @@ function CoinsPageContent() {
   const [tab, setTab] = useState<'topup' | 'boosts' | 'premium' | 'history'>(initTab);
   const [balance, setBalance] = useState(0);
   const [boostOpen, setBoostOpen] = useState(false);
+  const [boostRefreshKey, setBoostRefreshKey] = useState(0);
 
   function refreshBalance() {
     if (!token) return;
@@ -610,8 +612,8 @@ function CoinsPageContent() {
 
       {/* Content */}
       {tab === 'topup'   && token && <TopupTab    token={token} balance={balance} onRefresh={refreshBalance} />}
-      {tab === 'boosts'  && token && <ActiveBoostsTab token={token} onTopup={() => setTab('topup')} onBoost={() => setBoostOpen(true)} />}
-      {boostOpen && token && <BoostModal product={null} token={token} onClose={() => setBoostOpen(false)} onConfirmed={() => { setBoostOpen(false); refreshBalance(); }} />}
+      {tab === 'boosts'  && token && <ActiveBoostsTab token={token} onTopup={() => setTab('topup')} onBoost={() => setBoostOpen(true)} refreshKey={boostRefreshKey} />}
+      {boostOpen && token && <BoostModal product={null} token={token} onClose={() => setBoostOpen(false)} onConfirmed={() => { setBoostOpen(false); refreshBalance(); setBoostRefreshKey(k => k + 1); }} />}
       {tab === 'premium' && <PremiumTab />}
       {tab === 'history' && token && <HistoryTab  token={token} />}
     </div>

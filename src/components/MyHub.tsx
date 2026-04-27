@@ -671,9 +671,9 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
                               <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--pos)" strokeWidth={2.2}><polyline points="20 6 9 17 4 12"/></svg>
                               ทำเครื่องหมายว่าขายแล้ว
                             </button>
-                            <button onClick={() => setBoostProduct(p)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--ink-2)' }}>
-                              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={2}><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                              Boost
+                            <button onClick={() => setBoostProduct(p)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', border: '1.5px solid var(--accent)', borderRadius: 'var(--radius-sm)', background: 'color-mix(in srgb,var(--accent) 8%,transparent)', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: 'var(--accent)' }}>
+                              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                              ⚡ Boost
                             </button>
                           </>
                         )}
@@ -836,7 +836,7 @@ function SellListings({ token, onNewListing }: { token?: string; onNewListing: (
           product={boostProduct}
           token={token}
           onClose={() => setBoostProduct(null)}
-          onConfirmed={() => setBoostProduct(null)}
+          onConfirmed={() => { setBoostProduct(null); load(); }}
         />
       )}
     </div>
