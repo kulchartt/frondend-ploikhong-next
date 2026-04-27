@@ -239,7 +239,7 @@ export function MyHub({ mode: initialMode = 'sell', initialTab, onClose, onNewLi
         </aside>
 
         {/* ── Main content ── */}
-        <main style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)', minWidth: 0 }}>
+        <main style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)', minWidth: 0, minHeight: 0 }}>
           {/* Mobile: new listing button at top of content */}
           {isMobile && mode === 'sell' && (
             <div style={{ padding: '12px 16px 0' }}>
