@@ -89,11 +89,12 @@ test.describe('Coins Page — Page structure', () => {
     await expect(page.getByText('เหรียญ & Premium')).toBeVisible({ timeout: 8000 });
   });
 
-  test('shows coin balance with ◎ icon in topbar', async ({ page }) => {
+  test('shows coin balance in tabs bar (not topbar)', async ({ page }) => {
     await gotoCoins(page, { balance: 250 });
-    await expect(page.locator('.co-balance')).toContainText('250', { timeout: 8000 });
-    await expect(page.locator('.co-balance')).toContainText('เหรียญ');
-    await expect(page.locator('.co-balance')).toContainText('◎');
+    // Balance moved from topbar to tabs bar as .co-bal-num
+    await expect(page.locator('.co-tabs .co-bal-num')).toContainText('250', { timeout: 8000 });
+    await expect(page.locator('.co-tabs .co-bal-num')).toContainText('เหรียญ');
+    await expect(page.locator('.co-tabs .co-bal-num')).toContainText('🪙');
   });
 
   test('shows all 4 tab buttons', async ({ page }) => {
@@ -595,6 +596,413 @@ test.describe('Coins Page — History tab', () => {
     await gotoCoins(page, { txs: [] });
     await page.getByRole('button', { name: 'ประวัติการใช้' }).click();
     await expect(page.getByText('ยังไม่มีประวัติธุรกรรม')).toBeVisible({ timeout: 8000 });
+  });
+
+});
+
+// =============================================================================
+// BALANCE STRIP IN TABS BAR
+// =============================================================================
+
+test.describe('Coins Page — Balance strip in tabs bar', () => {
+
+  test('.co-bal-num is rendered inside .co-tabs', async ({ page }) => {
+    await gotoCoins(page, { balance: 500 });
+    await expect(page.locator('.co-tabs .co-bal-num')).toBeVisible({ timeout: 8000 });
+  });
+
+  test('balance strip shows correct coin count', async ({ page }) => {
+    await gotoCoins(page, { balance: 1234 });
+    await expect(page.locator('.co-bal-num')).toContainText('1,234', { timeout: 8000 });
+  });
+
+  test('balance strip shows เหรียญ label', async ({ page }) => {
+    await gotoCoins(page, { balance: 50 });
+    await expect(page.locator('.co-bal-num')).toContainText('เหรียญ', { timeout: 8000 });
+  });
+
+  test('balance strip shows 🪙 emoji', async ({ page }) => {
+    await gotoCoins(page, { balance: 50 });
+    await expect(page.locator('.co-bal-num')).toContainText('🪙', { timeout: 8000 });
+  });
+
+  test('.co-balance (old topbar element) does not exist', async ({ page }) => {
+    await gotoCoins(page, { balance: 100 });
+    await expect(page.locator('.co-balance')).not.toBeAttached({ timeout: 5000 });
+  });
+
+  test('balance strip gains .pop class after successful simulate payment', async ({ page }) => {
+    let balCalls = 0;
+    await setupRoutes(page, { balance: 250 });
+    await page.route('**/api/coins/balance**', r => {
+      balCalls++;
+      r.fulfill({ json: { balance: balCalls === 1 ? 250 : 350 } });
+    });
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      json: { charge_id: 'chrg_pop_test', qr_code_url: 'https://example.com/qr.png', amount: 3500, expires_at: new Date(Date.now() + 300000).toISOString() },
+    }));
+    await page.route('**/api/coins/test/simulate-payment**', r => r.fulfill({ json: { success: true } }));
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.getByText('สแกน QR PromptPay')).toBeVisible({ timeout: 8000 });
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    // After simulate, refreshBalance() is called → balAnimKey increments → .pop is added
+    await expect(page.locator('.co-bal-num.pop')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('balance value updates after simulate payment', async ({ page }) => {
+    let balCalls = 0;
+    await setupRoutes(page, { balance: 250 });
+    await page.route('**/api/coins/balance**', r => {
+      balCalls++;
+      r.fulfill({ json: { balance: balCalls === 1 ? 250 : 350 } });
+    });
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      json: { charge_id: 'chrg_pop2', qr_code_url: 'https://example.com/qr.png', amount: 3500, expires_at: new Date(Date.now() + 300000).toISOString() },
+    }));
+    await page.route('**/api/coins/test/simulate-payment**', r => r.fulfill({ json: { success: true } }));
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('.co-bal-num')).toContainText('250', { timeout: 8000 });
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.getByText('สแกน QR PromptPay')).toBeVisible({ timeout: 8000 });
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    await expect(page.locator('.co-bal-num')).toContainText('350', { timeout: 5000 });
+  });
+
+});
+
+// =============================================================================
+// PROMPTPAY QR FLOW
+// =============================================================================
+
+test.describe('Coins Page — PromptPay QR flow', () => {
+
+  test('PromptPay is the default payment method', async ({ page }) => {
+    await gotoCoins(page);
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    const ppBtn = page.locator('.co-pay', { hasText: 'PromptPay' });
+    await expect(ppBtn).toHaveClass(/on/, { timeout: 5000 });
+  });
+
+  test('clicking ชำระเงิน with PromptPay shows paying step', async ({ page }) => {
+    await setupRoutes(page);
+    await page.route('**/api/coins/charge-promptpay**', async r => {
+      await new Promise(res => setTimeout(res, 300));
+      r.fulfill({ json: { charge_id: 'chrg_slow', qr_code_url: 'https://example.com/qr.png', amount: 3500, expires_at: new Date(Date.now() + 300000).toISOString() } });
+    });
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.getByText('กำลังดำเนินการ...')).toBeVisible({ timeout: 3000 });
+  });
+
+  test('after charge-promptpay resolves, QR step is shown', async ({ page }) => {
+    await setupRoutes(page);
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      json: { charge_id: 'chrg_qr1', qr_code_url: 'https://example.com/qr.png', amount: 3500, expires_at: new Date(Date.now() + 300000).toISOString() },
+    }));
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.getByText('สแกน QR PromptPay')).toBeVisible({ timeout: 8000 });
+  });
+
+  test('QR step renders img[alt="PromptPay QR"]', async ({ page }) => {
+    await setupRoutes(page);
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      json: { charge_id: 'chrg_qr2', qr_code_url: 'https://example.com/qr.png', amount: 3500, expires_at: new Date(Date.now() + 300000).toISOString() },
+    }));
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.locator('img[alt="PromptPay QR"]')).toBeVisible({ timeout: 8000 });
+  });
+
+  test('QR step shows charge_id as reference number', async ({ page }) => {
+    await setupRoutes(page);
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      json: { charge_id: 'chrg_ref_XYZ789', qr_code_url: 'https://example.com/qr.png', amount: 3500, expires_at: new Date(Date.now() + 300000).toISOString() },
+    }));
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.getByText('สแกน QR PromptPay')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('chrg_ref_XYZ789')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('QR step shows ปิด button', async ({ page }) => {
+    await setupRoutes(page);
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      json: { charge_id: 'chrg_close', qr_code_url: 'https://example.com/qr.png', amount: 3500, expires_at: new Date(Date.now() + 300000).toISOString() },
+    }));
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.getByText('สแกน QR PromptPay')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole('button', { name: 'ปิด' })).toBeVisible({ timeout: 5000 });
+  });
+
+  test('ปิด button on QR step closes the modal', async ({ page }) => {
+    await setupRoutes(page);
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      json: { charge_id: 'chrg_dismiss', qr_code_url: 'https://example.com/qr.png', amount: 3500, expires_at: new Date(Date.now() + 300000).toISOString() },
+    }));
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.getByText('สแกน QR PromptPay')).toBeVisible({ timeout: 8000 });
+    await page.getByRole('button', { name: 'ปิด' }).click();
+    await expect(page.locator('.co-ck-overlay')).not.toBeVisible({ timeout: 3000 });
+  });
+
+  test('charge-promptpay error shows error in review step', async ({ page }) => {
+    await setupRoutes(page);
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      status: 500, json: { error: 'เกิดข้อผิดพลาด' },
+    }));
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    // Should fall back to review step with error
+    await expect(page.getByText('ยืนยันการชำระเงิน')).toBeVisible({ timeout: 8000 });
+  });
+
+});
+
+// =============================================================================
+// SIMULATE PAYMENT — TEST MODE
+// =============================================================================
+
+test.describe('Coins Page — Simulate payment (test mode)', () => {
+
+  async function gotoQrStep(page: Page, chargeId = 'chrg_sim_default') {
+    await setupRoutes(page);
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      json: { charge_id: chargeId, qr_code_url: 'https://example.com/qr.png', amount: 3500, expires_at: new Date(Date.now() + 300000).toISOString() },
+    }));
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.getByText('สแกน QR PromptPay')).toBeVisible({ timeout: 8000 });
+  }
+
+  test('simulate button is visible on QR step (test key starts with pkey_test_)', async ({ page }) => {
+    await gotoQrStep(page);
+    await expect(page.locator('button:has-text("จำลองการชำระ")')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('clicking simulate calls POST /api/coins/test/simulate-payment', async ({ page }) => {
+    let called = false;
+    await page.route('**/api/coins/test/simulate-payment**', r => {
+      called = true;
+      r.fulfill({ json: { success: true } });
+    });
+    await gotoQrStep(page);
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    await page.waitForTimeout(500);
+    expect(called).toBe(true);
+  });
+
+  test('simulate sends the correct charge_id in request body', async ({ page }) => {
+    let capturedBody: any = null;
+    await page.route('**/api/coins/test/simulate-payment**', async r => {
+      capturedBody = JSON.parse(r.request().postData() || '{}');
+      r.fulfill({ json: { success: true } });
+    });
+    await gotoQrStep(page, 'chrg_UNIQUE_999');
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    await page.waitForTimeout(500);
+    expect(capturedBody?.charge_id).toBe('chrg_UNIQUE_999');
+  });
+
+  test('simulate request includes Authorization: Bearer header', async ({ page }) => {
+    let capturedHeaders: Record<string, string> = {};
+    await page.route('**/api/coins/test/simulate-payment**', async r => {
+      capturedHeaders = r.request().headers();
+      r.fulfill({ json: { success: true } });
+    });
+    await gotoQrStep(page);
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    await page.waitForTimeout(500);
+    expect(capturedHeaders['authorization']).toMatch(/^Bearer /);
+  });
+
+  test('after simulate success, modal moves to ชำระเงินสำเร็จ ✅ step', async ({ page }) => {
+    await page.route('**/api/coins/test/simulate-payment**', r => r.fulfill({ json: { success: true } }));
+    await gotoQrStep(page);
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    await expect(page.getByText('ชำระเงินสำเร็จ ✅')).toBeVisible({ timeout: 8000 });
+  });
+
+  test('after simulate success, เสร็จสิ้น button closes modal', async ({ page }) => {
+    await page.route('**/api/coins/test/simulate-payment**', r => r.fulfill({ json: { success: true } }));
+    await gotoQrStep(page);
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    await expect(page.getByText('ชำระเงินสำเร็จ ✅')).toBeVisible({ timeout: 8000 });
+    await page.getByRole('button', { name: 'เสร็จสิ้น' }).click();
+    await expect(page.locator('.co-ck-overlay')).not.toBeVisible({ timeout: 3000 });
+  });
+
+  test('simulate is called exactly once per click', async ({ page }) => {
+    let callCount = 0;
+    await page.route('**/api/coins/test/simulate-payment**', r => { callCount++; r.fulfill({ json: { success: true } }); });
+    await gotoQrStep(page);
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    await page.waitForTimeout(500);
+    expect(callCount).toBe(1);
+  });
+
+  test('simulate button shows loading state while pending', async ({ page }) => {
+    await page.route('**/api/coins/test/simulate-payment**', async r => {
+      await new Promise(res => setTimeout(res, 500));
+      r.fulfill({ json: { success: true } });
+    });
+    await gotoQrStep(page);
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    await expect(page.locator('button:has-text("กำลังจำลอง")')).toBeVisible({ timeout: 3000 });
+  });
+
+  test('simulate error keeps step on QR and shows error message', async ({ page }) => {
+    await page.route('**/api/coins/test/simulate-payment**', r => r.fulfill({
+      status: 500, json: { error: 'จำลองไม่สำเร็จ' },
+    }));
+    await gotoQrStep(page);
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    // Step should remain on QR (not navigate to success)
+    await expect(page.getByText('สแกน QR PromptPay')).toBeVisible({ timeout: 5000 });
+  });
+
+});
+
+// =============================================================================
+// PAYMENT FEE AUTO-RECORDING
+// =============================================================================
+
+test.describe('Coins Page — Payment fee auto-recording', () => {
+
+  async function simulatePayment(page: Page, chargeId = 'chrg_fee_001') {
+    let simulateCalled = false;
+    let simulateBody: any = null;
+    await setupRoutes(page);
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      json: { charge_id: chargeId, qr_code_url: 'https://example.com/qr.png', amount: 9900, expires_at: new Date(Date.now() + 300000).toISOString() },
+    }));
+    await page.route('**/api/coins/test/simulate-payment**', async r => {
+      simulateCalled = true;
+      simulateBody = JSON.parse(r.request().postData() || '{}');
+      r.fulfill({ json: { success: true } });
+    });
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    // Pick the 4th pack (coins_1200 ฿349) to get a meaningful fee
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).nth(3).click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.getByText('สแกน QR PromptPay')).toBeVisible({ timeout: 8000 });
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    await page.waitForTimeout(500);
+    return { simulateCalled, simulateBody };
+  }
+
+  test('simulate-payment endpoint is called with the charge_id from charge-promptpay', async ({ page }) => {
+    const { simulateCalled, simulateBody } = await simulatePayment(page, 'chrg_fee_TRACK_ME');
+    expect(simulateCalled).toBe(true);
+    expect(simulateBody?.charge_id).toBe('chrg_fee_TRACK_ME');
+  });
+
+  test('simulate-payment is only called once (no duplicate fee entries)', async ({ page }) => {
+    let callCount = 0;
+    await setupRoutes(page);
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      json: { charge_id: 'chrg_once_fee', qr_code_url: 'https://example.com/qr.png', amount: 3500, expires_at: new Date(Date.now() + 300000).toISOString() },
+    }));
+    await page.route('**/api/coins/test/simulate-payment**', r => { callCount++; r.fulfill({ json: { success: true } }); });
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.getByText('สแกน QR PromptPay')).toBeVisible({ timeout: 8000 });
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    await page.waitForTimeout(500);
+    expect(callCount).toBe(1);
+  });
+
+  test('simulate-payment sends POST (not GET)', async ({ page }) => {
+    let capturedMethod = '';
+    await setupRoutes(page);
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      json: { charge_id: 'chrg_method_chk', qr_code_url: 'https://example.com/qr.png', amount: 3500, expires_at: new Date(Date.now() + 300000).toISOString() },
+    }));
+    await page.route('**/api/coins/test/simulate-payment**', async r => {
+      capturedMethod = r.request().method();
+      r.fulfill({ json: { success: true } });
+    });
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.getByText('สแกน QR PromptPay')).toBeVisible({ timeout: 8000 });
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    await page.waitForTimeout(500);
+    expect(capturedMethod).toBe('POST');
+  });
+
+  test('simulate-payment request body contains charge_id key', async ({ page }) => {
+    let capturedBody: any = null;
+    await setupRoutes(page);
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      json: { charge_id: 'chrg_body_chk', qr_code_url: 'https://example.com/qr.png', amount: 3500, expires_at: new Date(Date.now() + 300000).toISOString() },
+    }));
+    await page.route('**/api/coins/test/simulate-payment**', async r => {
+      capturedBody = JSON.parse(r.request().postData() || '{}');
+      r.fulfill({ json: { success: true } });
+    });
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.getByText('สแกน QR PromptPay')).toBeVisible({ timeout: 8000 });
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    await page.waitForTimeout(500);
+    expect(capturedBody).toHaveProperty('charge_id');
+  });
+
+  test('full simulate flow: QR → simulate → success → balance updates', async ({ page }) => {
+    let balCalls = 0;
+    await setupRoutes(page);
+    await page.route('**/api/coins/balance**', r => {
+      balCalls++;
+      r.fulfill({ json: { balance: balCalls === 1 ? 250 : 599 } });
+    });
+    await page.route('**/api/coins/charge-promptpay**', r => r.fulfill({
+      json: { charge_id: 'chrg_full_flow', qr_code_url: 'https://example.com/qr.png', amount: 9900, expires_at: new Date(Date.now() + 300000).toISOString() },
+    }));
+    await page.route('**/api/coins/test/simulate-payment**', r => r.fulfill({ json: { success: true } }));
+    await page.goto('/coins');
+    await page.waitForLoadState('networkidle');
+    // Initial balance shown
+    await expect(page.locator('.co-bal-num')).toContainText('250', { timeout: 8000 });
+    // Open checkout and pay
+    await page.getByRole('button', { name: 'ซื้อแพ็คนี้' }).first().click();
+    await page.locator('.co-ck-foot .btn-primary').click();
+    await expect(page.getByText('สแกน QR PromptPay')).toBeVisible({ timeout: 8000 });
+    // Simulate payment
+    await page.locator('button:has-text("จำลองการชำระ")').click();
+    // Success step shown
+    await expect(page.getByText('ชำระเงินสำเร็จ ✅')).toBeVisible({ timeout: 8000 });
+    // Balance updated
+    await expect(page.locator('.co-bal-num')).toContainText('599', { timeout: 5000 });
   });
 
 });
