@@ -88,7 +88,7 @@ function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem
       OmiseCard.configure({ publicKey: OPN_PUBLIC_KEY });
       OmiseCard.open({
         frameLabel:   'PloiKhong',
-        submitLabel:  `ชำระ ${fmtMoney(item.price)}`,
+        submitLabel:  'ชำระเงิน',
         currency:     'THB',
         amount:       item.price * 100,
         onCreateTokenSuccess: async (cardToken: string) => {
