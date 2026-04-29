@@ -211,7 +211,7 @@ export function Navbar({
                       { label: 'รายการถูกใจ',      icon: <DropHeartIcon />,     action: () => onOpenHub?.('buy', 'saved') },
                       { label: 'เติมเหรียญ & Premium', icon: <DropCoinIcon />, action: () => window.location.href = '/coins', badge: coinBalance !== null ? coinBalance.toLocaleString() : null },
                       { label: 'ร้องเรียนของฉัน',  icon: <DropAlertIcon />,     action: () => window.location.href = '/complaints' },
-                      ...((session?.user as any)?.is_admin ? [{ label: '🛡️ Admin Panel', icon: <DropShieldIcon />, action: () => window.location.href = '/admin' }] : []),
+                      ...((session?.user as any)?.is_admin ? [{ label: 'Admin Panel', icon: null, action: () => window.location.href = '/admin' }] : []),
                     ] as { label: string; icon: React.ReactNode; action: () => void; badge?: string | null }[]).map(({ label, icon, action, badge }) => (
                       <button key={label} onClick={action}
                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%',
