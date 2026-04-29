@@ -62,11 +62,11 @@ function CommandPalette({ onClose, onNavigate }: { onClose: () => void; onNaviga
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   const navItems = [
-    { key: 'queue', label: 'Queue', sub: 'ร้องเรียน · pending items' },
+    { key: 'queue', label: 'ร้องเรียน Inbox', sub: 'เคสใหม่ · รอดำเนินการ' },
     { key: 'users', label: 'ผู้ใช้', sub: 'จัดการบัญชีผู้ใช้' },
     { key: 'products', label: 'ประกาศ', sub: 'จัดการสินค้า' },
-    { key: 'complaints', label: 'เคสร้องเรียน', sub: 'จัดการเคสร้องเรียน' },
-    { key: 'finance', label: 'การเงิน', sub: 'คำขอเติมเหรียญ · รายได้' },
+    { key: 'complaints', label: 'ร้องเรียนทั้งหมด', sub: 'ดูและตอบกลับทุกเคส' },
+    { key: 'finance', label: 'การเงิน', sub: 'รายการ OPN · เหรียญ' },
   ].filter(i => !q || i.label.includes(q) || i.sub.includes(q));
 
   return (
@@ -769,7 +769,7 @@ function AccountingTab({ token }: { token: string }) {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [yearly, setYearly]   = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'overview' | 'income' | 'expense'>('overview');
+  const [tab, setTab] = useState<'overview' | 'income' | 'expense' | 'user'>('overview');
   // Form เพิ่ม/แก้ไขรายจ่าย
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -966,8 +966,8 @@ function AccountingTab({ token }: { token: string }) {
           {/* Sub tabs */}
           <div className="ad-flt-row" style={{ marginBottom: 12 }}>
             <div className="ad-flt-grp">
-              {([['overview', 'ภาพรวม'], ['income', 'รายรับ'], ['expense', 'รายจ่าย']] as const).map(([k, l]) => (
-                <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>
+              {([['overview', 'ภาพรวม'], ['income', 'รายรับ'], ['expense', 'รายจ่าย'], ['user', 'ประวัติ User']] as const).map(([k, l]) => (
+                <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k as any)}>{l}</button>
               ))}
             </div>
           </div>
@@ -1023,13 +1023,14 @@ function AccountingTab({ token }: { token: string }) {
                 <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>ยังไม่มีรายรับในเดือนนี้</div>
               ) : (
                 <table className="ad-tbl">
-                  <thead><tr><th>วันที่</th><th>ผู้ใช้</th><th>แพ็กเกจ</th><th>เหรียญ</th><th>ช่องทาง / Transaction ID</th><th style={{ textAlign: 'right' }}>จำนวนเงิน</th></tr></thead>
+                  <thead><tr><th>#</th><th>วันที่</th><th>ผู้ใช้</th><th>แพ็กเกจ</th><th>เหรียญ</th><th>ช่องทาง / Charge ID</th><th style={{ textAlign: 'right' }}>จำนวนเงิน</th></tr></thead>
                   <tbody>
                     {income.map((r: any) => {
                       const isOPN = r.sender_name === 'OPN PromptPay' || r.sender_name === 'OPN Card';
                       const methodLabel = r.sender_name === 'OPN Card' ? '💳 Card' : r.sender_name === 'OPN PromptPay' ? '📱 PromptPay' : r.sender_name || 'โอน';
                       return (
                       <tr key={r.id}>
+                        <td><span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>#{r.id}</span></td>
                         <td><span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{fmtDateTime(r.created_at)}</span></td>
                         <td><div style={{ fontWeight: 500, fontSize: 13 }}>{r.user_name || '—'}</div><div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{r.user_email}</div></td>
                         <td><span style={{ fontSize: 12 }}>{r.package_key}</span></td>
@@ -1055,16 +1056,37 @@ function AccountingTab({ token }: { token: string }) {
                 <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>ยังไม่มีรายจ่ายในเดือนนี้ กด "เพิ่มรายจ่าย" ด้านบน</div>
               ) : (
                 <table className="ad-tbl">
-                  <thead><tr><th>วันที่</th><th>หมวด</th><th>รายละเอียด</th><th style={{ textAlign: 'right' }}>จำนวนเงิน</th><th>เอกสาร</th><th></th></tr></thead>
+                  <thead><tr><th>วันที่</th><th>หมวด</th><th>รายละเอียด</th><th>ผู้ทำรายการ</th><th style={{ textAlign: 'right' }}>จำนวนเงิน</th><th>เอกสาร</th><th></th></tr></thead>
                   <tbody>
                     {expenses.map((r: any) => {
                       const cat = EXPENSE_CATS.find(x => x.key === r.category);
                       const isEditing = editingId === r.id;
+                      // Parse OPN fee description: "ค่าธรรมเนียม OPN PromptPay (1.5%) — coins_100 — chrg_xxx"
+                      const isOPNFee = r.category === 'payment' && r.description?.includes('OPN');
+                      const feeParts = isOPNFee ? r.description.split(' — ') : null;
+                      const feeMethod = feeParts?.[0]?.replace('ค่าธรรมเนียม OPN ', '') || '';
+                      const feePkg    = feeParts?.[1] || '';
+                      const feeCharge = feeParts?.[2] || '';
                       return (
                         <tr key={r.id} style={{ background: isEditing ? 'color-mix(in srgb,var(--accent) 6%,transparent)' : undefined }}>
                           <td><span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{fmtDate(r.expense_date)}</span></td>
                           <td><span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: `color-mix(in srgb,${CAT_COLOR[r.category] || 'var(--ink-3)'} 12%,transparent)`, color: CAT_COLOR[r.category] || 'var(--ink-3)' }}>{cat?.label || r.category}</span></td>
-                          <td><span style={{ fontSize: 13 }}>{r.description}</span></td>
+                          <td>
+                            {isOPNFee ? (
+                              <div>
+                                <div style={{ fontSize: 12, fontWeight: 600 }}>{feeMethod}</div>
+                                <div style={{ fontSize: 11, color: 'var(--ink-2)' }}>แพ็ก: {feePkg}</div>
+                                {feeCharge && <div style={{ fontSize: 10, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 1 }} title={feeCharge}>{feeCharge.length > 26 ? feeCharge.slice(0,26)+'…' : feeCharge}</div>}
+                              </div>
+                            ) : <span style={{ fontSize: 13 }}>{r.description}</span>}
+                          </td>
+                          <td>
+                            {r.created_by_name
+                              ? <span style={{ fontSize: 12 }}>{r.created_by_name}</span>
+                              : isOPNFee
+                                ? <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>auto (OPN)</span>
+                                : <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>—</span>}
+                          </td>
                           <td style={{ textAlign: 'right' }}><b style={{ color: r.amount > 0 ? 'var(--neg)' : 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{fmt(r.amount)}</b></td>
                           <td>
                             {r.receipt_url ? (
@@ -1086,8 +1108,135 @@ function AccountingTab({ token }: { token: string }) {
               )}
             </div>
           )}
+
+          {/* ประวัติ User */}
+          {tab === 'user' && <UserHistoryPanel token={token} />}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+// ─── User History Panel ───────────────────────────────────────────────────────
+function UserHistoryPanel({ token }: { token: string }) {
+  const [userId, setUserId] = useState('');
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+
+  const load = async () => {
+    const id = parseInt(userId);
+    if (!id) return setErr('กรุณากรอก User ID');
+    setErr(''); setLoading(true); setData(null);
+    try {
+      const d = await api.getAccountingUserHistory(id, token);
+      setData(d);
+    } catch (e: any) { setErr(e.message); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Search bar */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          type="number"
+          placeholder="User ID..."
+          value={userId}
+          onChange={e => setUserId(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && load()}
+          style={{ width: 140, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--line)', fontSize: 13, fontFamily: 'var(--font-mono)', background: 'var(--surface)', color: 'var(--ink)' }}
+        />
+        <button className="btn-grad" onClick={load} disabled={loading} style={{ padding: '6px 16px', fontSize: 13 }}>
+          {loading ? 'กำลังโหลด...' : 'ค้นหา'}
+        </button>
+        {err && <span style={{ fontSize: 12, color: 'var(--neg)' }}>{err}</span>}
+      </div>
+
+      {data && (
+        <>
+          {/* User info card */}
+          <div className="ad-panel" style={{ padding: '14px 18px', display: 'flex', gap: 20, alignItems: 'center' }}>
+            <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
+              {(data.user.name || '?')[0].toUpperCase()}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{data.user.name}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{data.user.email}</div>
+              <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>สมัคร: {fmtDate(data.user.created_at)}</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>ยอดเหรียญ</div>
+              <div style={{ fontWeight: 700, fontSize: 22, fontFamily: 'var(--font-mono)', color: 'var(--accent)' }}>🪙{data.user.coin_balance?.toLocaleString() || 0}</div>
+            </div>
+          </div>
+
+          {/* Payment requests table */}
+          <div className="ad-panel">
+            <div className="ad-panel-head"><h3>ประวัติการเติมเงิน ({data.payments.length} รายการ)</h3></div>
+            <div className="ad-tbl-wrap" style={{ maxHeight: 320, overflowY: 'auto' }}>
+              {data.payments.length === 0 ? (
+                <div style={{ padding: 20, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>ยังไม่มีประวัติการเติมเงิน</div>
+              ) : (
+                <table className="ad-tbl">
+                  <thead><tr><th>#</th><th>วันที่</th><th>แพ็กเกจ</th><th>เหรียญ</th><th>ช่องทาง</th><th>สถานะ</th><th style={{ textAlign: 'right' }}>ราคา</th></tr></thead>
+                  <tbody>
+                    {data.payments.map((p: any) => (
+                      <tr key={p.id}>
+                        <td><span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>#{p.id}</span></td>
+                        <td><span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{fmtDateTime(p.created_at)}</span></td>
+                        <td><span style={{ fontSize: 12 }}>{p.package_key}</span></td>
+                        <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{p.coins?.toLocaleString()}</span></td>
+                        <td>
+                          <span style={{ fontSize: 12 }}>
+                            {p.sender_name === 'OPN Card' ? '💳 Card' : p.sender_name === 'OPN PromptPay' ? '📱 PromptPay' : p.sender_name || '—'}
+                          </span>
+                          {p.slip_url && (
+                            <div style={{ fontSize: 10, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 1 }} title={p.slip_url}>
+                              {p.slip_url.length > 24 ? p.slip_url.slice(0, 24) + '…' : p.slip_url}
+                            </div>
+                          )}
+                        </td>
+                        <td><StatusTag status={p.status} /></td>
+                        <td style={{ textAlign: 'right' }}><b style={{ color: 'var(--pos)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>฿{p.amount?.toLocaleString()}</b></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+
+          {/* Coin transactions table */}
+          <div className="ad-panel">
+            <div className="ad-panel-head"><h3>ประวัติธุรกรรมเหรียญ ({data.transactions.length} รายการ)</h3></div>
+            <div className="ad-tbl-wrap" style={{ maxHeight: 360, overflowY: 'auto' }}>
+              {data.transactions.length === 0 ? (
+                <div style={{ padding: 20, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>ยังไม่มีธุรกรรมเหรียญ</div>
+              ) : (
+                <table className="ad-tbl">
+                  <thead><tr><th>#</th><th>วันที่</th><th>ประเภท</th><th>รายละเอียด</th><th style={{ textAlign: 'right' }}>จำนวน</th></tr></thead>
+                  <tbody>
+                    {data.transactions.map((t: any) => (
+                      <tr key={t.id}>
+                        <td><span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>#{t.id}</span></td>
+                        <td><span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{fmtDateTime(t.created_at)}</span></td>
+                        <td><span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: t.delta > 0 ? 'color-mix(in srgb,var(--pos) 12%,transparent)' : 'color-mix(in srgb,var(--neg) 12%,transparent)', color: t.delta > 0 ? 'var(--pos)' : 'var(--neg)' }}>{t.type}</span></td>
+                        <td><span style={{ fontSize: 12, color: 'var(--ink-2)' }}>{t.description || '—'}</span></td>
+                        <td style={{ textAlign: 'right' }}>
+                          <b style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: t.delta > 0 ? 'var(--pos)' : 'var(--neg)' }}>
+                            {t.delta > 0 ? '+' : ''}{t.delta?.toLocaleString()} 🪙
+                          </b>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -1313,15 +1462,15 @@ export default function AdminPage() {
   );
 
   const navItems = [
-    { key: 'queue',      label: 'Queue',             icon: <IcoQueue /> },
+    { key: 'queue',      label: 'ร้องเรียน Inbox',  icon: <IcoQueue /> },
     { key: 'users',      label: 'ผู้ใช้',            icon: <IcoUsers /> },
     { key: 'products',   label: 'ประกาศ',            icon: <IcoBox /> },
-    { key: 'complaints', label: 'เคสร้องเรียน',      icon: <IcoAlert /> },
+    { key: 'complaints', label: 'ร้องเรียนทั้งหมด', icon: <IcoAlert /> },
     { key: 'finance',    label: 'การเงิน',            icon: <IcoChart /> },
     { key: 'accounting', label: 'บัญชี',              icon: <IcoCoin /> },
   ];
 
-  const tabLabels: Record<string, string> = { queue: 'Queue', users: 'ผู้ใช้', products: 'ประกาศ', complaints: 'เคสร้องเรียน', finance: 'การเงิน', accounting: 'บัญชี' };
+  const tabLabels: Record<string, string> = { queue: 'ร้องเรียน Inbox', users: 'ผู้ใช้', products: 'ประกาศ', complaints: 'ร้องเรียนทั้งหมด', finance: 'การเงิน', accounting: 'บัญชี' };
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>

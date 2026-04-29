@@ -311,6 +311,9 @@ export const deleteAccountingExpense = (id: number, token: string) =>
 export const getAccountingYearly = (year: number, token: string) =>
   req<any>(`/api/accounting/yearly?year=${year}`, {}, token);
 
+export const getAccountingUserHistory = (userId: number, token: string) =>
+  req<any>(`/api/accounting/user-history?userId=${userId}`, {}, token);
+
 // ─── Upload ──────────────────────────────────────────────────────────────────
 
 export const uploadImage = async (file: File, token: string): Promise<string> => {
