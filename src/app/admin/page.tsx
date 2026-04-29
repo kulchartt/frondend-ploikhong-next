@@ -28,7 +28,9 @@ interface PaymentRequest { id: number; user_id: number; package_key: string; coi
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 const fmt = (n: number) => n?.toLocaleString('th-TH') ?? '0';
 const fmtMoney = (n: number) => '฿' + (n ?? 0).toLocaleString('th-TH', { maximumFractionDigits: 0 });
-const fmtDate = (d: string) => new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+const TZ = { timeZone: 'Asia/Bangkok' } as const;
+const fmtDate = (d: string) => new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit', ...TZ });
+const fmtDateTime = (d: string) => new Date(d).toLocaleString('th-TH', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit', ...TZ });
 
 function StatusTag({ status }: { status: string }) {
   const map: Record<string, string> = {
@@ -109,23 +111,28 @@ function QueueView({ token }: { token: string }) {
         complaints.forEach((c: any) => out.push({
           id: `c-${c.id}`, kind: 'complaint',
           subj: `[ร้องเรียน] ${c.type} – ${c.detail?.slice(0, 60)}...`,
-          meta: `#${c.id} · ${fmtDate(c.created_at)} · ${c.user_name || 'ผู้ใช้'}`,
+          meta: `#${c.id} · ${fmtDateTime(c.created_at)} · ${c.user_name || 'ผู้ใช้'}`,
           prio: 'mid', raw: c,
         }));
         const reviewing = await api.getComplaints('reviewing', token);
         reviewing.forEach((c: any) => out.push({
           id: `cr-${c.id}`, kind: 'complaint',
           subj: `[กำลังตรวจ] ${c.type} – ${c.detail?.slice(0, 60)}...`,
-          meta: `#${c.id} · ${fmtDate(c.created_at)} · ${c.user_name || 'ผู้ใช้'}`,
+          meta: `#${c.id} · ${fmtDateTime(c.created_at)} · ${c.user_name || 'ผู้ใช้'}`,
           prio: 'high', raw: c,
         }));
       } catch {}
       try {
         const payments = await api.getPaymentRequests('pending', token);
-        payments.forEach((p: any) => out.push({
+        // กรองเฉพาะ manual slip — OPN auto-payments (sender_name = 'OPN PromptPay'/'OPN Card')
+        // ไม่ต้องให้ admin ทำอะไร ยืนยันอัตโนมัติผ่าน webhook/simulate อยู่แล้ว
+        const manualPayments = payments.filter((p: any) =>
+          p.sender_name !== 'OPN PromptPay' && p.sender_name !== 'OPN Card'
+        );
+        manualPayments.forEach((p: any) => out.push({
           id: `p-${p.id}`, kind: 'payment',
           subj: `[เติมเหรียญ] ${p.user_name || `User #${p.user_id}`} · ${p.package_key}`,
-          meta: `${p.coins} เหรียญ · ${fmtMoney(p.amount)} · ${fmtDate(p.created_at)}`,
+          meta: `${p.coins} เหรียญ · ${fmtMoney(p.amount)} · ${fmtDateTime(p.created_at)}`,
           prio: 'low', raw: p,
         }));
       } catch {}
@@ -633,7 +640,7 @@ function PaymentsTab({ token }: { token: string }) {
                     <div style={{ fontWeight: 600, fontSize: 14 }}>{req.user_name || `User #${req.user_id}`} <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 400 }}>{req.user_email}</span></div>
                     <div style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 2 }}>แพ็กเกจ: <b>{req.package_key}</b> · {req.coins} เหรียญ · <b>{fmtMoney(req.amount)}</b></div>
                     {req.sender_name && <div style={{ fontSize: 12, color: 'var(--ink-2)' }}>ชื่อผู้โอน: <b>{req.sender_name}</b></div>}
-                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{fmtDate(req.created_at)}</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{fmtDateTime(req.created_at)}</div>
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
                     {req.slip_url && <a href={req.slip_url} target="_blank" rel="noreferrer" className="btn-sec" style={{ fontSize: 11, padding: '4px 10px', textDecoration: 'none' }}>ดูสลิป</a>}
@@ -805,7 +812,8 @@ function AccountingTab({ token }: { token: string }) {
   useEffect(() => { if (view === 'year') loadYearly(); }, [view, year, token]);
 
   const fmt = (n: number) => '฿' + (n || 0).toLocaleString('th-TH', { maximumFractionDigits: 0 });
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit', ...TZ });
+  const fmtDateTime = (d: string) => new Date(d).toLocaleString('th-TH', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit', ...TZ });
 
   function resetForm() {
     setForm({ category: 'server', description: '', amount: '', expense_date: now.toISOString().split('T')[0] });
@@ -1035,7 +1043,7 @@ function AccountingTab({ token }: { token: string }) {
                       const methodLabel = r.sender_name === 'OPN Card' ? '💳 Card' : r.sender_name === 'OPN PromptPay' ? '📱 PromptPay' : r.sender_name || 'โอน';
                       return (
                       <tr key={r.id}>
-                        <td><span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{fmtDate(r.created_at)}</span></td>
+                        <td><span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{fmtDateTime(r.created_at)}</span></td>
                         <td><div style={{ fontWeight: 500, fontSize: 13 }}>{r.user_name || '—'}</div><div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{r.user_email}</div></td>
                         <td><span style={{ fontSize: 12 }}>{r.package_key}</span></td>
                         <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.coins?.toLocaleString()}</span></td>
@@ -1263,7 +1271,7 @@ function FinanceTab({ token }: { token: string }) {
                       <div style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 2 }}>แพ็กเกจ: <b>{req.package_key}</b> · {req.coins} เหรียญ · <b>{fmtMoney(req.amount)}</b></div>
                       {req.sender_name && !isOPN && <div style={{ fontSize: 12, color: 'var(--ink-2)' }}>ชื่อผู้โอน: <b>{req.sender_name}</b></div>}
                       {isOPN && <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>charge: {req.slip_url}</div>}
-                      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{fmtDate(req.created_at)}</div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{fmtDateTime(req.created_at)}</div>
                     </div>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
                       {req.slip_url && !isOPN && <a href={req.slip_url} target="_blank" rel="noreferrer" className="btn-sec" style={{ fontSize: 11, padding: '4px 10px', textDecoration: 'none' }}>ดูสลิป</a>}
