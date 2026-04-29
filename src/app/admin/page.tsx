@@ -1028,17 +1028,25 @@ function AccountingTab({ token }: { token: string }) {
                 <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>ยังไม่มีรายรับในเดือนนี้</div>
               ) : (
                 <table className="ad-tbl">
-                  <thead><tr><th>วันที่</th><th>ผู้ใช้</th><th>แพ็กเกจ</th><th>เหรียญ</th><th style={{ textAlign: 'right' }}>จำนวนเงิน</th></tr></thead>
+                  <thead><tr><th>วันที่</th><th>ผู้ใช้</th><th>แพ็กเกจ</th><th>เหรียญ</th><th>ช่องทาง / Transaction ID</th><th style={{ textAlign: 'right' }}>จำนวนเงิน</th></tr></thead>
                   <tbody>
-                    {income.map((r: any) => (
+                    {income.map((r: any) => {
+                      const isOPN = r.sender_name === 'OPN PromptPay' || r.sender_name === 'OPN Card';
+                      const methodLabel = r.sender_name === 'OPN Card' ? '💳 Card' : r.sender_name === 'OPN PromptPay' ? '📱 PromptPay' : r.sender_name || 'โอน';
+                      return (
                       <tr key={r.id}>
                         <td><span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{fmtDate(r.created_at)}</span></td>
                         <td><div style={{ fontWeight: 500, fontSize: 13 }}>{r.user_name || '—'}</div><div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{r.user_email}</div></td>
                         <td><span style={{ fontSize: 12 }}>{r.package_key}</span></td>
                         <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.coins?.toLocaleString()}</span></td>
+                        <td>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: isOPN ? 'var(--accent)' : 'var(--ink-2)' }}>{methodLabel}</div>
+                          {r.slip_url && <div style={{ fontSize: 10, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 2 }} title={r.slip_url}>{r.slip_url.length > 28 ? r.slip_url.slice(0, 28) + '…' : r.slip_url}</div>}
+                        </td>
                         <td style={{ textAlign: 'right' }}><b style={{ color: 'var(--pos)', fontFamily: 'var(--font-mono)' }}>{fmt(r.amount)}</b></td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
