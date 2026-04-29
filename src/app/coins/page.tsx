@@ -619,16 +619,9 @@ function CoinsPageContent() {
             {t.label}
           </button>
         ))}
-      </div>
-
-      {/* Balance strip */}
-      <div className="co-bal-strip">
-        <span key={balAnimKey} className={`co-bal-num${balAnimKey > 0 ? ' pop' : ''}`}>
-          🪙 {balance.toLocaleString()} <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--ink-3)', fontFamily: 'inherit' }}>เหรียญ</span>
+        <span key={balAnimKey} className={`co-bal-num${balAnimKey > 0 ? ' pop' : ''}`} style={{ marginLeft: 'auto' }}>
+          🪙 {balance.toLocaleString()} <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--ink-3)', fontFamily: 'inherit' }}>เหรียญ</span>
         </span>
-        {tab !== 'topup' && (
-          <button className="co-bal-topup" onClick={() => setTab('topup')}>+ เติมเหรียญ</button>
-        )}
       </div>
 
       {/* Content */}
