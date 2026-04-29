@@ -1056,7 +1056,7 @@ function AccountingTab({ token }: { token: string }) {
                 <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>ยังไม่มีรายจ่ายในเดือนนี้ กด "เพิ่มรายจ่าย" ด้านบน</div>
               ) : (
                 <table className="ad-tbl">
-                  <thead><tr><th>วันที่</th><th>หมวด</th><th>รายละเอียด</th><th>ผู้ทำรายการ</th><th style={{ textAlign: 'right' }}>จำนวนเงิน</th><th>เอกสาร</th><th></th></tr></thead>
+                  <thead><tr><th>วันที่</th><th>หมวด</th><th>รายละเอียด</th><th>แพ็กเกจ</th><th>Charge ID</th><th>ผู้ทำรายการ</th><th style={{ textAlign: 'right' }}>จำนวนเงิน</th><th>เอกสาร</th><th></th></tr></thead>
                   <tbody>
                     {expenses.map((r: any) => {
                       const cat = EXPENSE_CATS.find(x => x.key === r.category);
@@ -1072,13 +1072,15 @@ function AccountingTab({ token }: { token: string }) {
                           <td><span style={{ fontSize: 12, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>{fmtDate(r.expense_date)}</span></td>
                           <td><span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: `color-mix(in srgb,${CAT_COLOR[r.category] || 'var(--ink-3)'} 12%,transparent)`, color: CAT_COLOR[r.category] || 'var(--ink-3)' }}>{cat?.label || r.category}</span></td>
                           <td>
-                            {isOPNFee ? (
-                              <div>
-                                <div style={{ fontSize: 12, fontWeight: 600 }}>{feeMethod}</div>
-                                <div style={{ fontSize: 11, color: 'var(--ink-2)' }}>แพ็ก: {feePkg}</div>
-                                {feeCharge && <div style={{ fontSize: 10, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 1 }} title={feeCharge}>{feeCharge.length > 26 ? feeCharge.slice(0,26)+'…' : feeCharge}</div>}
-                              </div>
-                            ) : <span style={{ fontSize: 13 }}>{r.description}</span>}
+                            {isOPNFee
+                              ? <span style={{ fontSize: 12, fontWeight: 600 }}>{feeMethod}</span>
+                              : <span style={{ fontSize: 13 }}>{r.description}</span>}
+                          </td>
+                          <td><span style={{ fontSize: 12, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)' }}>{feePkg || '—'}</span></td>
+                          <td>
+                            {feeCharge
+                              ? <span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }} title={feeCharge}>{feeCharge.length > 22 ? feeCharge.slice(0, 22) + '…' : feeCharge}</span>
+                              : <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>—</span>}
                           </td>
                           <td>
                             {r.created_by_name
