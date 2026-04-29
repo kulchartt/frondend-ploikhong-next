@@ -122,20 +122,7 @@ function QueueView({ token }: { token: string }) {
           prio: 'high', raw: c,
         }));
       } catch {}
-      try {
-        const payments = await api.getPaymentRequests('pending', token);
-        // กรองเฉพาะ manual slip — OPN auto-payments (sender_name = 'OPN PromptPay'/'OPN Card')
-        // ไม่ต้องให้ admin ทำอะไร ยืนยันอัตโนมัติผ่าน webhook/simulate อยู่แล้ว
-        const manualPayments = payments.filter((p: any) =>
-          p.sender_name !== 'OPN PromptPay' && p.sender_name !== 'OPN Card'
-        );
-        manualPayments.forEach((p: any) => out.push({
-          id: `p-${p.id}`, kind: 'payment',
-          subj: `[เติมเหรียญ] ${p.user_name || `User #${p.user_id}`} · ${p.package_key}`,
-          meta: `${p.coins} เหรียญ · ${fmtMoney(p.amount)} · ${fmtDateTime(p.created_at)}`,
-          prio: 'low', raw: p,
-        }));
-      } catch {}
+      // Manual slip payments ปิดแล้ว — ไม่ต้อง fetch payment requests ใน Queue
       setItems(out);
       setLoading(false);
     })();
@@ -151,9 +138,9 @@ function QueueView({ token }: { token: string }) {
           <h3>Inbox</h3>
           <span className="count">{visible.length} รายการ</span>
           <div className="ad-queue-tabs">
-            {(['all', 'complaint', 'payment'] as const).map(k => (
-              <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>
-                {k === 'all' ? 'ทั้งหมด' : k === 'complaint' ? 'ร้องเรียน' : 'เติมเหรียญ'}
+            {(['all', 'complaint'] as const).map(k => (
+              <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k as any)}>
+                {k === 'all' ? 'ทั้งหมด' : 'ร้องเรียน'}
               </button>
             ))}
           </div>
@@ -1146,7 +1133,7 @@ function FinanceTab({ token }: { token: string }) {
       <div className="ad-home-hero" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
         {[
           { l: 'รายได้รวม', v: fmtMoney(totalRevenue) },
-          { l: 'รอยืนยัน', v: String(coinStats?.pending?.count || 0) },
+          { l: 'รอ webhook', v: String(coinStats?.pending?.count || 0) },
           { l: 'เหรียญแจก', v: fmt(coinStats?.coins?.issued || 0) },
           { l: 'เหรียญคงค้าง', v: fmt(coinStats?.coins?.outstanding || 0) },
         ].map(s => (
@@ -1240,13 +1227,13 @@ function FinanceTab({ token }: { token: string }) {
         </div>
       )}
 
-      {/* Payment Requests */}
-      <div className="ad-panel-head" style={{ marginBottom: 8 }}><h3>💳 คำขอเติมเหรียญ</h3></div>
+      {/* Payment Transactions (OPN only — read-only log) */}
+      <div className="ad-panel-head" style={{ marginBottom: 8 }}><h3>💳 รายการชำระเงิน OPN</h3></div>
       <div className="ad-flt-row">
         <div className="ad-flt-grp">
-          {(['pending', 'confirmed', 'rejected'] as const).map(k => (
+          {(['confirmed', 'pending', 'rejected'] as const).map(k => (
             <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>
-              {k === 'pending' ? 'รอยืนยัน' : k === 'confirmed' ? 'ยืนยันแล้ว' : 'ปฏิเสธแล้ว'}
+              {k === 'confirmed' ? 'สำเร็จ' : k === 'pending' ? 'รอ webhook' : 'ล้มเหลว'}
             </button>
           ))}
         </div>
@@ -1278,16 +1265,8 @@ function FinanceTab({ token }: { token: string }) {
                       <StatusTag status={req.status} />
                     </div>
                   </div>
-                  {/* Manual bank transfer → show approve/reject buttons */}
-                  {filter === 'pending' && !isOPN && (
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <button className="btn-grad" onClick={() => confirm(req.id)} style={{ fontSize: 12, padding: '5px 14px' }}>ยืนยัน ✓</button>
-                      <input placeholder="หมายเหตุปฏิเสธ..." value={rejectNote[req.id] || ''} onChange={e => setRejectNote(prev => ({ ...prev, [req.id]: e.target.value }))} style={{ flex: 1, minWidth: 150, padding: '4px 10px', border: '1px solid var(--line)', borderRadius: 5, fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
-                      <button className="btn-sec danger" onClick={() => reject(req.id)} style={{ fontSize: 12, padding: '5px 12px' }}>ปฏิเสธ ✕</button>
-                    </div>
-                  )}
-                  {/* OPN pending → waiting for webhook */}
-                  {filter === 'pending' && isOPN && (
+                  {/* OPN pending → waiting for webhook, admin can delete stale ones */}
+                  {filter === 'pending' && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, color: 'var(--ink-3)', background: 'var(--surface-2)', borderRadius: 5, padding: '6px 10px' }}>
                       <span style={{ flex: 1 }}>⏳ รอ OPN webhook ยืนยันอัตโนมัติ — ไม่ต้องดำเนินการ</span>
                       <button onClick={() => deleteReq(req.id)}
