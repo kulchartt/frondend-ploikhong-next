@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Facebook from 'next-auth/providers/facebook';
+import Apple from 'next-auth/providers/apple';
 import Credentials from 'next-auth/providers/credentials';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://khai-claude-production.up.railway.app';
@@ -14,6 +15,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Facebook({
       clientId: process.env.FACEBOOK_CLIENT_ID!,
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
+    }),
+    Apple({
+      clientId: process.env.APPLE_ID!,
+      clientSecret: process.env.APPLE_SECRET!,
     }),
     Credentials({
       name: 'Email',
@@ -56,7 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (user.id) (token as any).dbUserId = user.id;
       }
       // Social login — register/login via backend
-      if (account && (account.provider === 'google' || account.provider === 'facebook')) {
+      if (account && ['google', 'facebook', 'apple'].includes(account.provider)) {
         try {
           const res = await fetch(`${API}/api/auth/social`, {
             method: 'POST',
