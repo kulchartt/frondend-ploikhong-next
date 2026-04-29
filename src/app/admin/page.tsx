@@ -1334,9 +1334,6 @@ export default function AdminPage() {
         {/* Sidebar */}
         <aside className="ad-side">
           <div className="ad-brand">
-            <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--accent)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', letterSpacing: '-.01em' }}>Admin</div>
             </div>
