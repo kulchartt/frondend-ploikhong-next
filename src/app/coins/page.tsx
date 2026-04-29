@@ -619,7 +619,7 @@ function CoinsPageContent() {
             {t.label}
           </button>
         ))}
-        <span key={balAnimKey} className={`co-bal-num${balAnimKey > 0 ? ' pop' : ''}`} style={{ marginLeft: 'auto' }}>
+        <span key={balAnimKey} className={`co-bal-num${balAnimKey > 0 ? ' pop' : ''}`}>
           🪙 {balance.toLocaleString()} <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--ink-3)', fontFamily: 'inherit' }}>เหรียญ</span>
         </span>
       </div>
