@@ -567,6 +567,7 @@ function CoinsPageContent() {
   const initTab = (searchParams.get('tab') as 'topup' | 'boosts' | 'premium' | 'history') || 'topup';
   const [tab, setTab] = useState<'topup' | 'boosts' | 'premium' | 'history'>(initTab);
   const [balance, setBalance] = useState(0);
+  const [balAnimKey, setBalAnimKey] = useState(0);
   const [boostOpen, setBoostOpen] = useState(false);
   const [boostRefreshKey, setBoostRefreshKey] = useState(0);
   const [viewProduct, setViewProduct] = useState<any>(null);
@@ -580,7 +581,10 @@ function CoinsPageContent() {
 
   function refreshBalance() {
     if (!token) return;
-    api.getCoinBalance(token).then(data => setBalance(data.balance || 0)).catch(() => {});
+    api.getCoinBalance(token).then(data => {
+      setBalance(data.balance || 0);
+      setBalAnimKey(k => k + 1); // trigger coin pop animation
+    }).catch(() => {});
   }
 
   useEffect(() => { refreshBalance(); }, [token]);
@@ -606,11 +610,6 @@ function CoinsPageContent() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px', height: 56, borderBottom: '1px solid var(--line)', background: 'var(--surface)', flexShrink: 0 }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', padding: 4, display: 'flex' }}><IcoBack /></button>
         <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)', flex: 1 }}>เหรียญ & Premium</div>
-        <div className="co-balance">
-          <span className="co-ic">◎</span>
-          <span style={{ fontFamily: 'var(--font-mono)' }}>{balance.toLocaleString()}</span>
-          <span style={{ fontWeight: 400, fontSize: 11, opacity: .8 }}>เหรียญ</span>
-        </div>
       </div>
 
       {/* Tabs */}
@@ -620,6 +619,16 @@ function CoinsPageContent() {
             {t.label}
           </button>
         ))}
+      </div>
+
+      {/* Balance strip */}
+      <div className="co-bal-strip">
+        <span key={balAnimKey} className={`co-bal-num${balAnimKey > 0 ? ' pop' : ''}`}>
+          🪙 {balance.toLocaleString()} <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--ink-3)', fontFamily: 'inherit' }}>เหรียญ</span>
+        </span>
+        {tab !== 'topup' && (
+          <button className="co-bal-topup" onClick={() => setTab('topup')}>+ เติมเหรียญ</button>
+        )}
       </div>
 
       {/* Content */}
