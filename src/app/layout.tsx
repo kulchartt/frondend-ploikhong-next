@@ -5,10 +5,10 @@ import { Providers } from './providers';
 export const metadata: Metadata = {
   metadataBase: new URL('https://frontend-next-pied.vercel.app'),
   title: {
-    default: 'PloiKhong — ตลาดซื้อขายของมือสองออนไลน์',
+    default: 'PloiKhong — ตลาดซื้อขายของมือสองออนไลน์ ปล่อยของง่าย',
     template: '%s | PloiKhong ตลาดของมือสอง',
   },
-  description: 'PloiKhong ปล่อยของ — ตลาดซื้อขายของมือสองออนไลน์ ของดีราคาโดนทุกวัน ลงขายง่าย ค้นหาสะดวก มีของทุกประเภท ทั้งเสื้อผ้า อุปกรณ์อิเล็กทรอนิกส์ ของแต่งบ้าน และอีกมากมาย',
+  description: 'PloiKhong ปล่อยของ — ตลาดซื้อขายของมือสองออนไลน์อันดับ 1 ของดีราคาโดนทุกวัน ลงขายง่าย ค้นหาสะดวก มีของทุกประเภท ทั้งเสื้อผ้า อุปกรณ์อิเล็กทรอนิกส์ ของแต่งบ้าน และอีกมากมาย',
   keywords: [
     'ของมือสอง',
     'ตลาดนัดออนไลน์',
