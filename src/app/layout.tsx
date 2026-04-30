@@ -5,10 +5,10 @@ import { Providers } from './providers';
 export const metadata: Metadata = {
   metadataBase: new URL('https://frontend-next-pied.vercel.app'),
   title: {
-    default: 'PloiKhong — ตลาดซื้อขายของมือสอง',
-    template: '%s | PloiKhong',
+    default: 'PloiKhong — ตลาดซื้อขายของมือสองออนไลน์',
+    template: '%s | PloiKhong ตลาดของมือสอง',
   },
-  description: 'ของดี ราคาโดน ทุกวัน — ตลาดซื้อขายของมือสองออนไลน์ที่ใหญ่ที่สุด มือหนึ่งก็มี มือสองก็ดี',
+  description: 'PloiKhong ปล่อยของ — ตลาดซื้อขายของมือสองออนไลน์ ของดีราคาโดนทุกวัน ลงขายง่าย ค้นหาสะดวก มีของทุกประเภท ทั้งเสื้อผ้า อุปกรณ์อิเล็กทรอนิกส์ ของแต่งบ้าน และอีกมากมาย',
   keywords: [
     'ของมือสอง',
     'ตลาดนัดออนไลน์',
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
     'มือสองราคาถูก',
   ],
   openGraph: {
-    title: 'PloiKhong — ตลาดซื้อขายของมือสอง',
-    description: 'ของดี ราคาโดน ทุกวัน — ตลาดซื้อขายของมือสองออนไลน์ที่ใหญ่ที่สุด',
+    title: 'PloiKhong — ตลาดซื้อขายของมือสองออนไลน์',
+    description: 'PloiKhong ปล่อยของ — ตลาดซื้อขายของมือสองออนไลน์ ของดีราคาโดนทุกวัน ลงขายง่าย ค้นหาสะดวก มีของทุกประเภท',
     type: 'website',
     locale: 'th_TH',
     siteName: 'PloiKhong',
@@ -38,8 +38,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PloiKhong — ตลาดซื้อขายของมือสอง',
-    description: 'ของดี ราคาโดน ทุกวัน — ตลาดซื้อขายของมือสองออนไลน์ที่ใหญ่ที่สุด',
+    title: 'PloiKhong — ตลาดซื้อขายของมือสองออนไลน์',
+    description: 'PloiKhong ปล่อยของ — ตลาดซื้อขายของมือสองออนไลน์ ของดีราคาโดนทุกวัน ลงขายง่าย ค้นหาสะดวก มีของทุกประเภท',
     images: ['/opengraph-image'],
   },
   robots: {
