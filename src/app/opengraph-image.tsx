@@ -65,7 +65,7 @@ export default async function OGImage() {
           fontSize: 36, color: '#e2e8f0', marginTop: 20,
           fontWeight: 500, display: 'flex',
         }}>
-          พลอยของ — ของดี ราคาโดน ทุกวัน
+          ปล่อยของ — ของดี ราคาโดน ทุกวัน
         </div>
 
         {/* Divider */}
