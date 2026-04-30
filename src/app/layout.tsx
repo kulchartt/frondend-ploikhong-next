@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     siteName: 'PloiKhong',
     images: [
       {
-        url: '/og-default.png',
+        url: '/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'PloiKhong — ตลาดซื้อขายของมือสอง',
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'PloiKhong — ตลาดซื้อขายของมือสอง',
     description: 'ของดี ราคาโดน ทุกวัน — ตลาดซื้อขายของมือสองออนไลน์ที่ใหญ่ที่สุด',
-    images: ['/og-default.png'],
+    images: ['/opengraph-image'],
   },
   robots: {
     index: true,
