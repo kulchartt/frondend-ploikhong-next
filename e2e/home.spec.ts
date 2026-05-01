@@ -123,8 +123,7 @@ test.describe('Home Page', () => {
   test('toolbar: result count is displayed', async ({ page }) => {
     await page.route('**/api/products**', r => r.fulfill({ json: [{ id: 1, title: 'Test', price: 1000, images: [], location: 'กรุงเทพฯ', condition: 'ใหม่ในกล่อง', category: 'อื่นๆ', boosted: false, is_sold: false, created_at: new Date().toISOString() }] }));
     await page.goto('/');
-    await expect(page.getByText(/พบ/)).toBeVisible({ timeout: 8000 });
-    await expect(page.getByText(/รายการ/)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(/พบ \d+ รายการ/)).toBeVisible({ timeout: 8000 });
   });
 
   test('toolbar: sort dropdown has expected options', async ({ page }) => {
