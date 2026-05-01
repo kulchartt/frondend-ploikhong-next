@@ -129,13 +129,13 @@ test.describe('Product page dynamic metadata', () => {
   });
 
   test('product page title contains product name via title template', async ({ page }) => {
-    // Navigate via deep-link on homepage
-    await page.goto('/?product=1');
+    // Navigate to the product detail page (server-side metadata)
+    await page.goto('/products/1');
     await expect(page).toHaveTitle(/iPhone 14 Pro 256GB สีม่วง/, { timeout: 10000 });
   });
 
   test('product title includes | PloiKhong suffix', async ({ page }) => {
-    await page.goto('/?product=1');
+    await page.goto('/products/1');
     await expect(page).toHaveTitle(/PloiKhong/, { timeout: 10000 });
   });
 });

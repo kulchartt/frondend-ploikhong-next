@@ -56,9 +56,21 @@ test.describe('Home Page', () => {
   // ─── Sidebar ───────────────────────────────────────────────────────────────
 
   test('sidebar: category list is visible', async ({ page }) => {
-    await expect(page.getByText('ทั้งหมด')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('มือถือ & แท็บเล็ต')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('แฟชั่น')).toBeVisible({ timeout: 10000 });
+    // Mock categories API so sidebar always has data
+    await page.route('**/api/products/categories**', r => r.fulfill({
+      json: {
+        total: 3,
+        categories: [
+          { name: 'มือถือ & แท็บเล็ต', count: 10 },
+          { name: 'แฟชั่น', count: 5 },
+          { name: 'คอมพิวเตอร์', count: 3 },
+        ],
+      },
+    }));
+    await page.goto('/');
+    await expect(page.getByText('ทั้งหมด')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('มือถือ & แท็บเล็ต')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('แฟชั่น')).toBeVisible({ timeout: 5000 });
   });
 
   test('sidebar: price range inputs accept numbers', async ({ page }) => {
@@ -109,8 +121,10 @@ test.describe('Home Page', () => {
   // ─── Toolbar ───────────────────────────────────────────────────────────────
 
   test('toolbar: result count is displayed', async ({ page }) => {
-    await expect(page.getByText(/พบ/)).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/รายการ/)).toBeVisible({ timeout: 10000 });
+    await page.route('**/api/products**', r => r.fulfill({ json: [{ id: 1, title: 'Test', price: 1000, images: [], location: 'กรุงเทพฯ', condition: 'ใหม่ในกล่อง', category: 'อื่นๆ', boosted: false, is_sold: false, created_at: new Date().toISOString() }] }));
+    await page.goto('/');
+    await expect(page.getByText(/พบ/)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(/รายการ/)).toBeVisible({ timeout: 8000 });
   });
 
   test('toolbar: sort dropdown has expected options', async ({ page }) => {
@@ -132,14 +146,14 @@ test.describe('Home Page', () => {
   });
 
   test('toolbar: clicking list view toggles layout', async ({ page }) => {
-    // Wait for products to load first
-    await page.waitForTimeout(1500);
+    await page.route('**/api/products**', r => r.fulfill({ json: [{ id: 1, title: 'Test', price: 1000, images: [], location: 'กรุงเทพฯ', condition: 'ใหม่ในกล่อง', category: 'อื่นๆ', boosted: false, is_sold: false, created_at: new Date().toISOString() }] }));
+    await page.goto('/');
+    // Wait for result count to appear (products loaded)
+    await expect(page.getByText(/พบ/)).toBeVisible({ timeout: 8000 });
     // Click the List button (second toggle)
     const listBtn = page.locator('button').nth(-1);
     await listBtn.click();
-    // Grid becomes single column: gridTemplateColumns: '1fr'
-    const grid = page.locator('div').filter({ hasText: /รายการ/ }).last();
-    // Just verify no crash and page still shows products label
+    // Verify no crash and page still shows products label
     await expect(page.getByText(/พบ/)).toBeVisible();
   });
 
