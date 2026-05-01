@@ -50,6 +50,16 @@ export function AuthModal({ open, onClose, initialMode = 'login' }: AuthModalPro
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // iOS bfcache fix: when user comes back from Apple/Google OAuth redirect,
+  // iOS may restore the page from cache with loading=true still set.
+  useEffect(() => {
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) setLoading(false);
+    }
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
+  }, []);
+
   if (!open) return null;
 
   async function handleSubmit(e: React.FormEvent) {
