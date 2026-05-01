@@ -5,10 +5,10 @@ import type { Metadata } from 'next';
 import ProductDetailClient from './ProductDetailClient';
 
 const API_URL = 'https://khai-claude-production.up.railway.app';
-const BASE_URL = 'https://frontend-next-pied.vercel.app';
+const BASE_URL = 'https://ploikhong.com';
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 async function fetchProduct(id: string) {
@@ -24,7 +24,8 @@ async function fetchProduct(id: string) {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const product = await fetchProduct(params.id);
+  const { id } = await params;
+  const product = await fetchProduct(id);
 
   if (!product) {
     return {

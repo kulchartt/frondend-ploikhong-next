@@ -68,9 +68,9 @@ test.describe('Home Page', () => {
       },
     }));
     await page.goto('/');
-    await expect(page.getByText('ทั้งหมด')).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText('มือถือ & แท็บเล็ต')).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText('แฟชั่น')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: /^ทั้งหมด/ }).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: /มือถือ/ })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: /^แฟชั่น/ })).toBeVisible({ timeout: 5000 });
   });
 
   test('sidebar: price range inputs accept numbers', async ({ page }) => {
