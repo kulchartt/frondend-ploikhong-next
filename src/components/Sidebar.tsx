@@ -113,7 +113,7 @@ export function Sidebar({ onFilter }: SidebarProps) {
               color: activeCat === cat.name ? 'var(--accent)' : 'var(--ink-3)',
               fontWeight: activeCat === cat.name ? 700 : 400,
             }}>
-              {cat.count === null
+              {cat.count == null
                 ? '…'
                 : cat.count === 0
                   ? <span style={{ opacity: 0.35 }}>0</span>
