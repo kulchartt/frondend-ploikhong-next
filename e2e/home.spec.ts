@@ -148,12 +148,12 @@ test.describe('Home Page', () => {
     await page.route('**/api/products**', r => r.fulfill({ json: [{ id: 1, title: 'Test', price: 1000, images: [], location: 'กรุงเทพฯ', condition: 'ใหม่ในกล่อง', category: 'อื่นๆ', boosted: false, is_sold: false, created_at: new Date().toISOString() }] }));
     await page.goto('/');
     // Wait for result count to appear (products loaded)
-    await expect(page.getByText(/พบ/)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(/พบ \d+ รายการ/)).toBeVisible({ timeout: 8000 });
     // Click the List button (second toggle)
     const listBtn = page.locator('button').nth(-1);
     await listBtn.click();
     // Verify no crash and page still shows products label
-    await expect(page.getByText(/พบ/)).toBeVisible();
+    await expect(page.getByText(/พบ \d+ รายการ/)).toBeVisible();
   });
 
   // ─── Product Grid ──────────────────────────────────────────────────────────
