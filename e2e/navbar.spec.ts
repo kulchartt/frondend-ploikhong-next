@@ -38,22 +38,22 @@ test.describe('Navbar — Admin Panel in profile dropdown', () => {
   test('admin user sees "🛡️ Admin Panel" inside account dropdown', async ({ page }) => {
     await gotoHome(page, ADMIN_SESSION);
     await openAccountDropdown(page);
-    await expect(page.getByText('🛡️ Admin Panel')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Admin Panel')).toBeVisible({ timeout: 5000 });
   });
 
   test('non-admin user does NOT see admin panel in dropdown', async ({ page }) => {
     await gotoHome(page, USER_SESSION);
     await openAccountDropdown(page);
-    await expect(page.getByText('🛡️ Admin Panel')).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Admin Panel')).not.toBeVisible({ timeout: 5000 });
   });
 
   test('admin panel is inside the account dropdown (not standalone in navbar)', async ({ page }) => {
     await gotoHome(page, ADMIN_SESSION);
     // Before opening dropdown: Admin Panel should not be visible
-    await expect(page.getByText('🛡️ Admin Panel')).not.toBeVisible({ timeout: 3000 });
+    await expect(page.getByText('Admin Panel')).not.toBeVisible({ timeout: 3000 });
     // After opening: it appears
     await openAccountDropdown(page);
-    await expect(page.getByText('🛡️ Admin Panel')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Admin Panel')).toBeVisible({ timeout: 5000 });
   });
 
   test('clicking "🛡️ Admin Panel" navigates to /admin', async ({ page }) => {
@@ -61,7 +61,7 @@ test.describe('Navbar — Admin Panel in profile dropdown', () => {
     // Also mock admin page session so redirect doesn't fail
     await page.route('**/api/auth/session', (r: any) => r.fulfill({ json: ADMIN_SESSION }));
     await openAccountDropdown(page);
-    await page.getByText('🛡️ Admin Panel').click();
+    await page.getByText('Admin Panel').click();
     await expect(page).toHaveURL(/\/admin/, { timeout: 6000 });
   });
 

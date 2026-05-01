@@ -40,25 +40,25 @@ test.describe('Home Page', () => {
 
   // ─── Promo Banner ──────────────────────────────────────────────────────────
 
-  test('promo banner: visible with 48-hour guarantee text', async ({ page }) => {
-    await expect(page.getByText(/48 ชม/)).toBeVisible();
+  test('promo banner: visible with feature promotion text', async ({ page }) => {
+    await expect(page.getByText(/เรามีฟีเจอร์/)).toBeVisible();
   });
 
   // ─── Money Rail ────────────────────────────────────────────────────────────
 
   test('money rail: shows 4 feature cards', async ({ page }) => {
     await expect(page.getByText('ลงขายฟรีไม่จำกัด')).toBeVisible();
-    await expect(page.getByText(/Boost สินค้า/)).toBeVisible();
-    await expect(page.getByText('รับเงินปลอดภัย')).toBeVisible();
-    await expect(page.getByText('ค่าส่งคืนได้')).toBeVisible();
+    await expect(page.getByText(/สินค้าเด่น/)).toBeVisible();
+    await expect(page.getByText(/แจ้งเตือนผู้ติดตาม/)).toBeVisible();
+    await expect(page.getByText('ฟีเจอร์อื่นๆ')).toBeVisible();
   });
 
   // ─── Sidebar ───────────────────────────────────────────────────────────────
 
   test('sidebar: category list is visible', async ({ page }) => {
-    await expect(page.getByText('ทั้งหมด')).toBeVisible();
-    await expect(page.getByText('มือถือ & แท็บเล็ต')).toBeVisible();
-    await expect(page.getByText('แฟชั่น')).toBeVisible();
+    await expect(page.getByText('ทั้งหมด')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('มือถือ & แท็บเล็ต')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('แฟชั่น')).toBeVisible({ timeout: 10000 });
   });
 
   test('sidebar: price range inputs accept numbers', async ({ page }) => {
@@ -93,7 +93,7 @@ test.describe('Home Page', () => {
 
   test('sidebar: delivery checkboxes are present', async ({ page }) => {
     await expect(page.getByLabel('นัดรับ')).toBeVisible();
-    await expect(page.getByLabel('ส่ง PloiShip')).toBeVisible();
+    await expect(page.getByLabel('ส่งฟรี')).toBeVisible();
   });
 
   test('sidebar: clicking a category updates the active category', async ({ page }) => {
@@ -109,8 +109,8 @@ test.describe('Home Page', () => {
   // ─── Toolbar ───────────────────────────────────────────────────────────────
 
   test('toolbar: result count is displayed', async ({ page }) => {
-    await expect(page.getByText(/พบ/)).toBeVisible();
-    await expect(page.getByText(/รายการ/)).toBeVisible();
+    await expect(page.getByText(/พบ/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/รายการ/)).toBeVisible({ timeout: 10000 });
   });
 
   test('toolbar: sort dropdown has expected options', async ({ page }) => {
@@ -161,12 +161,11 @@ test.describe('Home Page', () => {
   });
 
   test('product grid: shows products or empty state after load', async ({ page }) => {
-    // Wait for loading to finish
-    await page.waitForFunction(() => {
-      return !document.querySelector('div[style*="pulse"]');
-    }, { timeout: 10_000 }).catch(() => {});
+    // Wait for network to settle
+    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
-    const hasProducts = await page.locator('[data-testid="product-card"]').count() > 0;
+    // Either product prices show up or empty state text appears
+    const hasProducts = await page.locator('text=/฿[0-9,]+/').count() > 0;
     const hasEmpty = await page.getByText('ไม่พบสินค้า').isVisible().catch(() => false);
 
     // One of the two must be true

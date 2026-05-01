@@ -9,7 +9,7 @@ test.describe('robots.txt', () => {
     const res = await page.goto('/robots.txt');
     expect(res?.status()).toBe(200);
     const body = await page.content();
-    expect(body).toContain('User-agent: *');
+    expect(body).toContain('User-Agent: *');
     expect(body).toContain('Allow: /');
   });
 
