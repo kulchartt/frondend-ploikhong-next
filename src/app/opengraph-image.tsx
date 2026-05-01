@@ -76,7 +76,7 @@ export default async function OGImage() {
           color: '#475569',
           fontSize: 20,
         }}>
-          frontend-next-pied.vercel.app
+          ploikhong.com
         </div>
       </div>
     ),

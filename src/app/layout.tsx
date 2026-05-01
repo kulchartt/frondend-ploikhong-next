@@ -3,7 +3,7 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://frontend-next-pied.vercel.app'),
+  metadataBase: new URL('https://ploikhong.com'),
   title: {
     default: 'PloiKhong — ตลาดซื้อขายของมือสองออนไลน์ ปล่อยของง่าย',
     template: '%s | PloiKhong ตลาดของมือสอง',

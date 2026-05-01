@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://frontend-next-pied.vercel.app/sitemap.xml',
+    sitemap: 'https://ploikhong.com/sitemap.xml',
   };
 }

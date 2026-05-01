@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 
-const BASE_URL = 'https://frontend-next-pied.vercel.app';
+const BASE_URL = 'https://ploikhong.com';
 const API_URL = 'https://khai-claude-production.up.railway.app';
 
 const staticPages: MetadataRoute.Sitemap = [
