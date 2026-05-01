@@ -71,6 +71,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               email: token.email,
               name: token.name,
               avatar: token.picture,
+              provider_account_id: account.providerAccountId, // Apple: stable ID even when email is absent
             }),
           });
           const data = await res.json();
