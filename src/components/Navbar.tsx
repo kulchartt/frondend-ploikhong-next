@@ -143,7 +143,7 @@ export function Navbar({
           <div style={{ position: 'relative' }}>
             {!session?.user ? (
               /* Not logged in → Login button only (dark toggle hidden) */
-              <button onClick={onOpenAuth} style={iconBtn()}
+              <button data-testid="open-auth" onClick={onOpenAuth} style={iconBtn()}
                 onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
                 <UserIcon />
                 {!isMobile && (
