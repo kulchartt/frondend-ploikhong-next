@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/Navbar';
+import { PloiMark } from '@/components/PloiLogo';
 import { Sidebar } from '@/components/Sidebar';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -423,8 +424,12 @@ export default function HomePage() {
 
             {/* Brand */}
             <div style={{ minWidth: 200, flex: '1 1 200px' }}>
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 18, color: 'var(--ink)', marginBottom: 8, letterSpacing: '-.04em' }}>
-                <span style={{ marginRight: 4 }}>🛍️</span>Ploi<span style={{ color: 'var(--accent)' }}>Khong</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <PloiMark size={44} />
+                <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: '#0f172a', letterSpacing: '-.03em' }}>PloiKhong</span>
+                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 9, color: '#FF6B35', letterSpacing: '.04em', textTransform: 'uppercase' }}>Marketplace</span>
+                </span>
               </div>
               <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.7, maxWidth: 220 }}>
                 ตลาดซื้อขายของมือสองออนไลน์<br />ของดี ราคาโดน ทุกวัน
