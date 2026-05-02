@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import * as api from '@/lib/api';
-import { PloiMark } from './PloiLogo';
+import { PloiMark, PK_GRADIENT } from './PloiLogo';
 
 const SUBNAV = ['สำหรับคุณ', 'ใกล้ฉัน', 'ของใหม่', 'Boost เด่น', 'ส่งฟรี', 'ลดราคา', 'ของสะสม', 'ดีลพนักงาน', 'นัดรับ'];
 
@@ -80,15 +80,23 @@ export function Navbar({
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14,
         padding: isMobile ? '8px 14px' : '10px 20px', maxWidth: 1440, margin: '0 auto' }}>
 
-        <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <PloiMark size={isMobile ? 40 : 48} />
+        <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: isMobile ? 8 : 12, flexShrink: 0 }}>
+          <PloiMark size={isMobile ? 36 : 44} />
           {!isMobile && (
-            <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 17, color: '#0f172a', letterSpacing: '-.03em' }}>
+            <span style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{
+                fontFamily: 'var(--font-display, "Inter Tight", system-ui, sans-serif)',
+                fontWeight: 800, fontSize: 18, letterSpacing: '-0.015em', lineHeight: 1.1,
+                background: PK_GRADIENT, backgroundClip: 'text',
+                WebkitBackgroundClip: 'text', color: 'transparent', WebkitTextFillColor: 'transparent',
+              }}>
                 PloiKhong
               </span>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 10, color: 'var(--brand-orange, #FF6B35)', letterSpacing: '.04em', textTransform: 'uppercase' }}>
-                Marketplace
+              <span style={{
+                fontFamily: 'var(--font-th, "IBM Plex Sans Thai", system-ui, sans-serif)',
+                fontWeight: 400, fontSize: 10, color: '#8a877e', letterSpacing: '0.01em', marginTop: 1,
+              }}>
+                marketplace · ขายของออนไลน์
               </span>
             </span>
           )}

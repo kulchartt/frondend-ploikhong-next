@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/Navbar';
-import { PloiMark } from '@/components/PloiLogo';
+import { PloiMark, PK_GRADIENT } from '@/components/PloiLogo';
 import { Sidebar } from '@/components/Sidebar';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -424,11 +424,19 @@ export default function HomePage() {
 
             {/* Brand */}
             <div style={{ minWidth: 200, flex: '1 1 200px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
                 <PloiMark size={44} />
-                <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: '#0f172a', letterSpacing: '-.03em' }}>PloiKhong</span>
-                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 9, color: 'var(--brand-orange, #FF6B35)', letterSpacing: '.04em', textTransform: 'uppercase' }}>Marketplace</span>
+                <span style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{
+                    fontFamily: 'var(--font-display, "Inter Tight", system-ui, sans-serif)',
+                    fontWeight: 800, fontSize: 17, letterSpacing: '-0.015em', lineHeight: 1.1,
+                    background: PK_GRADIENT, backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text', color: 'transparent', WebkitTextFillColor: 'transparent',
+                  }}>PloiKhong</span>
+                  <span style={{
+                    fontFamily: 'var(--font-th, "IBM Plex Sans Thai", system-ui, sans-serif)',
+                    fontWeight: 400, fontSize: 10, color: '#8a877e', letterSpacing: '0.01em', marginTop: 1,
+                  }}>marketplace · ขายของออนไลน์</span>
                 </span>
               </div>
               <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.7, maxWidth: 220 }}>
