@@ -57,7 +57,7 @@ export function PloiMark({ size = 78 }: { size?: number }) {
 }
 
 // PloiWordmark — mark + "PloiKhong" + accent "Marketplace"
-// Colors hardcoded from LOGO_C_SPEC.md: ink=#0f172a, accent c2=#FF6B35
+// Colors hardcoded from LOGO_C_SPEC.md: ink=#0f172a, accent c2=var(--brand-orange, #FF6B35)
 export function PloiWordmark({ size = 22, markSize = 52 }: { size?: number; markSize?: number }) {
   return (
     <span style={{
@@ -73,7 +73,7 @@ export function PloiWordmark({ size = 22, markSize = 52 }: { size?: number; mark
       <PloiMark size={markSize} />
       <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
         <span style={{ color: '#0f172a', fontWeight: 800, letterSpacing: '-.03em' }}>PloiKhong</span>
-        <span style={{ color: '#FF6B35', fontSize: size * 0.58, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase' }}>Marketplace</span>
+        <span style={{ color: 'var(--brand-orange, #FF6B35)', fontSize: size * 0.58, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase' }}>Marketplace</span>
       </span>
     </span>
   );

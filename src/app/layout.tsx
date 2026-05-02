@@ -1,6 +1,21 @@
 import type { Metadata } from 'next';
+import { Inter_Tight, IBM_Plex_Sans_Thai } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+
+const interTight = Inter_Tight({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-inter-tight',
+  display: 'swap',
+});
+
+const ibmPlexSansThai = IBM_Plex_Sans_Thai({
+  subsets: ['thai', 'latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-ibm-thai',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ploikhong.com'),
@@ -50,7 +65,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="th">
+    <html lang="th" className={`${interTight.variable} ${ibmPlexSansThai.variable}`}>
       <body style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <Providers>{children}</Providers>
       </body>

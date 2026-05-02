@@ -5,10 +5,11 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Brand */
-  --accent:       #ff2d1f;
-  --accent-hover: #e02218;
+  /* Brand — LOGO_C_SPEC.md: c1=#1667fe (blue) c2=#FF6B35 (orange) c3=#0f172a (ink) */
+  --accent:       #1667fe;
+  --accent-hover: #0f55e8;
   --accent-ink:   #ffffff;
+  --brand-orange: #FF6B35;
 
   /* Backgrounds — Cool White */
   --bg:           #f8f9fb;
@@ -20,7 +21,7 @@
   --line-2:       #d0d5de;
 
   /* Text */
-  --ink:          #111110;
+  --ink:          #0f172a;
   --ink-2:        #55534c;
   --ink-3:        #8a877e;
 
@@ -29,11 +30,11 @@
   --warn:         #a85a00;
   --neg:          #b83216;
 
-  /* Typography — system font stack (matches design preview) */
-  --font-th:      system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-display: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Typography — Inter Tight (display) + IBM Plex Sans Thai (body) from LOGO_C_SPEC.md */
+  --font-th:      var(--font-ibm-thai, 'IBM Plex Sans Thai', system-ui, sans-serif);
+  --font-display: var(--font-inter-tight, 'Inter Tight', system-ui, sans-serif);
   --font-mono:    ui-monospace, 'Cascadia Code', Consolas, 'Courier New', monospace;
-  --font-disp:    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-disp:    var(--font-inter-tight, 'Inter Tight', system-ui, sans-serif);
 
   /* Radius */
   --radius:    10px;

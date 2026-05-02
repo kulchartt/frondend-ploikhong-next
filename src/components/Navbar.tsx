@@ -87,7 +87,7 @@ export function Navbar({
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 17, color: '#0f172a', letterSpacing: '-.03em' }}>
                 PloiKhong
               </span>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 10, color: '#FF6B35', letterSpacing: '.04em', textTransform: 'uppercase' }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 10, color: 'var(--brand-orange, #FF6B35)', letterSpacing: '.04em', textTransform: 'uppercase' }}>
                 Marketplace
               </span>
             </span>
