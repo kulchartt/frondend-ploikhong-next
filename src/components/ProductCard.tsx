@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 interface ProductCardProps {
   product: {
@@ -51,6 +52,7 @@ export function ProductCard({ product, inWishlist = false, onWishlist, onClick, 
   const [liked, setLiked] = useState(inWishlist);
   useEffect(() => { setLiked(inWishlist); }, [inWishlist]);
   const [hovered, setHovered] = useState(false);
+  const isMobile = useBreakpoint(768);
   const tints = IMG_TINTS[product.id % IMG_TINTS.length];
   const price = product.flash_price || product.price;
 
@@ -182,33 +184,55 @@ export function ProductCard({ product, inWishlist = false, onWishlist, onClick, 
         </button>
       </div>
 
-      {/* Body */}
-      <div style={{ padding: '12px 14px 14px' }}>
-        <div style={{
-          fontSize: 14, fontWeight: 500, lineHeight: 1.4, marginBottom: 4,
-          color: 'var(--ink)',
-          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-          overflow: 'hidden', minHeight: '2.8em',
-        }}>
-          {product.title}
+      {/* Body — compact on mobile, full on desktop */}
+      {isMobile ? (
+        /* Mobile: image-first, minimal text */
+        <div style={{ padding: '5px 8px 8px' }}>
+          <div style={{
+            fontSize: 12, fontWeight: 500, lineHeight: 1.35, color: 'var(--ink)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            marginBottom: 2,
+          }}>
+            {product.title}
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
+            ฿{Number(price).toLocaleString()}
+            {product.flash_price && product.original_price && product.original_price > price && (
+              <s style={{ color: 'var(--ink-3)', fontWeight: 400, fontSize: 11, marginLeft: 5 }}>
+                ฿{Number(product.original_price).toLocaleString()}
+              </s>
+            )}
+          </div>
         </div>
+      ) : (
+        /* Desktop: full info */
+        <div style={{ padding: '12px 14px 14px' }}>
+          <div style={{
+            fontSize: 14, fontWeight: 500, lineHeight: 1.4, marginBottom: 4,
+            color: 'var(--ink)',
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+            overflow: 'hidden', minHeight: '2.8em',
+          }}>
+            {product.title}
+          </div>
 
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700,
-          letterSpacing: '-.01em', color: 'var(--ink)' }}>
-          ฿{Number(price).toLocaleString()}
-          {product.original_price && product.original_price > price && (
-            <s style={{ color: 'var(--ink-3)', fontWeight: 400, fontSize: 13, marginLeft: 6 }}>
-              ฿{Number(product.original_price).toLocaleString()}
-            </s>
-          )}
-        </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700,
+            letterSpacing: '-.01em', color: 'var(--ink)' }}>
+            ฿{Number(price).toLocaleString()}
+            {product.original_price && product.original_price > price && (
+              <s style={{ color: 'var(--ink-3)', fontWeight: 400, fontSize: 13, marginLeft: 6 }}>
+                ฿{Number(product.original_price).toLocaleString()}
+              </s>
+            )}
+          </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginTop: 8, fontSize: 12, color: 'var(--ink-3)' }}>
-          <span>{product.location?.split('·')[0]?.trim() ?? ''}</span>
-          <span>{timeAgo(product.created_at)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginTop: 8, fontSize: 12, color: 'var(--ink-3)' }}>
+            <span>{product.location?.split('·')[0]?.trim() ?? ''}</span>
+            <span>{timeAgo(product.created_at)}</span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

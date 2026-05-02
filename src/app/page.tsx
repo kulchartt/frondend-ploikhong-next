@@ -210,7 +210,7 @@ export default function HomePage() {
 
       {/* Main wrapper */}
       <div style={{ maxWidth: 1440, margin: '0 auto',
-        padding: isMobile ? '12px 14px 72px' : '20px 20px 60px',
+        padding: isMobile ? '10px 8px 72px' : '20px 20px 60px',
         display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '240px 1fr', gap: 24, alignItems: 'flex-start' }}>
 
         {/* Sidebar */}
@@ -379,7 +379,7 @@ export default function HomePage() {
             </div>
           ) : (
             <div style={{
-              display: 'grid', gap: 14,
+              display: 'grid', gap: isMobile ? 8 : 14,
               gridTemplateColumns: gridView
                 ? (isMobile ? 'repeat(2,1fr)' : 'repeat(auto-fill, minmax(180px, 1fr))')
                 : '1fr',
