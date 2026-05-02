@@ -111,7 +111,7 @@ export function PloiWordmark({ size = 22, markSize = 52 }: { size?: number; mark
     WebkitTextFillColor: 'transparent',
     fontSize: size,
     lineHeight: 1.1,
-    display: 'block',
+    display: 'inline-block',
   };
 
   return (
