@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import * as api from '@/lib/api';
+import { PloiMark } from './PloiLogo';
 
 const SUBNAV = ['สำหรับคุณ', 'ใกล้ฉัน', 'ของใหม่', 'Boost เด่น', 'ส่งฟรี', 'ลดราคา', 'ของสะสม', 'ดีลพนักงาน', 'นัดรับ'];
 
@@ -79,15 +80,18 @@ export function Navbar({
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14,
         padding: isMobile ? '8px 14px' : '10px 20px', maxWidth: 1440, margin: '0 auto' }}>
 
-        <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
-          <span style={{ fontSize: 20, lineHeight: 1, marginRight: 4, filter: 'saturate(1.2)' }}>🛍️</span>
-          <span style={{
-            fontFamily: 'var(--font-display)', fontWeight: 900,
-            fontSize: 17, color: 'var(--ink)', letterSpacing: '-.04em',
-            lineHeight: 1,
-          }}>
-            Ploi<span style={{ color: 'var(--accent)' }}>Khong</span>
-          </span>
+        <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <PloiMark size={isMobile ? 34 : 38} />
+          {!isMobile && (
+            <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 15, color: 'var(--ink)', letterSpacing: '-.03em' }}>
+                PloiKhong
+              </span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 9.5, color: 'var(--accent)', letterSpacing: '.01em' }}>
+                Marketplace
+              </span>
+            </span>
+          )}
         </Link>
 
         {/* Search bar */}
