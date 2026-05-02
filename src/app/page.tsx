@@ -78,6 +78,9 @@ export default function HomePage() {
   const isMobile = useBreakpoint(768);
   const token: string | undefined = (session as any)?.token;
   const debouncedSearch = useDebounce(search, 400);
+  const [activeMobileCat, setActiveMobileCat] = useState<string | undefined>(undefined);
+
+  const MOBILE_CATS = ['ทั้งหมด', 'มือถือ & แท็บเล็ต', 'คอมพิวเตอร์', 'เครื่องใช้ไฟฟ้า', 'แฟชั่น', 'กล้อง & อุปกรณ์', 'กีฬา & จักรยาน', 'ของสะสม & เกม', 'หนังสือ', 'อื่นๆ'];
 
   function openListing() {
     if (session?.user) setListingOpen(true);
@@ -168,9 +171,46 @@ export default function HomePage() {
         }}
       />
 
+      {/* ── Mobile category chips bar ─────────────────────────────────────────── */}
+      {isMobile && (
+        <div style={{
+          position: 'sticky', top: 57, zIndex: 90,
+          background: 'var(--surface)', borderBottom: '1px solid var(--line)',
+          display: 'flex', gap: 8, padding: '8px 14px',
+          overflowX: 'auto', scrollbarWidth: 'none',
+        }}>
+          {MOBILE_CATS.map(cat => {
+            const isActive = cat === 'ทั้งหมด' ? !activeMobileCat : activeMobileCat === cat;
+            return (
+              <button key={cat}
+                onClick={() => {
+                  const next = cat === 'ทั้งหมด' ? undefined : cat;
+                  setActiveMobileCat(next);
+                  setFilters((f: any) => ({ ...f, activeCat: next }));
+                }}
+                style={{
+                  flexShrink: 0,
+                  padding: '6px 14px',
+                  borderRadius: 999,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: isActive ? 600 : 400,
+                  background: isActive ? 'var(--ink)' : 'var(--surface-2)',
+                  color: isActive ? 'var(--bg)' : 'var(--ink)',
+                  fontFamily: 'inherit',
+                  whiteSpace: 'nowrap',
+                }}>
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Main wrapper */}
       <div style={{ maxWidth: 1440, margin: '0 auto',
-        padding: isMobile ? '12px 14px 60px' : '20px 20px 60px',
+        padding: isMobile ? '12px 14px 72px' : '20px 20px 60px',
         display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '240px 1fr', gap: 24, alignItems: 'flex-start' }}>
 
         {/* Sidebar */}
@@ -179,8 +219,8 @@ export default function HomePage() {
         {/* Main */}
         <main>
 
-          {/* Promo Banner */}
-          <div style={{
+          {/* Promo Banner — desktop only */}
+          {!isMobile && <div style={{
             background: 'linear-gradient(120deg, var(--surface), var(--surface-2))',
             border: '1px solid var(--line)',
             borderRadius: 'var(--radius)',
@@ -213,10 +253,10 @@ export default function HomePage() {
               }}>
               ทดลองใช้งานฟรี
             </button>
-          </div>
+          </div>}
 
-          {/* Money Rail — bordered container */}
-          <div style={{
+          {/* Money Rail — desktop only */}
+          {!isMobile && <div style={{
             background: 'var(--surface)',
             border: '1px solid var(--line)',
             borderRadius: 14,
@@ -271,7 +311,7 @@ export default function HomePage() {
                 )}
               </div>
             ))}
-          </div>
+          </div>}
 
           {/* Toolbar */}
           <div style={{
@@ -356,7 +396,8 @@ export default function HomePage() {
               ))}
             </div>
           )}
-          {isMobile && (
+          {/* Floating filter button — desktop only (replaced by category chips on mobile) */}
+          {!isMobile && (
             <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
               <button
                 onClick={() => setFilterDrawerOpen(true)}
@@ -489,6 +530,62 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* ── Mobile bottom tab bar ────────────────────────────────────────────── */}
+      {isMobile && (
+        <nav style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
+          background: 'var(--surface)', borderTop: '1px solid var(--line)',
+          height: 58,
+          display: 'flex', alignItems: 'center',
+        }}>
+          {/* หน้าหลัก */}
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', fontFamily: 'inherit', height: '100%' }}>
+            <HomeTabIcon />
+            <span style={{ fontSize: 11 }}>หน้าหลัก</span>
+          </button>
+
+          {/* ค้นหา */}
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', fontFamily: 'inherit', height: '100%' }}>
+            <SearchTabIcon />
+            <span style={{ fontSize: 11 }}>ค้นหา</span>
+          </button>
+
+          {/* ➕ center */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button
+              onClick={openListing}
+              style={{ width: 44, height: 44, borderRadius: 999, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', display: 'grid', placeItems: 'center', fontSize: 22, fontWeight: 700, lineHeight: 1 }}>
+              +
+            </button>
+          </div>
+
+          {/* แชท */}
+          <button
+            onClick={() => { if (!session?.user) { setAuthMode('login'); setAuthOpen(true); return; } setChatOpen(true); setUnreadChat(0); }}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', fontFamily: 'inherit', height: '100%', position: 'relative' }}>
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              <ChatTabIcon />
+              {!!unreadChat && (
+                <span style={{ position: 'absolute', top: -2, right: -4, width: 6, height: 6, background: 'var(--accent)', borderRadius: '50%' }} />
+              )}
+            </span>
+            <span style={{ fontSize: 11 }}>แชท</span>
+          </button>
+
+          {/* บัญชี */}
+          <button
+            onClick={() => { if (session?.user) setHubOpen({ mode: 'sell' }); else { setAuthOpen(true); setAuthMode('login'); } }}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', fontFamily: 'inherit', height: '100%' }}>
+            <UserTabIcon />
+            <span style={{ fontSize: 11 }}>บัญชี</span>
+          </button>
+        </nav>
+      )}
 
       {chatOpen && (
         <ChatDrawer
@@ -627,6 +724,39 @@ export default function HomePage() {
         />
       )}
     </>
+  );
+}
+
+// ─── Mobile bottom tab icons ─────────────────────────────────────────────────
+function HomeTabIcon() {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
+      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/>
+      <path d="M9 21V12h6v9"/>
+    </svg>
+  );
+}
+function SearchTabIcon() {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
+      <circle cx="11" cy="11" r="7"/>
+      <path d="M21 21l-4.35-4.35"/>
+    </svg>
+  );
+}
+function ChatTabIcon() {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
+      <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  );
+}
+function UserTabIcon() {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={1.8}>
+      <circle cx="12" cy="8" r="4"/>
+      <path d="M4 21a8 8 0 0 1 16 0"/>
+    </svg>
   );
 }
 

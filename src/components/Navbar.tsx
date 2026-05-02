@@ -91,30 +91,39 @@ export function Navbar({
         </Link>
 
         {/* Search bar */}
-        <div style={{ flex: 1, maxWidth: isMobile ? undefined : 640, display: 'flex',
-          border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)',
-          overflow: 'hidden', background: 'var(--surface)' }}>
+        {isMobile ? (
+          /* Mobile: compact pill, no category dropdown, no search button */
           <input type="text" placeholder="ค้นหาของมือสอง..."
             onChange={e => onSearch?.(e.target.value)}
-            style={{ flex: 1, border: 'none', outline: 'none', padding: '10px 14px',
-              fontSize: 14, background: 'transparent', color: 'var(--ink)', fontFamily: 'inherit' }} />
-          <div style={{ borderLeft: '1px solid var(--line)', padding: '0 14px',
-            display: 'flex', alignItems: 'center', gap: 6,
-            fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-            หมวด: ทั้งหมด <ChevronDown size={13} />
+            style={{ flex: 1, border: 'none', outline: 'none', padding: '8px 14px',
+              fontSize: 14, background: 'var(--surface-2)', color: 'var(--ink)', fontFamily: 'inherit',
+              borderRadius: 20 }} />
+        ) : (
+          <div style={{ flex: 1, maxWidth: 640, display: 'flex',
+            border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)',
+            overflow: 'hidden', background: 'var(--surface)' }}>
+            <input type="text" placeholder="ค้นหาของมือสอง..."
+              onChange={e => onSearch?.(e.target.value)}
+              style={{ flex: 1, border: 'none', outline: 'none', padding: '10px 14px',
+                fontSize: 14, background: 'transparent', color: 'var(--ink)', fontFamily: 'inherit' }} />
+            <div style={{ borderLeft: '1px solid var(--line)', padding: '0 14px',
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              หมวด: ทั้งหมด <ChevronDown size={13} />
+            </div>
+            <button style={{ padding: '0 18px', background: 'var(--ink)', color: 'var(--bg)',
+              border: 'none', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+              ค้นหา
+            </button>
           </div>
-          <button style={{ padding: '0 18px', background: 'var(--ink)', color: 'var(--bg)',
-            border: 'none', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-            fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-            ค้นหา
-          </button>
-        </div>
+        )}
 
         {/* ── Right section ── order: แชท, ถูกใจ, บัญชี, ซื้อ, ขาย, +ลงขาย ───── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
 
-          {/* แชท, ถูกใจ */}
-          {navItems.slice(0, 2).map(({ icon, label, badge, action }) => (
+          {/* Desktop-only: แชท, ถูกใจ, ซื้อ, ขาย */}
+          {!isMobile && navItems.slice(0, 2).map(({ icon, label, badge, action }) => (
             <button key={label} onClick={action} style={iconBtn()}
               onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
               <span style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -124,18 +133,17 @@ export function Navbar({
                     width: 6, height: 6, background: 'var(--accent)', borderRadius: '50%' }} />
                 )}
               </span>
-              {!isMobile && <span style={labelStyle}>{label}</span>}
+              <span style={labelStyle}>{label}</span>
             </button>
           ))}
 
-          {/* ซื้อ, ขาย */}
-          {navItems.slice(2).map(({ icon, label, action }) => (
+          {!isMobile && navItems.slice(2).map(({ icon, label, action }) => (
             <button key={label} onClick={action} style={iconBtn()}
               onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {icon}
               </span>
-              {!isMobile && <span style={labelStyle}>{label}</span>}
+              <span style={labelStyle}>{label}</span>
             </button>
           ))}
 
@@ -287,39 +295,43 @@ export function Navbar({
             )}
           </div>
 
-          {/* + ลงขาย */}
-          <button onClick={onOpenListing}
-            style={{ padding: isMobile ? '8px 12px' : '9px 16px',
-              background: 'var(--accent)', color: '#fff',
-              border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 600,
-              fontSize: isMobile ? 12 : 13, cursor: 'pointer', whiteSpace: 'nowrap',
-              flexShrink: 0, marginLeft: 4, fontFamily: 'inherit' }}>
-            + ลงขาย
-          </button>
+          {/* + ลงขาย — desktop only */}
+          {!isMobile && (
+            <button onClick={onOpenListing}
+              style={{ padding: '9px 16px',
+                background: 'var(--accent)', color: '#fff',
+                border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 600,
+                fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
+                flexShrink: 0, marginLeft: 4, fontFamily: 'inherit' }}>
+              + ลงขาย
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ── Row 2 — subnav ─────────────────────────────────────────────────────── */}
-      <div style={{ borderTop: '1px solid var(--line)', background: 'var(--surface)',
-        overflowX: 'auto', scrollbarWidth: 'none' }}>
-        <div style={{ display: 'flex', gap: 2, padding: isMobile ? '0 14px' : '0 20px',
-          maxWidth: 1440, margin: '0 auto' }}>
-          {SUBNAV.map((item, i) => (
-            <button key={item}
-              style={{ padding: isMobile ? '9px 10px' : '11px 16px',
-                background: 'none', border: 'none', cursor: 'pointer',
-                borderBottom: i === 0 ? '2px solid var(--ink)' : '2px solid transparent',
-                fontWeight: i === 0 ? 600 : 400,
-                fontSize: isMobile ? 12 : 13,
-                color: i === 0 ? 'var(--ink)' : 'var(--ink-2)', whiteSpace: 'nowrap',
-                fontFamily: 'inherit' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink)')}
-              onMouseLeave={e => (e.currentTarget.style.color = i === 0 ? 'var(--ink)' : 'var(--ink-2)')}>
-              {item}
-            </button>
-          ))}
+      {/* ── Row 2 — subnav (desktop only) ─────────────────────────────────────── */}
+      {!isMobile && (
+        <div style={{ borderTop: '1px solid var(--line)', background: 'var(--surface)',
+          overflowX: 'auto', scrollbarWidth: 'none' }}>
+          <div style={{ display: 'flex', gap: 2, padding: '0 20px',
+            maxWidth: 1440, margin: '0 auto' }}>
+            {SUBNAV.map((item, i) => (
+              <button key={item}
+                style={{ padding: '11px 16px',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  borderBottom: i === 0 ? '2px solid var(--ink)' : '2px solid transparent',
+                  fontWeight: i === 0 ? 600 : 400,
+                  fontSize: 13,
+                  color: i === 0 ? 'var(--ink)' : 'var(--ink-2)', whiteSpace: 'nowrap',
+                  fontFamily: 'inherit' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink)')}
+                onMouseLeave={e => (e.currentTarget.style.color = i === 0 ? 'var(--ink)' : 'var(--ink-2)')}>
+                {item}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </header>
   );
 }
