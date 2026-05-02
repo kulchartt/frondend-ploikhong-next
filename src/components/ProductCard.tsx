@@ -169,47 +169,39 @@ export function ProductCard({ product, inWishlist = false, onWishlist, onClick, 
           )}
         </div>
 
-        {/* Wishlist top-right */}
+        {/* Wishlist top-right — outline heart, no bg */}
         <button onClick={handleWishlist}
-          style={{ position: 'absolute', top: 8, right: 8, width: 28, height: 28,
-            borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,.32)',
-            display: 'grid', placeItems: 'center', cursor: 'pointer',
-            backdropFilter: 'blur(4px)', padding: 0 }}>
-          <svg width={14} height={14} viewBox="0 0 24 24" strokeWidth={1.8}
-            stroke={liked ? '#ff6b6b' : '#fff'} fill={liked ? '#ff6b6b' : 'none'}>
+          style={{ position: 'absolute', top: 6, right: 6, width: 26, height: 26,
+            borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,.75)',
+            display: 'grid', placeItems: 'center', cursor: 'pointer', padding: 0 }}>
+          <svg width={13} height={13} viewBox="0 0 24 24" strokeWidth={2}
+            stroke={liked ? '#e53935' : '#555'} fill={liked ? '#e53935' : 'none'}>
             <path d="M12 21s-7-4.5-9.5-10C1 7.5 3 4 7 4c2 0 3.5 1.5 5 3 1.5-1.5 3-3 5-3 4 0 6 3.5 4.5 7C19 16.5 12 21 12 21z"/>
           </svg>
         </button>
-
-        {/* Price overlay — bottom-left */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          padding: '18px 10px 6px 8px',
-          background: 'linear-gradient(to top, rgba(0,0,0,.55) 0%, transparent 100%)',
-          display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
-        }}>
-          <span style={{ color: '#fff', fontWeight: 700, fontSize: 14, fontFamily: 'var(--font-display)', textShadow: '0 1px 3px rgba(0,0,0,.4)' }}>
-            ฿{Number(price).toLocaleString()}
-            {product.original_price && product.original_price > price && (
-              <s style={{ color: 'rgba(255,255,255,.65)', fontWeight: 400, fontSize: 11, marginLeft: 5 }}>
-                ฿{Number(product.original_price).toLocaleString()}
-              </s>
-            )}
-          </span>
-          {product.flash_price && (
-            <span style={{ background: 'var(--accent)', color: '#fff', fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 999 }}>SALE</span>
-          )}
-        </div>
       </div>
 
-      {/* Body — title only */}
+      {/* Body — FB style: price bold + title + location */}
       <div style={{ padding: '5px 8px 8px' }}>
-        <div style={{
-          fontSize: 12, fontWeight: 500, lineHeight: 1.35, color: 'var(--ink)',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
+        {/* Price */}
+        <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)', fontFamily: 'var(--font-display)', lineHeight: 1.2 }}>
+          ฿{Number(price).toLocaleString()}
+          {product.flash_price && (
+            <span style={{ background: 'var(--accent)', color: '#fff', fontSize: 9, fontWeight: 800, padding: '1px 5px', borderRadius: 999, marginLeft: 5, verticalAlign: 'middle' }}>SALE</span>
+          )}
+        </div>
+        {/* Title */}
+        <div style={{ fontSize: 12, fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.35, marginTop: 1,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {product.title}
         </div>
+        {/* Location */}
+        {product.location && (
+          <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 1,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {product.location.split('·')[0]?.trim()}
+          </div>
+        )}
       </div>
     </div>
   );
