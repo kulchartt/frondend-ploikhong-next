@@ -379,7 +379,7 @@ export default function HomePage() {
             </div>
           ) : (
             <div style={{
-              display: 'grid', gap: isMobile ? 8 : 14,
+              display: 'grid', gap: isMobile ? 8 : 10,
               gridTemplateColumns: gridView
                 ? (isMobile ? 'repeat(2,1fr)' : 'repeat(auto-fill, minmax(180px, 1fr))')
                 : '1fr',
