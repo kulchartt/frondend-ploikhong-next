@@ -90,6 +90,7 @@ export function Navbar({
                 color: '#e63946',
                 background: PK_GRADIENT, backgroundClip: 'text',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                width: 'fit-content',
               }}>
                 PloiKhong
               </span>

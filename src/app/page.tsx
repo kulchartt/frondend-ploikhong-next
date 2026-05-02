@@ -433,6 +433,7 @@ export default function HomePage() {
                     color: '#e63946',
                     background: PK_GRADIENT, backgroundClip: 'text',
                     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                    width: 'fit-content',
                   }}>PloiKhong</span>
                   <span style={{
                     fontFamily: 'var(--font-th, "IBM Plex Sans Thai", system-ui, sans-serif)',

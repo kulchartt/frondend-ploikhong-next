@@ -112,6 +112,7 @@ export function PloiWordmark({ size = 22, markSize = 52 }: { size?: number; mark
     fontSize: size,
     lineHeight: 1.1,
     display: 'inline-block',
+    width: 'fit-content',   // prevent flex-stretch from widening the span beyond text width
   };
 
   return (
