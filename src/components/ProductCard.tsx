@@ -143,8 +143,8 @@ export function ProductCard({ product, inWishlist = false, onWishlist, onClick, 
         opacity: hovered ? .88 : 1,
       }}
     >
-      {/* Image — 4:3 landscape (bigger feel like FB) */}
-      <div style={{ position: 'relative', aspectRatio: '4/3', width: '100%',
+      {/* Image — 1:1 square */}
+      <div style={{ position: 'relative', aspectRatio: '1/1', width: '100%',
         background: `linear-gradient(135deg, ${tints[0]} 0%, ${tints[1]} 100%)` }}>
         {product.images?.[0] && (
           <img src={product.images[0]} alt={product.title}

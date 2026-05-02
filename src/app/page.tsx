@@ -379,9 +379,9 @@ export default function HomePage() {
             </div>
           ) : (
             <div style={{
-              display: 'grid', gap: isMobile ? 2 : 8,
+              display: 'grid', gap: isMobile ? 2 : 3,
               gridTemplateColumns: gridView
-                ? (isMobile ? 'repeat(2,1fr)' : 'repeat(auto-fill, minmax(180px, 1fr))')
+                ? (isMobile ? 'repeat(2,1fr)' : 'repeat(auto-fill, minmax(150px, 1fr))')
                 : '1fr',
             }}>
               {products.map(p => (
