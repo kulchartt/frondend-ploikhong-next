@@ -102,10 +102,12 @@ export function PloiWordmark({ size = 22, markSize = 52 }: { size?: number; mark
     fontFamily: 'var(--font-display, "Inter Tight", system-ui, sans-serif)',
     fontWeight: 800,
     letterSpacing: '-0.015em',
+    /* fallback: browsers ที่ไม่ support background-clip:text จะเห็นสีนี้ */
+    color: '#e63946',
+    /* gradient overlay */
     background: PK_GRADIENT,
     backgroundClip: 'text',
     WebkitBackgroundClip: 'text',
-    color: 'transparent',
     WebkitTextFillColor: 'transparent',
     fontSize: size,
     lineHeight: 1.1,

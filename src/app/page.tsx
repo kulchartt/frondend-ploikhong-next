@@ -430,8 +430,9 @@ export default function HomePage() {
                   <span style={{
                     fontFamily: 'var(--font-display, "Inter Tight", system-ui, sans-serif)',
                     fontWeight: 800, fontSize: 17, letterSpacing: '-0.015em', lineHeight: 1.1,
+                    color: '#e63946',
                     background: PK_GRADIENT, backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text', color: 'transparent', WebkitTextFillColor: 'transparent',
+                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                   }}>PloiKhong</span>
                   <span style={{
                     fontFamily: 'var(--font-th, "IBM Plex Sans Thai", system-ui, sans-serif)',
