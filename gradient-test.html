@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Gradient Test — PloiKhong C10</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@800&display=swap" rel="stylesheet">
+<style>
+  body { font-family: sans-serif; background: #f8f9fb; padding: 40px; display: flex; gap: 60px; flex-wrap: wrap; }
+  .box { background: white; padding: 32px 40px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+  h3 { font-size: 12px; color: #888; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 20px; }
+
+  /* ✅ SPEC GRADIENT — hard stops */
+  .spec-gradient {
+    font-family: "Inter Tight", sans-serif;
+    font-weight: 800;
+    font-size: 36px;
+    letter-spacing: -0.015em;
+    display: inline-block;       /* REQUIRED */
+    color: #e63946;              /* fallback */
+    background: linear-gradient(
+      90deg,
+      #e63946 0%,  #e63946 18%,
+      #1d4ed8 22%, #1d4ed8 38%,
+      #16a34a 42%, #16a34a 58%,
+      #facc15 62%, #facc15 78%,
+      #f97316 82%, #f97316 100%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* ❌ WRONG — smooth gradient (สำหรับเทียบ) */
+  .wrong-gradient {
+    font-family: "Inter Tight", sans-serif;
+    font-weight: 800;
+    font-size: 36px;
+    letter-spacing: -0.015em;
+    display: inline-block;
+    color: #e63946;
+    background: linear-gradient(90deg, #e63946, #1d4ed8, #16a34a, #facc15, #f97316);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* ❌ WRONG — display:block */
+  .wrong-block {
+    font-family: "Inter Tight", sans-serif;
+    font-weight: 800;
+    font-size: 36px;
+    letter-spacing: -0.015em;
+    display: block;   /* ← wrong */
+    width: 300px;     /* simulates container width */
+    color: #e63946;
+    background: linear-gradient(
+      90deg,
+      #e63946 0%,  #e63946 18%,
+      #1d4ed8 22%, #1d4ed8 38%,
+      #16a34a 42%, #16a34a 58%,
+      #facc15 62%, #facc15 78%,
+      #f97316 82%, #f97316 100%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .stripe-ref {
+    display: flex; height: 16px; width: 200px; border-radius: 3px; overflow: hidden; margin-top: 8px;
+  }
+  .stripe-ref div { flex: 1; }
+  .tag { font-size: 11px; color: #888; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="box">
+  <h3>✅ Correct — hard stops (spec)</h3>
+  <div class="spec-gradient">PloiKhong</div>
+  <div class="stripe-ref">
+    <div style="background:#e63946"></div>
+    <div style="background:#1d4ed8"></div>
+    <div style="background:#16a34a"></div>
+    <div style="background:#facc15"></div>
+    <div style="background:#f97316"></div>
+  </div>
+  <div class="tag">ตัวอักษรแต่ละกลุ่มควรมีสีเดียวคมแยกชัด ตามแถบสีด้านล่าง</div>
+</div>
+
+<div class="box">
+  <h3>❌ Wrong 1 — smooth gradient (ไม่มี hard stops)</h3>
+  <div class="wrong-gradient">PloiKhong</div>
+  <div class="tag">ไล่สีต่อเนื่อง เบลอ — ไม่ตรง spec</div>
+</div>
+
+<div class="box">
+  <h3>❌ Wrong 2 — display:block (gradient ยืดเต็ม container)</h3>
+  <div class="wrong-block">PloiKhong</div>
+  <div class="tag">เห็นแค่แดงทั้งคำ เพราะ text อยู่แค่ 30% ของ container</div>
+</div>
+
+</body>
+</html>
