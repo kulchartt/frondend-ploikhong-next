@@ -176,7 +176,7 @@ export default function HomePage() {
         <div style={{
           position: 'sticky', top: 57, zIndex: 90,
           background: 'var(--surface)', borderBottom: '1px solid var(--line)',
-          display: 'flex', gap: 8, padding: '8px 14px',
+          display: 'flex', gap: 6, padding: '8px 10px',
           overflowX: 'auto', scrollbarWidth: 'none',
         }}>
           {MOBILE_CATS.map(cat => {
@@ -210,7 +210,7 @@ export default function HomePage() {
 
       {/* Main wrapper */}
       <div style={{ maxWidth: 1440, margin: '0 auto',
-        padding: isMobile ? '10px 8px 72px' : '20px 20px 60px',
+        padding: isMobile ? '8px 0 72px' : '20px 20px 60px',
         display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '240px 1fr', gap: 24, alignItems: 'flex-start' }}>
 
         {/* Sidebar */}
@@ -379,7 +379,7 @@ export default function HomePage() {
             </div>
           ) : (
             <div style={{
-              display: 'grid', gap: isMobile ? 8 : 10,
+              display: 'grid', gap: isMobile ? 2 : 8,
               gridTemplateColumns: gridView
                 ? (isMobile ? 'repeat(2,1fr)' : 'repeat(auto-fill, minmax(180px, 1fr))')
                 : '1fr',

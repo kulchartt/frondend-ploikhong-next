@@ -134,17 +134,17 @@ export function ProductCard({ product, inWishlist = false, onWishlist, onClick, 
       onMouseLeave={() => setHovered(false)}
       style={{
         background: 'var(--surface)',
-        border: `1px solid ${hovered ? 'var(--ink)' : 'var(--line)'}`,
-        borderRadius: 'var(--radius)',
+        border: 'none',
+        borderRadius: 6,
         overflow: 'hidden',
         cursor: 'pointer',
         position: 'relative',
-        transition: 'border-color .18s, transform .18s',
-        transform: hovered ? 'translateY(-1px)' : 'none',
+        transition: 'opacity .15s',
+        opacity: hovered ? .88 : 1,
       }}
     >
-      {/* Image — square 1:1 */}
-      <div style={{ position: 'relative', aspectRatio: '1/1', width: '100%',
+      {/* Image — 4:3 landscape (bigger feel like FB) */}
+      <div style={{ position: 'relative', aspectRatio: '4/3', width: '100%',
         background: `linear-gradient(135deg, ${tints[0]} 0%, ${tints[1]} 100%)` }}>
         {product.images?.[0] && (
           <img src={product.images[0]} alt={product.title}
