@@ -120,7 +120,7 @@ export function Navbar({
               fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
               หมวด: ทั้งหมด <ChevronDown size={13} />
             </div>
-            <button style={{ padding: '0 18px', background: 'var(--ink)', color: 'var(--bg)',
+            <button style={{ padding: '0 18px', background: '#4b5563', color: '#fff',
               border: 'none', fontSize: 13, fontWeight: 500, cursor: 'pointer',
               fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
               ค้นหา
@@ -308,10 +308,11 @@ export function Navbar({
           {!isMobile && (
             <button onClick={onOpenListing}
               style={{ padding: '9px 16px',
-                background: 'var(--accent)', color: '#fff',
+                background: PK_GRADIENT, color: '#fff',
                 border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 600,
                 fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
-                flexShrink: 0, marginLeft: 4, fontFamily: 'inherit' }}>
+                flexShrink: 0, marginLeft: 4, fontFamily: 'inherit',
+                boxShadow: '0 2px 10px rgba(230,57,70,.3)' }}>
               + ลงขาย
             </button>
           )}

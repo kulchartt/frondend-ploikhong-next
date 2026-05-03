@@ -231,7 +231,7 @@ export default function HomePage() {
           }}>
             <div style={{
               width: 40, height: 40, borderRadius: 'var(--radius-sm)',
-              background: 'var(--accent)', color: '#fff',
+              background: PK_GRADIENT, color: '#fff',
               display: isMobile ? 'none' : 'grid', placeItems: 'center',
               fontWeight: 700, fontFamily: 'var(--font-display)',
               fontSize: 18, flexShrink: 0,
@@ -248,9 +248,10 @@ export default function HomePage() {
             <button
               onClick={() => { if (session?.user) setHubOpen({ mode: 'sell', tab: 'premium' }); else setAuthOpen(true); }}
               style={{
-                padding: '9px 16px', background: 'var(--accent)', color: '#fff',
+                padding: '9px 16px', background: PK_GRADIENT, color: '#fff',
                 border: 'none', borderRadius: 'var(--radius-sm)',
                 fontWeight: 600, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap',
+                boxShadow: '0 2px 10px rgba(230,57,70,.3)',
               }}>
               ทดลองใช้งานฟรี
             </button>
@@ -274,8 +275,8 @@ export default function HomePage() {
                   else setAuthOpen(true);
                 }}
                 style={{
-                  background: m.featured ? 'var(--ink)' : 'var(--surface-2)',
-                  color: m.featured ? 'var(--bg)' : 'var(--ink)',
+                  background: m.featured ? '#4b5563' : 'var(--surface-2)',
+                  color: m.featured ? '#fff' : 'var(--ink)',
                   borderRadius: 'var(--radius)',
                   padding: '14px 16px',
                   border: (m as any).ctaLast
@@ -290,7 +291,7 @@ export default function HomePage() {
                   position: 'absolute', top: 10, right: 10,
                   fontSize: 10, fontWeight: 700,
                   fontFamily: 'var(--font-mono)', letterSpacing: '.08em',
-                  color: m.featured ? 'rgba(255,255,255,.5)' : 'var(--accent)',
+                  color: '#e63946',
                   textTransform: 'uppercase',
                 }}>{m.badge}</span>
                 <div style={{
@@ -299,14 +300,14 @@ export default function HomePage() {
                   display: 'flex', alignItems: 'center', gap: 6,
                 }}>
                   {m.title}
-                  {(m as any).ctaLast && <span style={{ fontSize: 13, color: 'var(--accent)' }}>→</span>}
+                  {(m as any).ctaLast && <span style={{ fontSize: 13, color: '#e63946' }}>→</span>}
                 </div>
                 <div style={{
                   fontSize: 12, lineHeight: 1.5,
-                  color: m.featured ? 'rgba(250,250,247,.72)' : 'var(--ink-2)',
+                  color: m.featured ? 'rgba(255,255,255,.8)' : 'var(--ink-2)',
                 }}>{m.desc}</div>
                 {(m as any).ctaLast && (
-                  <div style={{ marginTop: 6, fontSize: 11, fontWeight: 600, color: 'var(--accent)' }}>
+                  <div style={{ marginTop: 6, fontSize: 11, fontWeight: 600, color: '#e63946' }}>
                     ดูทั้งหมด →
                   </div>
                 )}
@@ -395,17 +396,6 @@ export default function HomePage() {
                   onWishlist={handleWishlist}
                 />
               ))}
-            </div>
-          )}
-          {/* Floating filter button — desktop only (replaced by category chips on mobile) */}
-          {!isMobile && (
-            <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
-              <button
-                onClick={() => setFilterDrawerOpen(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 22px', background: 'var(--accent)', color: '#fff', borderRadius: 999, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(29,78,216,.35)' }}>
-                <svg width={16} height={16} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={2}><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-                ตัวกรอง
-              </button>
             </div>
           )}
         </main>

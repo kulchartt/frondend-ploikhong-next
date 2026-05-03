@@ -17,6 +17,7 @@ const ibmPlexSansThai = IBM_Plex_Sans_Thai({
   display: 'swap',
 });
 
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://ploikhong.com'),
   title: {

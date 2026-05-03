@@ -28,8 +28,8 @@ interface SidebarProps {
 
 const sectionLabel: React.CSSProperties = {
   fontFamily: 'var(--font-mono)',
-  fontSize: 11,
-  fontWeight: 500,
+  fontSize: 13,
+  fontWeight: 600,
   textTransform: 'uppercase',
   letterSpacing: '.08em',
   color: 'var(--ink-3)',
@@ -102,15 +102,15 @@ export function Sidebar({ onFilter }: SidebarProps) {
             style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               width: '100%', padding: '6px 8px', border: 'none', cursor: 'pointer',
-              borderRadius: 'var(--radius-sm)', textAlign: 'left', fontSize: 13,
+              borderRadius: 'var(--radius-sm)', textAlign: 'left', fontSize: 14,
               background: activeCat === cat.name || hoveredCat === cat.name ? 'var(--surface-2)' : 'transparent',
               fontWeight: activeCat === cat.name ? 600 : 400,
               color: activeCat === cat.name ? 'var(--ink)' : 'var(--ink-2)',
             }}>
             <span>{cat.name}</span>
             <span style={{
-              fontFamily: 'var(--font-mono)', fontSize: 11,
-              color: activeCat === cat.name ? 'var(--accent)' : 'var(--ink-3)',
+              fontFamily: 'var(--font-mono)', fontSize: 13,
+              color: activeCat === cat.name ? '#e63946' : 'var(--ink-3)',
               fontWeight: activeCat === cat.name ? 700 : 400,
             }}>
               {cat.count == null
