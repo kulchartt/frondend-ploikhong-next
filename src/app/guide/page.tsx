@@ -124,7 +124,7 @@ function TabCoins() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <StepCard n={1} icon={<IconUser />} title="เข้าเมนูเติมเหรียญ" desc="เข้าถึงได้จากเมนูบัญชีของคุณ" items={['กดไอคอนบัญชีที่ Navbar → "เติมเหรียญ & Premium"', 'หรือเข้าที่ ploikhong.com/coins โดยตรง']} />
       <StepCard n={2} icon={<IconCoin />} title="เลือกแพ็กเกจเหรียญ" desc="มีให้เลือก 4 แพ็กเกจ" items={['🪙 100 เหรียญ — ฿99', '🪙 350 เหรียญ (ประหยัด 15%) — ฿299', '🪙 800 เหรียญ (ประหยัด 25%) — ฿599 🔥 ยอดนิยม', '🪙 1,500 เหรียญ (ประหยัด 33%) — ฿999 ⭐']} />
-      <StepCard n={3} icon={<IconCard />} title="ชำระผ่าน Omise" desc="รองรับหลายช่องทาง" items={['บัตรเครดิต / เดบิต (Visa, Mastercard) — 3-D Secure', 'PromptPay — สแกน QR Code', 'TrueMoney Wallet', 'Mobile Banking']} />
+      <StepCard n={3} icon={<IconCard />} title="ชำระผ่าน Omise" desc="รองรับหลายช่องทาง" items={['บัตรเครดิต / เดบิต (Visa, Mastercard) — 3-D Secure', 'PromptPay — สแกน QR Code', 'TrueMoney Wallet — เร็วๆ นี้', 'Mobile Banking — เร็วๆ นี้']} />
       <StepCard n={4} icon={<IconStar />} title="ใช้เหรียญซื้อบริการเสริม" desc="เพิ่มยอดขายด้วย Boost และ Premium" items={['สินค้าเด่น (Featured): ปักหมุดหน้าแรก 7 วัน — 80 เหรียญ', 'Boost สินค้า: ดันขึ้นบนสุดในหมวดหมู่ — 30 เหรียญ', 'แจ้งเตือนผู้ติดตาม — 25 เหรียญ', 'Analytics Pro — 50 เหรียญ', 'เหรียญไม่หมดอายุ คืนได้ภายใน 14 วันหากยังไม่ใช้']} />
     </div>
   );
