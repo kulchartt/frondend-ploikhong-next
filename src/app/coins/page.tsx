@@ -283,7 +283,6 @@ function TopupTab({ token, balance, onRefresh }: { token: string; balance: numbe
             <div className="co-coins">🪙 {(p.coins + p.bonus).toLocaleString()}</div>
             {p.bonus > 0 && <div className="co-bonus">+ โบนัส {p.bonus.toLocaleString()} เหรียญ</div>}
             <div className="co-price">{fmtMoney(p.price)}</div>
-            <div className="co-perprice">{(p.price / (p.coins + p.bonus || 1) * 100).toFixed(1)} สต./เหรียญ</div>
             <button className="btn btn-primary" onClick={() => setCheckout({ label: `${(p.coins + p.bonus).toLocaleString()} เหรียญ`, coins: p.coins + p.bonus, price: p.price, packKey: p.key })}>
               ซื้อแพ็คนี้
             </button>
