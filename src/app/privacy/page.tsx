@@ -15,7 +15,7 @@ export default function PrivacyPage() {
         <ul style={{ paddingLeft: 20, marginTop: 8 }}>
           <li>ยืนยันตัวตนและเข้าสู่ระบบ</li>
           <li>แสดงโปรไฟล์ผู้ใช้ในแพลตฟอร์ม</li>
-          <li>อำนวยความสะดวกในการซื้อขายสินค้ามือสอง</li>
+          <li>อำนวยความสะดวกในการซื้อขายสินค้าออนไลน์</li>
         </ul>
       </section>
 

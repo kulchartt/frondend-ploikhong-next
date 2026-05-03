@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/Navbar';
-import { PloiMark, PK_GRADIENT } from '@/components/PloiLogo';
+import { PloiMark, PloiThWordmark, PK_GRADIENT } from '@/components/PloiLogo';
 import { Sidebar } from '@/components/Sidebar';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -435,14 +435,11 @@ export default function HomePage() {
                     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                     width: 'fit-content',
                   }}>PloiKhong</span>
-                  <span style={{
-                    fontFamily: 'var(--font-th, "IBM Plex Sans Thai", system-ui, sans-serif)',
-                    fontWeight: 400, fontSize: 10, color: '#8a877e', letterSpacing: '0.01em', marginTop: 1,
-                  }}>marketplace · ขายของออนไลน์</span>
+                  <PloiThWordmark size={11} />
                 </span>
               </div>
               <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.7, maxWidth: 220 }}>
-                ตลาดซื้อขายของมือสองออนไลน์<br />ของดี ราคาโดน ทุกวัน
+                ตลาดซื้อขายออนไลน์<br />ของดี ราคาโดน ทุกวัน
               </div>
             </div>
 

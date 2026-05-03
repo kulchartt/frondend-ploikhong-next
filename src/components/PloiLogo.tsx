@@ -95,6 +95,30 @@ export function PloiMark({ size = 78, ink = '#0f172a' }: { size?: number; ink?: 
   );
 }
 
+// ─── Thai Wordmark "ปล่อยของ" (rainbow gradient, IBM Plex Sans Thai 700) ────────
+// logo C10 tagline — 5 hard-stop stripes: แดง→น้ำเงิน→เขียว→เหลือง→ส้ม
+export function PloiThWordmark({ size = 14 }: { size?: number }) {
+  return (
+    <span style={{
+      fontFamily: 'var(--font-th, "IBM Plex Sans Thai", system-ui, sans-serif)',
+      fontWeight: 700,
+      letterSpacing: '-0.01em',
+      lineHeight: 1,
+      fontSize: size,
+      // fallback: browsers ที่ไม่ support background-clip:text จะเห็นสี red แทน transparent
+      color: '#e63946',
+      background: PK_GRADIENT,
+      backgroundClip: 'text',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      display: 'inline-block',
+      width: 'fit-content',
+    }}>
+      ปล่อยของ
+    </span>
+  );
+}
+
 // ─── Wordmark (rainbow gradient text) ─────────────────────────────────────────
 // "PloiKhong" = rainbow gradient | tagline = IBM Plex Sans Thai, gray
 export function PloiWordmark({ size = 22, markSize = 52 }: { size?: number; markSize?: number }) {

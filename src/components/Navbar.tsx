@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import * as api from '@/lib/api';
-import { PloiMark, PK_GRADIENT } from './PloiLogo';
+import { PloiMark, PloiThWordmark, PK_GRADIENT } from './PloiLogo';
 
 const SUBNAV = ['สำหรับคุณ', 'ใกล้ฉัน', 'ของใหม่', 'Boost เด่น', 'ส่งฟรี', 'ลดราคา', 'ของสะสม', 'ดีลพนักงาน', 'นัดรับ'];
 
@@ -94,12 +94,7 @@ export function Navbar({
               }}>
                 PloiKhong
               </span>
-              <span style={{
-                fontFamily: 'var(--font-th, "IBM Plex Sans Thai", system-ui, sans-serif)',
-                fontWeight: 400, fontSize: 10, color: '#8a877e', letterSpacing: '0.01em', marginTop: 1,
-              }}>
-                marketplace · ขายของออนไลน์
-              </span>
+              <PloiThWordmark size={11} />
             </span>
           )}
         </Link>
@@ -107,7 +102,7 @@ export function Navbar({
         {/* Search bar */}
         {isMobile ? (
           /* Mobile: compact pill, no category dropdown, no search button */
-          <input type="text" placeholder="ค้นหาของมือสอง..."
+          <input type="text" placeholder="ค้นหาสินค้า..."
             onChange={e => onSearch?.(e.target.value)}
             style={{ flex: 1, border: 'none', outline: 'none', padding: '8px 14px',
               fontSize: 14, background: 'var(--surface-2)', color: 'var(--ink)', fontFamily: 'inherit',
@@ -116,7 +111,7 @@ export function Navbar({
           <div style={{ flex: 1, maxWidth: 640, display: 'flex',
             border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)',
             overflow: 'hidden', background: 'var(--surface)' }}>
-            <input type="text" placeholder="ค้นหาของมือสอง..."
+            <input type="text" placeholder="ค้นหาสินค้า..."
               onChange={e => onSearch?.(e.target.value)}
               style={{ flex: 1, border: 'none', outline: 'none', padding: '10px 14px',
                 fontSize: 14, background: 'transparent', color: 'var(--ink)', fontFamily: 'inherit' }} />

@@ -214,3 +214,77 @@ test.describe('Logo C10 — Footer brand', () => {
   });
 
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Thai wordmark "ปล่อยของ" — Logo C10 tagline
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('Logo C10 — Thai wordmark "ปล่อยของ"', () => {
+
+  test.beforeEach(async ({ page }) => { await setup(page); });
+
+  test('navbar มี "ปล่อยของ" แสดงผลอยู่', async ({ page }) => {
+    const el = page.locator('header span').filter({ hasText: /^ปล่อยของ$/ }).first();
+    await expect(el).toBeVisible();
+  });
+
+  test('"ปล่อยของ" มี rainbow gradient (ไม่ใช่ none)', async ({ page }) => {
+    const bg = await page.evaluate(() => {
+      const el = Array.from(document.querySelectorAll('header span'))
+        .find(s => s.textContent?.trim() === 'ปล่อยของ');
+      return el ? getComputedStyle(el).backgroundImage : null;
+    });
+    expect(bg).toContain('linear-gradient');
+  });
+
+  test('"ปล่อยของ" gradient มีสีถูกต้องครบ 5 สี', async ({ page }) => {
+    const bg = await page.evaluate(() => {
+      const el = Array.from(document.querySelectorAll('header span'))
+        .find(s => s.textContent?.trim() === 'ปล่อยของ');
+      return el ? getComputedStyle(el).backgroundImage : '';
+    });
+    expect(bg).toContain('rgb(230, 57, 70)');   // #e63946 red
+    expect(bg).toContain('rgb(29, 78, 216)');   // #1d4ed8 blue
+    expect(bg).toContain('rgb(22, 163, 74)');   // #16a34a green
+    expect(bg).toContain('rgb(250, 204, 21)');  // #facc15 yellow
+    expect(bg).toContain('rgb(249, 115, 22)');  // #f97316 orange
+  });
+
+  test('"ปล่อยของ" gradient เป็น hard stops (แต่ละสีปรากฏ 2 ครั้ง)', async ({ page }) => {
+    const bg = await page.evaluate(() => {
+      const el = Array.from(document.querySelectorAll('header span'))
+        .find(s => s.textContent?.trim() === 'ปล่อยของ');
+      return el ? getComputedStyle(el).backgroundImage : '';
+    });
+    const redCount = (bg.match(/rgb\(230, 57, 70\)/g) || []).length;
+    expect(redCount).toBeGreaterThanOrEqual(2);
+  });
+
+  test('"ปล่อยของ" -webkit-text-fill-color เป็น transparent', async ({ page }) => {
+    const fill = await page.evaluate(() => {
+      const el = Array.from(document.querySelectorAll('header span'))
+        .find(s => s.textContent?.trim() === 'ปล่อยของ');
+      return el ? getComputedStyle(el).webkitTextFillColor : null;
+    });
+    expect(fill).toBe('rgba(0, 0, 0, 0)');
+  });
+
+  test('"ปล่อยของ" fallback color เป็น #e63946 (ไม่ใช่ดำ)', async ({ page }) => {
+    const color = await page.evaluate(() => {
+      const el = Array.from(document.querySelectorAll('header span'))
+        .find(s => s.textContent?.trim() === 'ปล่อยของ');
+      return el ? getComputedStyle(el).color : null;
+    });
+    expect(color).toBe('rgb(230, 57, 70)');
+  });
+
+  test('footer ก็มี "ปล่อยของ" พร้อม gradient', async ({ page }) => {
+    const bg = await page.evaluate(() => {
+      const el = Array.from(document.querySelectorAll('footer span'))
+        .find(s => s.textContent?.trim() === 'ปล่อยของ');
+      return el ? getComputedStyle(el).backgroundImage : null;
+    });
+    expect(bg).toContain('linear-gradient');
+  });
+
+});
