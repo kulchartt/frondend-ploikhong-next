@@ -181,7 +181,7 @@ export function Navbar({
                       style={{ borderRadius: '50%', objectFit: 'cover' }} />
                   ) : (
                     <div style={{ width: 20, height: 20, borderRadius: '50%',
-                      background: 'var(--accent)', color: '#fff', display: 'grid',
+                      background: PK_GRADIENT, color: '#fff', display: 'grid',
                       placeItems: 'center', fontSize: 10, fontWeight: 700 }}>
                       {avatarLetter}
                     </div>
@@ -204,7 +204,7 @@ export function Navbar({
                           style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                       ) : (
                         <div style={{ width: 36, height: 36, borderRadius: '50%',
-                          background: 'var(--accent)', color: '#fff', display: 'grid',
+                          background: PK_GRADIENT, color: '#fff', display: 'grid',
                           placeItems: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>
                           {avatarLetter}
                         </div>

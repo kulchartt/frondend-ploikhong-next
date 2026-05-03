@@ -571,7 +571,7 @@ export default function HomePage() {
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <button
               onClick={openListing}
-              style={{ width: 44, height: 44, borderRadius: 999, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', display: 'grid', placeItems: 'center', fontSize: 22, fontWeight: 700, lineHeight: 1 }}>
+              style={{ width: 44, height: 44, borderRadius: 999, background: PK_GRADIENT, color: '#fff', border: 'none', cursor: 'pointer', display: 'grid', placeItems: 'center', fontSize: 22, fontWeight: 700, lineHeight: 1, boxShadow: '0 4px 16px rgba(230,57,70,.4)' }}>
               +
             </button>
           </div>
