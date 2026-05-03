@@ -14,7 +14,7 @@ interface TxRow { id: number; type: string; amount?: number; delta?: number; des
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const PAY_METHODS = [
-  { id: 'promptpay', label: 'PromptPay', sub: 'สแกน QR · ยืนยันอัตโนมัติทันที', ic: 'PP' },
+  { id: 'promptpay', label: 'PromptPay', sub: 'QR สแกนด้วยแอปธนาคาร · ยืนยันอัตโนมัติ', ic: 'PP' },
   { id: 'card',      label: 'บัตรเครดิต / เดบิต', sub: 'Visa · Mastercard · JCB', ic: 'CC' },
 ];
 
@@ -53,8 +53,13 @@ function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem
   const [qrUrl, setQrUrl]         = useState('');
   const [err, setErr]             = useState('');
   const [simulating, setSimulating] = useState(false);
+  const [isMobile, setIsMobile]   = useState(false);
 
   const isTestMode = process.env.NEXT_PUBLIC_OPN_PUBLIC_KEY?.startsWith('pkey_test_') ?? false;
+
+  useEffect(() => {
+    setIsMobile(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
+  }, []);
 
   async function handleSimulatePayment() {
     if (!txId) return;
@@ -148,8 +153,36 @@ function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem
         {/* ── QR PromptPay ── */}
         {step === 'qr' && (
           <div className="co-ck-success">
-            <p style={{ fontSize: 13, color: 'var(--ink-2)', marginBottom: 12 }}>สแกน QR ด้านล่างด้วยแอปธนาคาร หรือ Mobile Banking</p>
-            {qrUrl && <img src={qrUrl} alt="PromptPay QR" style={{ width: 220, height: 220, borderRadius: 8, border: '1px solid var(--line)', marginBottom: 12 }} />}
+            {isMobile ? (
+              /* ── Mobile: บันทึก QR แล้วสแกนจากคลังรูป ── */
+              <>
+                <div style={{ fontSize: 22, marginBottom: 8 }}>📱</div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 4, textAlign: 'center' }}>ชำระด้วย PromptPay บนมือถือ</p>
+                <p style={{ fontSize: 13, color: 'var(--ink-2)', marginBottom: 14, textAlign: 'center', lineHeight: 1.6 }}>
+                  กดบันทึก QR → เปิดแอปธนาคาร → เลือก สแกน QR → เลือกรูปจากคลัง
+                </p>
+                {qrUrl && (
+                  <img src={qrUrl} alt="PromptPay QR" style={{ width: 160, height: 160, borderRadius: 8, border: '1px solid var(--line)', marginBottom: 14, display: 'block', margin: '0 auto 14px' }} />
+                )}
+                {qrUrl && (
+                  <a
+                    href={qrUrl}
+                    download="promptpay-qr.png"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'block', width: '100%', padding: '12px', background: 'var(--accent)', color: '#fff', borderRadius: 8, fontSize: 14, fontWeight: 700, textAlign: 'center', textDecoration: 'none', marginBottom: 10 }}
+                  >
+                    💾 บันทึก QR ลงมือถือ
+                  </a>
+                )}
+              </>
+            ) : (
+              /* ── Desktop: สแกนด้วยกล้องมือถือ ── */
+              <>
+                <p style={{ fontSize: 13, color: 'var(--ink-2)', marginBottom: 12 }}>เปิดแอปธนาคารบนมือถือแล้วสแกน QR ด้านล่าง</p>
+                {qrUrl && <img src={qrUrl} alt="PromptPay QR" style={{ width: 220, height: 220, borderRadius: 8, border: '1px solid var(--line)', marginBottom: 12 }} />}
+              </>
+            )}
             <div className="co-ck-rcpt" style={{ marginBottom: 12 }}>
               <div><span>จำนวน</span><b style={{ color: 'var(--pos)' }}>{fmtMoney(item.price)}</b></div>
               <div><span>เหรียญ</span><b>{item.coins.toLocaleString()} เหรียญ</b></div>
