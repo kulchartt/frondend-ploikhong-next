@@ -216,6 +216,9 @@ export const chargeCard = (body: { package_key: string; token: string }, token: 
 export const chargePromptPay = (package_key: string, token: string) =>
   req<{ charge_id: string; qr_code_url: string; amount: number; expires_at: string }>('/api/coins/charge-promptpay', { method: 'POST', body: JSON.stringify({ package_key }) }, token);
 
+export const chargeMobileBanking = (package_key: string, bank: string, token: string) =>
+  req<{ charge_id: string; authorize_uri: string; amount: number }>('/api/coins/charge-mobile-banking', { method: 'POST', body: JSON.stringify({ package_key, bank }) }, token);
+
 export const getMyPaymentRequests = (token: string) =>
   req<any[]>('/api/coins/payment-requests/my', {}, token);
 

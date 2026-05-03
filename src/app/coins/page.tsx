@@ -14,8 +14,17 @@ interface TxRow { id: number; type: string; amount?: number; delta?: number; des
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const PAY_METHODS = [
-  { id: 'promptpay', label: 'PromptPay', sub: 'QR สแกนด้วยแอปธนาคาร · ยืนยันอัตโนมัติ', ic: 'PP' },
-  { id: 'card',      label: 'บัตรเครดิต / เดบิต', sub: 'Visa · Mastercard · JCB', ic: 'CC' },
+  { id: 'promptpay',      label: 'PromptPay',           sub: 'QR สแกนด้วยแอปธนาคาร · ยืนยันอัตโนมัติ', ic: 'PP' },
+  { id: 'mobile_banking', label: 'Mobile Banking',       sub: 'เด้งแอปธนาคารอัตโนมัติ · KBank · SCB · ฯลฯ', ic: 'MB' },
+  { id: 'card',           label: 'บัตรเครดิต / เดบิต', sub: 'Visa · Mastercard · JCB', ic: 'CC' },
+];
+
+const MOBILE_BANKS = [
+  { id: 'kbank', label: 'KBank KPlus',     emoji: '🟢' },
+  { id: 'scb',   label: 'SCB Easy',        emoji: '🟣' },
+  { id: 'bay',   label: 'Krungsri KMA',    emoji: '🟡' },
+  { id: 'bbl',   label: 'Bangkok Bank',    emoji: '🔵' },
+  { id: 'ktb',   label: 'Krungthai NEXT',  emoji: '🔵' },
 ];
 
 const OPN_PUBLIC_KEY = process.env.NEXT_PUBLIC_OPN_PUBLIC_KEY || 'pkey_test_67heydolr6gthuf18bz';
@@ -48,6 +57,7 @@ interface CheckoutItem { label: string; coins: number; price: number; packKey: s
 function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem; token: string; onClose: () => void; onSuccess: () => void }) {
   const [step, setStep]           = useState<CheckoutStep>('review');
   const [payMethod, setPayMethod] = useState('promptpay');
+  const [bank, setBank]           = useState('kbank');
   const [consent, setConsent]     = useState(true);
   const [txId, setTxId]           = useState('');
   const [qrUrl, setQrUrl]         = useState('');
@@ -110,6 +120,20 @@ function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem
         },
         onFormClosed: () => {},
       });
+      return;
+    }
+
+    if (payMethod === 'mobile_banking') {
+      if (!bank) { setErr('กรุณาเลือกธนาคาร'); return; }
+      setStep('paying');
+      try {
+        const result = await api.chargeMobileBanking(item.packKey, bank, token);
+        // redirect ไปแอปธนาคาร — หน้านี้จะถูก unload
+        window.location.href = result.authorize_uri;
+      } catch (e: any) {
+        setStep('review');
+        setErr(e.message || 'เชื่อมต่อธนาคารไม่สำเร็จ กรุณาลองใหม่');
+      }
       return;
     }
 
@@ -247,6 +271,20 @@ function CheckoutModal({ item, token, onClose, onSuccess }: { item: CheckoutItem
                     <div className={`co-pay-radio${payMethod === m.id ? ' on' : ''}`} />
                   </button>
                 ))}
+                {payMethod === 'mobile_banking' && (
+                  <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, marginBottom: 2 }}>เลือกธนาคาร</div>
+                    {MOBILE_BANKS.map(b => (
+                      <button key={b.id}
+                        onClick={() => setBank(b.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: bank === b.id ? 'color-mix(in srgb,var(--accent) 8%,transparent)' : 'var(--surface)', border: `1.5px solid ${bank === b.id ? 'var(--accent)' : 'var(--line)'}`, borderRadius: 8, fontSize: 13, fontWeight: bank === b.id ? 700 : 500, color: 'var(--ink)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                        <span style={{ fontSize: 18 }}>{b.emoji}</span>
+                        <span>{b.label}</span>
+                        {bank === b.id && <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={2.5}><polyline points="20 6 9 17 4 12"/></svg>}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="co-ck-sum">
@@ -597,12 +635,14 @@ function CoinsPageContent() {
   const token: string | undefined = (session as any)?.token;
 
   const initTab = (searchParams.get('tab') as 'topup' | 'boosts' | 'premium' | 'history') || 'topup';
+  const paymentReturn = searchParams.get('payment');
   const [tab, setTab] = useState<'topup' | 'boosts' | 'premium' | 'history'>(initTab);
   const [balance, setBalance] = useState(0);
   const [balAnimKey, setBalAnimKey] = useState(0);
   const [boostOpen, setBoostOpen] = useState(false);
   const [boostRefreshKey, setBoostRefreshKey] = useState(0);
   const [viewProduct, setViewProduct] = useState<any>(null);
+  const [mbReturnBanner, setMbReturnBanner] = useState(paymentReturn === 'success');
 
   async function handleViewProduct(id: number) {
     try {
@@ -621,6 +661,14 @@ function CoinsPageContent() {
 
   useEffect(() => { refreshBalance(); }, [token]);
 
+  // กลับจาก Mobile Banking — รอ webhook แล้ว refresh balance
+  useEffect(() => {
+    if (paymentReturn !== 'success' || !token) return;
+    const t1 = setTimeout(() => refreshBalance(), 3000);
+    const t2 = setTimeout(() => { refreshBalance(); setMbReturnBanner(false); }, 8000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [paymentReturn, token]);
+
   // redirect must be inside useEffect — calling router.push during render crashes React
   useEffect(() => {
     if (status !== 'loading' && !session?.user) router.push('/');
@@ -638,6 +686,14 @@ function CoinsPageContent() {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden' }}>
+      {/* Mobile Banking return banner */}
+      {mbReturnBanner && (
+        <div style={{ background: '#dcfce7', borderBottom: '1px solid #86efac', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#15803d', flexShrink: 0 }}>
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><circle cx={12} cy={12} r={10}/><path d="M12 6v6l4 2"/></svg>
+          <span>กำลังตรวจสอบการชำระเงิน... เหรียญจะเข้าบัญชีอัตโนมัติภายในไม่กี่วินาที</span>
+          <button onClick={() => setMbReturnBanner(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#15803d', fontSize: 16, lineHeight: 1 }}>×</button>
+        </div>
+      )}
       {/* Topbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px', height: 56, borderBottom: '1px solid var(--line)', background: 'var(--surface)', flexShrink: 0 }}>
         <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)', padding: 4, display: 'flex' }}><IcoBack /></button>
