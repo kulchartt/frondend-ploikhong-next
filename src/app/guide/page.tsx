@@ -223,30 +223,18 @@ export default function GuidePage() {
           </div>
         </section>
 
-        {/* ── วิธีชำระเงิน ──────────────────────────────────────────────── */}
+        {/* ── การชำระเงินระหว่างผู้ซื้อ-ผู้ขาย ─────────────────────────── */}
         <section style={{ marginBottom: 64 }}>
-          <SectionHeader color="#f97316" title="วิธีชำระเงิน" sub="💳 Payment Methods" />
-          <p style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 24, lineHeight: 1.7 }}>
-            การชำระเงินสินค้าบน PloiKhong เป็นการตกลงกันโดยตรงระหว่างผู้ซื้อและผู้ขาย
-            รองรับหลากหลายวิธีตามที่ผู้ขายกำหนด
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16, marginBottom: 24 }}>
-            <MethodCard icon={<IconQR />}
-              title="PromptPay / พร้อมเพย์"
-              desc="โอนเงินผ่าน QR Code หรือหมายเลขพร้อมเพย์ได้ทันที รองรับทุกธนาคาร"
-              note="✅ วิธีที่นิยมที่สุด — รวดเร็ว ปลอดภัย" />
-            <MethodCard icon={<IconBank />}
-              title="โอนเงินผ่านธนาคาร"
-              desc="โอนตรงเข้าบัญชีธนาคารของผู้ขาย รองรับทุกธนาคารในไทย เช่น กสิกร SCB กรุงไทย ออมสิน"
-              note="📱 ใช้ได้ผ่าน Mobile Banking ทุกแอป" />
-            <MethodCard icon={<IconCash />}
-              title="เงินสด (นัดรับ)"
-              desc="จ่ายเงินสดเมื่อนัดรับสินค้าด้วยตัวเอง ตรวจสอบสินค้าได้ก่อนจ่าย"
-              note="🤝 เหมาะสำหรับสินค้าราคาสูงหรือต้องการตรวจสอบก่อนซื้อ" />
-            <MethodCard icon={<IconCard />}
-              title="วิธีอื่นๆ"
-              desc="True Money Wallet, Line Pay, หรือวิธีอื่นตามที่ผู้ซื้อ-ผู้ขายตกลงกัน"
-              note="💬 ตกลงวิธีชำระเงินกับผู้ขายในแชทได้เลย" />
+          <SectionHeader color="#f97316" title="การชำระเงินระหว่างผู้ซื้อ-ผู้ขาย" sub="🤝 ตกลงกันโดยตรง" />
+          <div style={{
+            background: 'var(--surface)', border: '1px solid var(--line)',
+            borderRadius: 'var(--radius)', padding: '24px', marginBottom: 20,
+            fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.8,
+          }}>
+            <p style={{ margin: '0 0 12px' }}>
+              PloiKhong เป็นแพลตฟอร์มกลางสำหรับซื้อขายออนไลน์ — <strong style={{ color: 'var(--ink)' }}>การชำระเงินค่าสินค้าเป็นการตกลงกันโดยตรงระหว่างผู้ซื้อและผู้ขาย</strong> ผ่านระบบแชทของแพลตฟอร์ม
+            </p>
+            <p style={{ margin: 0 }}>วิธีชำระเงินที่นิยมใช้กัน เช่น โอนเงินผ่าน PromptPay / บัญชีธนาคาร / หรือจ่ายเงินสดเมื่อนัดรับสินค้า — ขึ้นอยู่กับข้อตกลงของผู้ซื้อและผู้ขายแต่ละคู่</p>
           </div>
           <div style={{
             background: '#fef3c7', border: '1px solid #fde68a',
@@ -255,6 +243,53 @@ export default function GuidePage() {
           }}>
             ⚠️ <strong>คำแนะนำด้านความปลอดภัย:</strong> ควรตรวจสอบประวัติและรีวิวของผู้ขายก่อนโอนเงิน
             และเก็บหลักฐานการโอนเงินไว้เสมอ หากพบปัญหาสามารถแจ้งทีมงาน PloiKhong ได้ทันที
+          </div>
+        </section>
+
+        {/* ── เติมเหรียญและซื้อ Boost ───────────────────────────────────── */}
+        <section style={{ marginBottom: 64 }}>
+          <SectionHeader color="#f97316" title="เติมเหรียญและซื้อบริการเสริม" sub="🪙 PloiCoin & Boost" />
+          <p style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 24, lineHeight: 1.7 }}>
+            เหรียญ PloiCoin ใช้สำหรับซื้อบริการเสริมเพื่อเพิ่มยอดขาย เช่น Boost สินค้าและแพ็กเกจ Premium
+            ชำระผ่านระบบ Omise รองรับบัตรเครดิต/เดบิต, PromptPay, TrueMoney Wallet และ Mobile Banking
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
+            <StepCard n={1} icon={<IconUser />}
+              title="เข้าเมนูเติมเหรียญ"
+              desc="เข้าถึงได้จากเมนูบัญชีของคุณ"
+              items={[
+                'กดไอคอนบัญชีที่ Navbar แล้วเลือก "เติมเหรียญ & Premium"',
+                'หรือเข้าที่ URL: ploikhong.com/coins',
+              ]} />
+            <StepCard n={2} icon={<IconMoney />}
+              title="เลือกแพ็กเกจเหรียญ"
+              desc="มีให้เลือก 4 แพ็กเกจตามความต้องการ"
+              items={[
+                '🪙 100 เหรียญ — ฿99',
+                '🪙 350 เหรียญ (ประหยัด 15%) — ฿299',
+                '🪙 800 เหรียญ (ประหยัด 25%) — ฿599 🔥 ยอดนิยม',
+                '🪙 1,500 เหรียญ (ประหยัด 33%) — ฿999 ⭐',
+              ]} />
+            <StepCard n={3} icon={<IconCard />}
+              title="ชำระเงินผ่าน Omise"
+              desc="รองรับหลายช่องทางการชำระเงิน"
+              items={[
+                'บัตรเครดิต / เดบิต (Visa, Mastercard) — ปลอดภัยด้วย 3-D Secure',
+                'PromptPay — สแกน QR Code จ่ายได้ทันที',
+                'TrueMoney Wallet — สำหรับผู้ใช้ TrueMoney',
+                'Mobile Banking — ผ่านแอปธนาคารที่รองรับ',
+              ]} />
+            <StepCard n={4} icon={<IconStar />}
+              title="ใช้เหรียญซื้อ Boost และบริการเสริม"
+              desc="เพิ่มยอดขายด้วยบริการเสริมของ PloiKhong"
+              items={[
+                'สินค้าเด่น (Featured): ปักหมุดขึ้นหน้าแรก 7 วัน — 80 เหรียญ',
+                'Boost สินค้า: ดันสินค้าขึ้นบนสุดในหมวดหมู่ — 30 เหรียญ',
+                'แจ้งเตือนผู้ติดตาม: ส่ง push notification ถึงผู้ติดตาม — 25 เหรียญ',
+                'Analytics Pro: ดูสถิติสินค้าและร้านค้า — 50 เหรียญ',
+                'เหรียญไม่มีวันหมดอายุ สามารถขอคืนได้ภายใน 14 วันหากยังไม่ใช้',
+              ]} />
           </div>
         </section>
 
