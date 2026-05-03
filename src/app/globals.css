@@ -6,8 +6,8 @@
 
 :root {
   /* Brand — LOGO_C_SPEC.md: c1=#1667fe (blue) c2=#FF6B35 (orange) c3=#0f172a (ink) */
-  --accent:       #1667fe;
-  --accent-hover: #0f55e8;
+  --accent:       #1d4ed8;
+  --accent-hover: #1e40af;
   --accent-ink:   #ffffff;
   --brand-orange: #FF6B35;
 

@@ -197,8 +197,8 @@ export default function HomePage() {
                   cursor: 'pointer',
                   fontSize: 13,
                   fontWeight: isActive ? 600 : 400,
-                  background: isActive ? 'var(--ink)' : 'var(--surface-2)',
-                  color: isActive ? 'var(--bg)' : 'var(--ink)',
+                  background: isActive ? PK_GRADIENT : 'var(--surface-2)',
+                  color: isActive ? '#fff' : 'var(--ink)',
                   fontFamily: 'inherit',
                   whiteSpace: 'nowrap',
                 }}>
@@ -402,7 +402,7 @@ export default function HomePage() {
             <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
               <button
                 onClick={() => setFilterDrawerOpen(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 22px', background: 'var(--ink)', color: 'var(--bg)', borderRadius: 999, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,.25)' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 22px', background: 'var(--accent)', color: '#fff', borderRadius: 999, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(29,78,216,.35)' }}>
                 <svg width={16} height={16} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth={2}><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
                 ตัวกรอง
               </button>

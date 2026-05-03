@@ -154,8 +154,8 @@ export function ProductCard({ product, inWishlist = false, onWishlist, onClick, 
         {/* Badges top-left */}
         <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {product.is_featured && (
-            <span style={{ background: '#f59e0b', color: '#fff', fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 999, letterSpacing: '.05em' }}>
-              ⭐ FEATURED
+            <span style={{ background: 'linear-gradient(90deg,#e63946,#1d4ed8,#16a34a,#facc15,#f97316)', color: '#fff', fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 999, letterSpacing: '.05em' }}>
+              ★ FEATURED
             </span>
           )}
           {product.is_boosted && (
