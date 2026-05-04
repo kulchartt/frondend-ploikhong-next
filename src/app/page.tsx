@@ -482,12 +482,15 @@ export default function HomePage() {
             <div style={{ flex: '1 1 120px' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 12 }}>ติดต่อเรา</div>
               {[
-                { label: '📧 support@ploikhong.com', href: 'mailto:support@ploikhong.com' },
-                { label: '📘 Facebook Page',          href: 'https://facebook.com/ploikhong' },
-                { label: '🐦 @ploikhong',             href: 'https://twitter.com/ploikhong' },
+                { label: '📋 ข้อมูลผู้ประกอบการ',   href: '/contact', external: false },
+                { label: '📧 contact@ploikhong.com', href: 'mailto:contact@ploikhong.com', external: true },
               ].map(item => (
                 <div key={item.label} style={{ marginBottom: 8 }}>
-                  <a href={item.href} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}>{item.label}</a>
+                  <a
+                    href={item.href}
+                    {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    style={{ fontSize: 13, color: 'var(--ink-2)', textDecoration: 'none' }}
+                  >{item.label}</a>
                 </div>
               ))}
             </div>

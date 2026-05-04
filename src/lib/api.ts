@@ -317,6 +317,28 @@ export const getAccountingYearly = (year: number, token: string) =>
 export const getAccountingUserHistory = (userId: number, token: string) =>
   req<any>(`/api/accounting/user-history?userId=${userId}`, {}, token);
 
+// ─── Site Settings (Business contact info — for DBD compliance) ────────────
+
+export interface SiteSettings {
+  business_name?: string;
+  owner_name?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  registration_number?: string;
+  updated_at?: string;
+}
+
+export const getSiteSettings = () =>
+  req<SiteSettings>('/api/site-settings');
+
+export const updateSiteSettings = (body: Partial<SiteSettings>, token: string) =>
+  req<SiteSettings>('/api/site-settings', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  }, token);
+
 // ─── Upload ──────────────────────────────────────────────────────────────────
 
 export const uploadImage = async (file: File, token: string): Promise<string> => {
