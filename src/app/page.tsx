@@ -211,7 +211,7 @@ export default function HomePage() {
 
       {/* Main wrapper */}
       <div style={{ maxWidth: 1440, margin: '0 auto',
-        padding: isMobile ? '8px 0 72px' : '20px 20px 60px',
+        padding: isMobile ? '8px 0 72px' : '20px 0 60px',
         display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '240px 1fr', gap: 24, alignItems: 'flex-start' }}>
 
         {/* Sidebar */}
